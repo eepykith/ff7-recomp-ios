@@ -1,39 +1,36 @@
 import SwiftUI
 
-/// P0: placeholder host that talks to the C engine stub.
-/// P1 replaces the Color layer with an MTKView / CAMetalLayer surface.
+/// Play surface. FF7MetalView presents a CAMetalLayer; FFNx will draw into it
+/// once the lifted game is linked. Until then the layer clears to a status color.
 struct GameHostView: View {
     let packagePath: String?
 
     @State private var status = "Starting…"
-    @State private var canBoot = false
 
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
+        ZStack(alignment: .bottom) {
+            MetalSurfaceView()
+                .ignoresSafeArea()
 
-            VStack(spacing: 16) {
-                Text("FF7Recomp")
-                    .font(.largeTitle.weight(.semibold))
-                    .foregroundStyle(.white)
-
+            VStack(spacing: 12) {
                 Text(status)
-                    .font(.body.monospaced())
-                    .foregroundStyle(.white.opacity(0.75))
+                    .font(.footnote.monospaced())
+                    .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal)
+                    .padding(10)
+                    .frame(maxWidth: .infinity)
+                    .background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 10))
 
-                if canBoot {
-                    Text("Metal surface wiring is next (P1).")
-                        .font(.footnote)
-                        .foregroundStyle(.white.opacity(0.5))
-                }
+                TouchPadView()
             }
+            .padding()
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle("Play")
+        .toolbarBackground(.hidden, for: .navigationBar)
         .onAppear(perform: boot)
         .onDisappear {
+            EngineBridge.setPad(buttons: 0)
             EngineBridge.shutdown()
         }
     }
@@ -42,6 +39,13 @@ struct GameHostView: View {
         let probe = EngineBridge.probe(width: 1920, height: 1080, fps: 60)
         let result = EngineBridge.boot(packagePath: packagePath)
         status = result.message.isEmpty ? probe.message : result.message
-        canBoot = result.statusCode == 0
     }
+}
+
+private struct MetalSurfaceView: UIViewRepresentable {
+    func makeUIView(context: Context) -> FF7MetalView {
+        FF7MetalView(frame: .zero)
+    }
+
+    func updateUIView(_ uiView: FF7MetalView, context: Context) {}
 }

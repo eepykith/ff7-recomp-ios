@@ -4,8 +4,8 @@
 extern "C" {
 #endif
 
-/* P1 will create a CAMetalLayer-backed surface for bgfx.
- * P0 only declares the entry points the Swift GameHost will call. */
+/* Bookkeeping for the CAMetalLayer created by FF7MetalView.
+ * bgfx reads the layer through ff7_platform_window(). */
 
 typedef struct ff7_ios_surface {
   void *metal_layer; /* CAMetalLayer* */

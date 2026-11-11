@@ -8,7 +8,9 @@
 | Mac companion CLI | `tools/ff7recomp-mac` | Linux / macOS (Python 3) |
 | SwiftUI launcher shell | `ios/FF7Recomp` | macOS + Xcode 15+ |
 
-There is **no** lifted game, FFNx, or Metal frame yet. That is P1.
+P1 presents a `CAMetalLayer` and the Android-compatible `ff7_platform_window()`
+ABI. FFNx is not linked yet, so the layer clears to a status color instead of
+drawing the game. See [`P1_METAL.md`](P1_METAL.md).
 
 ## Linux / CI (engine stubs)
 
@@ -46,8 +48,8 @@ Select an iPhone / iPad simulator or device, then Run.
 Signing: use your personal team for sideload / development. App Store distribution
 is out of scope (see `docs/IOS_PORT_PLAN.md`).
 
-## Next (P1)
+## Next (rest of P1)
 
-1. Vendor or submodule the Android core (`src/host`, `src/hle`, FFNx port, bgfx).
-2. Implement `src/ios` Metal surface for bgfx.
-3. Enable `FF7_BUNDLE_GAME` for local title-screen bring-up.
+1. `bash tools/fetch_android_core.sh`
+2. Build FFNx/bgfx for Metal and call `ff7_boot_and_run` on a 64 MB game thread.
+3. Enable `FF7_BUNDLE_GAME` only for a local lift of your own `ff7_en.exe`.

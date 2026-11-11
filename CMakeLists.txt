@@ -11,8 +11,12 @@ set(FF7_PLATFORM "host" CACHE STRING "host | ios | mac")
 
 add_library(ff7_platform STATIC
   src/platform/ff7_host.c
+  src/platform/ff7_platform.c
   src/ios/ff7_ios_window.c
 )
+# pthread for the window/pad locks (same split as Android's game thread vs UI).
+find_package(Threads REQUIRED)
+target_link_libraries(ff7_platform PUBLIC Threads::Threads)
 target_include_directories(ff7_platform
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/platform
@@ -38,4 +42,4 @@ if(FF7_BUILD_TESTS)
   add_test(NAME host_smoke COMMAND ff7_host_smoke)
 endif()
 
-message(STATUS "FF7Recomp iOS scaffold: platform=${FF7_PLATFORM} bundle_game=${FF7_BUNDLE_GAME}")
+message(STATUS "FF7Recomp iOS P1: platform=${FF7_PLATFORM} bundle_game=${FF7_BUNDLE_GAME}")

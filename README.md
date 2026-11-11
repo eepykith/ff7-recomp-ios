@@ -5,14 +5,14 @@ Native iOS host (in progress) for
 FINAL FANTASY VII (Steam PC) statically recompiled to ARM64, rendered by FFNx,
 with a 7th Heaven–style mod launcher. **No game files are included.**
 
-## Status: P0 scaffold
+## Status: P1 Metal surface
 
 | Done | Not yet |
 |---|---|
-| SwiftUI launcher shell | FFNx / Metal title screen (P1) |
-| C host API + smoke test | Real pcrecomp lift → arm64-ios |
+| SwiftUI launcher + on-screen pad | FFNx drawing the title screen |
+| `CAMetalLayer` published as `ff7_platform_window()` | Real pcrecomp lift → arm64-ios |
 | `ff7recomp-mac` validate / stub `.ff7pkg` | Signed game dylib package (P3) |
-| XcodeGen project | Mods, save states, catalogs |
+| Host ABI smoke test | Mods, save states, catalogs |
 
 Plan: [`docs/IOS_PORT_PLAN.md`](docs/IOS_PORT_PLAN.md)  
 Build: [`docs/BUILDING.md`](docs/BUILDING.md)

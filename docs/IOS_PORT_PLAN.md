@@ -305,7 +305,17 @@ Landed in-tree:
 - `tools/ff7recomp-mac` validate + stub `.ff7pkg` writer
 - `docs/BUILDING.md`
 
-Still open for P0→P1: vendor Android core, Metal surface, bundled game lift.
+### P1 progress (started)
+
+Landed:
+
+- `FF7MetalView` presents a `CAMetalLayer` and clears it to a status color
+- `ff7_platform_window` / pad ABI matches the Android host
+- On-screen pad feeds that ABI
+- `ff7_boot_and_run` is a weak symbol (no FFNx in the binary yet)
+
+Still open: fetch the Android core, build FFNx for Metal, boot a local lift.
+See `docs/P1_METAL.md`.
 
 ---
 

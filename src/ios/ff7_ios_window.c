@@ -1,27 +1,26 @@
 #include "ff7_ios_window.h"
 
-#include <stddef.h>
+#include "ff7_platform.h"
 
-static ff7_ios_surface g_surface;
+#include <stddef.h>
 
 int ff7_ios_window_attach(ff7_ios_surface *surface) {
   if (!surface || !surface->metal_layer || surface->width <= 0 ||
       surface->height <= 0) {
     return -1;
   }
-  g_surface = *surface;
+  ff7_platform_set_window(surface->metal_layer, surface->width, surface->height);
   return 0;
 }
 
 void ff7_ios_window_resize(int width, int height) {
+  int cur_w = 0, cur_h = 0;
+  void *layer = ff7_platform_window(&cur_w, &cur_h);
   if (width > 0 && height > 0) {
-    g_surface.width = width;
-    g_surface.height = height;
+    ff7_platform_set_window(layer, width, height);
   }
 }
 
 void ff7_ios_window_detach(void) {
-  g_surface.metal_layer = NULL;
-  g_surface.width = 0;
-  g_surface.height = 0;
+  ff7_platform_set_window(NULL, 0, 0);
 }
