@@ -1,0 +1,10 @@
+FF7Recomp iOS is intended to be licensed under the GNU General Public License
+v3.0, same as the Android project it ports (it will link FFNx, which is GPL-3.0).
+
+Until FFNx is vendored, the P0 scaffold sources in this repository are also
+offered under GPL-3.0 so the license does not need to change at P1.
+
+See https://www.gnu.org/licenses/gpl-3.0.en.html for the full license text.
+
+This project contains no FINAL FANTASY VII game code or data. Users must
+supply their own legally obtained Steam copy.
