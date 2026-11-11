@@ -295,6 +295,18 @@ Do not start with the full launcher. Build this vertical slice:
 
 That proves the port is real before investing in catalogs, dual-screen, or Steam.
 
+### P0 progress (started)
+
+Landed in-tree:
+
+- `src/platform` host API + Linux/macOS smoke test
+- `ios/FF7Recomp` SwiftUI launcher / Play / Settings / Import shell
+- `ios/project.yml` (XcodeGen)
+- `tools/ff7recomp-mac` validate + stub `.ff7pkg` writer
+- `docs/BUILDING.md`
+
+Still open for P0→P1: vendor Android core, Metal surface, bundled game lift.
+
 ---
 
 ## 11. Open decisions

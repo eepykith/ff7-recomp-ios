@@ -1,0 +1,33 @@
+# Build
+build/
+build-*/
+DerivedData/
+*.xcodeproj/
+!ios/*.xcodeproj/
+*.xcworkspace/
+*.xcuserstate
+xcuserdata/
+
+# Packages / game data (never commit)
+game/
+generated/
+analysis/
+external/
+*.ff7pkg
+*.ff7s
+ff7_en.exe
+ff7.exe
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+*.egg-info/
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+agent-tools/
+*.log
