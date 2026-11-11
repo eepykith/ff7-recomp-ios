@@ -1,7 +1,18 @@
 #include "ff7_host.h"
 
+#include "ff7_platform.h"
+
 #include <stdio.h>
 #include <string.h>
+
+/* Defined by the FFNx/lifted-game link (see ff7-recomp-android ff7_boot.c).
+ * Missing on purpose in the P1 shell. Darwin wants weak_import; ELF wants weak. */
+#if defined(__APPLE__)
+#define FF7_WEAK_ENTRY __attribute__((weak_import))
+#else
+#define FF7_WEAK_ENTRY __attribute__((weak))
+#endif
+extern int ff7_boot_and_run(const char *game_dir) FF7_WEAK_ENTRY;
 
 static ff7_host_config g_config;
 static ff7_host_state g_state;
@@ -15,7 +26,7 @@ static void set_message(const char *msg) {
 }
 
 const char *ff7_host_version(void) {
-  return "0.1.0-p0";
+  return "0.2.0-p1";
 }
 
 ff7_host_status ff7_host_init(const ff7_host_config *config) {
@@ -42,6 +53,7 @@ void ff7_host_shutdown(void) {
   memset(&g_state, 0, sizeof(g_state));
   memset(&g_config, 0, sizeof(g_config));
   set_message("");
+  ff7_engine_set_drawing(0);
   g_inited = 0;
 }
 
@@ -69,13 +81,29 @@ ff7_host_status ff7_host_boot(const char *package_path_or_null) {
     return g_state.status;
   }
 
-  /* Package path present but engine not wired yet. */
+  if (ff7_boot_and_run != NULL) {
+    g_state.booted = 1;
+    g_state.status = FF7_HOST_OK;
+    ff7_engine_set_drawing(1);
+    snprintf(g_message, sizeof(g_message),
+             "FFNx entry is linked; boot %s on the game thread next",
+             package_path_or_null);
+    return g_state.status;
+  }
+
+  /* Surface can present. The lifted game and FFNx are not in this binary. */
   g_state.booted = 0;
   g_state.status = FF7_HOST_ERR_UNSUPPORTED;
   snprintf(g_message, sizeof(g_message),
-           "package noted (%s); Metal/FFNx boot lands in P1",
+           "Metal surface ready; FFNx is not linked (P1). Package: %s",
            package_path_or_null);
   return g_state.status;
+}
+
+void ff7_host_note_present(void) {
+  if (g_inited) {
+    g_state.frame += 1;
+  }
 }
 
 ff7_host_status ff7_host_frame(void) {
@@ -85,7 +113,7 @@ ff7_host_status ff7_host_frame(void) {
   if (!g_state.booted) {
     return g_state.status == FF7_HOST_OK ? FF7_HOST_ERR_NO_GAME : g_state.status;
   }
-  g_state.frame += 1;
+  ff7_host_note_present();
   return FF7_HOST_OK;
 }
 

@@ -37,6 +37,10 @@ enum EngineBridge {
         ff7_host_shutdown()
     }
 
+    static func setPad(buttons: UInt16, lt: UInt8 = 0, rt: UInt8 = 0, lx: Int16 = 0, ly: Int16 = 0, rx: Int16 = 0, ry: Int16 = 0) {
+        ff7_platform_set_pad(buttons, lt, rt, lx, ly, rx, ry)
+    }
+
     private static func snapshot() -> EngineState {
         let state = ff7_host_get_state()
         return EngineState(

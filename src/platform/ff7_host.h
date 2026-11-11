@@ -7,8 +7,7 @@
 extern "C" {
 #endif
 
-/* Shared host API for Android JNI and iOS Swift/ObjC++ bridges.
- * P0: stubs only. Real FFNx/Metal wiring lands in P1. */
+/* Shared host API for the iOS shell and, later, the FFNx boot thread. */
 
 typedef struct ff7_host_config {
   int width;
@@ -44,8 +43,11 @@ const char *ff7_host_message(void);
  * FF7_HOST_ERR_NO_GAME and leaves a human-readable message. */
 ff7_host_status ff7_host_boot(const char *package_path_or_null);
 
-/* Advance one frame of the stub host (no GPU work in P0). */
+/* Advance one frame of the stub host (no GPU work until FFNx is linked). */
 ff7_host_status ff7_host_frame(void);
+
+/* Count a presented Metal drawable. */
+void ff7_host_note_present(void);
 
 /* Paths the launcher uses for Documents / Application Support. */
 void ff7_host_set_paths(const char *documents, const char *support);
