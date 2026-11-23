@@ -12,6 +12,7 @@ static void *g_window;
 static int g_width;
 static int g_height;
 static ff7_pad_state g_pad;
+static unsigned short g_inject;
 static int g_engine_drawing;
 
 void ff7_platform_set_window(void *metal_layer, int width, int height) {
@@ -72,8 +73,25 @@ int ff7_platform_pad_state(unsigned index, ff7_pad_state *out) {
   }
   pthread_mutex_lock(&g_pad_mu);
   *out = g_pad;
+  out->buttons |= g_inject;
   pthread_mutex_unlock(&g_pad_mu);
   return 1;
+}
+
+/* Same contract as the Android host: the injected mask (quickboot's presses) replaces the
+ * previous one and is merged only into what the game reads, so ff7_platform_pad_buttons()
+ * keeps reporting the player's own buttons. */
+void ff7_platform_pad_inject(unsigned short buttons) {
+  pthread_mutex_lock(&g_pad_mu);
+  g_inject = buttons;
+  pthread_mutex_unlock(&g_pad_mu);
+}
+
+int ff7_platform_pad_buttons(void) {
+  pthread_mutex_lock(&g_pad_mu);
+  int buttons = g_pad.buttons;
+  pthread_mutex_unlock(&g_pad_mu);
+  return buttons;
 }
 
 void ff7_platform_pad_rumble(unsigned index, unsigned short left,

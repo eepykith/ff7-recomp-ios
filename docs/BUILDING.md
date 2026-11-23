@@ -50,6 +50,12 @@ is out of scope (see `docs/IOS_PORT_PLAN.md`).
 
 ## Next (rest of P1)
 
-1. `bash tools/fetch_android_core.sh`
-2. Build FFNx/bgfx for Metal and call `ff7_boot_and_run` on a 64 MB game thread.
-3. Enable `FF7_BUNDLE_GAME` only for a local lift of your own `ff7_en.exe`.
+See [`P1_METAL.md`](P1_METAL.md) for the full Mac sequence:
+
+1. `bash tools/fetch_android_core.sh && bash tools/setup_android_core.sh`
+2. `bash tools/apply_metal_overlay.sh` (Metal bgfx + display)
+3. Import Steam 2026 FF7, lift `ff7_en.exe`, then
+   `cmake -S . -B build-metal -DFF7_BUNDLE_GAME=ON && cmake --build build-metal`
+4. `ff7_host_boot` starts `ff7_boot_and_run` on a 64 MB game thread.
+
+Never commit `external/`, `generated/`, or `game/`.

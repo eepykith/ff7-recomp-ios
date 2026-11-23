@@ -1,4 +1,5 @@
 #include "../../../src/platform/ff7_host.h"
 #include "../../../src/platform/ff7_platform.h"
 #include "../../../src/ios/ff7_ios_window.h"
+#include "../../../src/ios/ff7_ios_boot.h"
 #include "../../../src/ios/FF7MetalView.h"

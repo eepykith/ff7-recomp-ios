@@ -20,6 +20,11 @@ class ValidationResult:
 
 
 def find_exe(game_dir: Path) -> Path | None:
+    # Steam 2026 layout: ff7/resources/ff7_1.02/ff7_en (no .exe suffix).
+    steam2026 = game_dir / "ff7" / "resources" / "ff7_1.02" / "ff7_en"
+    if steam2026.is_file():
+        return steam2026
+
     for name in REQUIRED_MARKERS:
         candidate = game_dir / name
         if candidate.is_file():
