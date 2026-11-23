@@ -1,4 +1,4 @@
-# Building FF7Recomp iOS (P0 scaffold)
+# Building FF7Recomp iOS
 
 ## What works on this repo today
 
@@ -8,9 +8,9 @@
 | Mac companion CLI | `tools/ff7recomp-mac` | Linux / macOS (Python 3) |
 | SwiftUI launcher shell | `ios/FF7Recomp` | macOS + Xcode 15+ |
 
-P1 presents a `CAMetalLayer` and the Android-compatible `ff7_platform_window()`
-ABI. FFNx is not linked yet, so the layer clears to a status color instead of
-drawing the game. See [`P1_METAL.md`](P1_METAL.md).
+This page covers the pieces that build without the game. To build and run the game itself (Mac,
+iOS simulator, iPhone), follow the README's "Using it" section; the details are in
+[`P1_METAL.md`](P1_METAL.md).
 
 ## Linux / CI (engine stubs)
 
@@ -48,14 +48,8 @@ Select an iPhone / iPad simulator or device, then Run.
 Signing: use your personal team for sideload / development. App Store distribution
 is out of scope (see `docs/IOS_PORT_PLAN.md`).
 
-## Next (rest of P1)
+## The game (Mac and iOS)
 
-See [`P1_METAL.md`](P1_METAL.md) for the full Mac sequence:
-
-1. `bash tools/fetch_android_core.sh && bash tools/setup_android_core.sh`
-2. `bash tools/apply_metal_overlay.sh` (Metal bgfx + display)
-3. Import Steam 2026 FF7, lift `ff7_en.exe`, then
-   `cmake -S . -B build-metal -DFF7_BUNDLE_GAME=ON && cmake --build build-metal`
-4. `ff7_host_boot` starts `ff7_boot_and_run` on a 64 MB game thread.
-
-Never commit `external/`, `generated/`, or `game/`.
+See the README's "Using it" section and [`P1_METAL.md`](P1_METAL.md): set up the core, import
+and lift your `ff7_en.exe`, then run `ff7_metal_boot` on the Mac or the `FF7RecompBundled` app
+in the iOS simulator.
