@@ -49,15 +49,21 @@ python3 -I "$AND/tools/run_lift.py" lift "$AND/game/ff7_en.exe" \
 python3 -I "$AND/tools/gen_extents.py" "$AND/generated/recomp"
 python3 -I "$AND/tools/gen_retn_table.py"
 
-# Native arm64 cannot shrink PAGEZERO (kernel SIGKILL), so guest flat 32-bit
-# VAs need Rosetta x86_64 until a non-flat memory model exists:
-cmake -S . -B build-metal-x64 -DFF7_BUNDLE_GAME=ON -DFF7_PLATFORM=mac \
-  -DCMAKE_OSX_ARCHITECTURES=x86_64 -DFF7_BUILD_TESTS=OFF
-cmake --build build-metal-x64 -j --target ffnx ff7_core ff7_metal_boot || true
-bash tools/darwin_link_metal_boot.sh   # FF7_BUILD_DIR defaults to build-metal-x64
+# Native arm64 (no Rosetta): the guest lives in a window at g_mem_base (FF7_BASED_MEMORY).
+cmake -S . -B build-metal-arm64 -DFF7_BUNDLE_GAME=ON -DFF7_PLATFORM=mac \
+  -DCMAKE_OSX_ARCHITECTURES=arm64 -DFF7_BUILD_TESTS=OFF -DFF7_BASED_MEMORY=ON
+cmake --build build-metal-arm64 -j --target ffnx ff7_core ff7_platform
+FF7_BUILD_DIR=$PWD/build-metal-arm64 bash tools/darwin_link_metal_boot.sh
 make -C "$AND/external/bgfx" shaderc
 bash tools/compile_shaders_metal.sh
 cp "$AND/external/FFNx/misc/FFNx.toml" ./FFNx.toml
+FF7_QUICKBOOT=title ./build-metal-arm64/ff7_metal_boot game
+
+# Rosetta x86_64 flat build (the first bring-up; still works, g_mem_base stays 0):
+cmake -S . -B build-metal-x64 -DFF7_BUNDLE_GAME=ON -DFF7_PLATFORM=mac \
+  -DCMAKE_OSX_ARCHITECTURES=x86_64 -DFF7_BUILD_TESTS=OFF
+cmake --build build-metal-x64 -j --target ffnx ff7_core ff7_platform
+bash tools/darwin_link_metal_boot.sh   # FF7_BUILD_DIR defaults to build-metal-x64
 FF7_QUICKBOOT=title ./build-metal-x64/ff7_metal_boot game
 ```
 
@@ -79,12 +85,12 @@ advance on their own. `FF7_SNAPSHOT=/path/shot.png` writes the window to a PNG e
 | bgfx Metal static libs | Works (`tools/apply_metal_overlay.sh`) |
 | `ff7_core` + `libffnx.a` compile | Works |
 | 64 MB game thread API | Wired in `src/ios/ff7_ios_boot.c` |
-| Final `ff7_metal_boot` link | Works on **Rosetta x86_64** via `tools/darwin_link_metal_boot.sh` (CMake-object dedupe + `dynamic_lookup` + small PAGEZERO + high `image_base`) |
-| Guest arena + PE map at `0x400000` | Works under Rosetta |
+| Final `ff7_metal_boot` link | Works on **native arm64** (based memory) and **Rosetta x86_64** (flat) via `tools/darwin_link_metal_boot.sh` |
+| Guest arena + PE map | Native arm64: guest window at `g_mem_base` (4 GB aligned); Rosetta: flat at `0x400000` |
 | CAMetalLayer window | Works (`src/mac/ff7_mac_metal_window.mm`) |
 | Metal shaders (`*.mtl.*`) | Works (`tools/compile_shaders_metal.sh`) |
-| Title screen | **Works on Mac (Rosetta x86_64)**: FFNx logo, then the title (New Game / Continue) on the CAMetalLayer |
-| iOS device / simulator | **Not yet** — both are native arm64, which cannot map the flat 32-bit guest (see below) |
+| Title screen | **Works on Mac, native arm64 and Rosetta x86_64**: FFNx logo, then the title (New Game / Continue) |
+| iOS device / simulator | **Next** — the core now runs native arm64; still to do: link it into the iOS app (see below) |
 
 Steam folder used here:
 `~/Library/Application Support/Steam/steamapps/common/FINAL FANTASY VII Steam Edition`
@@ -105,11 +111,31 @@ Steam folder used here:
 - **Pad inject was sticky.** `ff7_platform_pad_inject` ORed into the player's pad and never
   released. It now keeps a separate mask, as on Android.
 
-### What blocks iOS (device and simulator)
+### Based memory (native arm64)
 
-The lifted code addresses guest memory as flat 32-bit host pointers (PE at 0x400000, arena at
-0x33000000). Native arm64 processes, including every iOS process and the simulator on Apple
-silicon, keep a 4 GB PAGEZERO that cannot be shrunk, so those addresses can never be mapped.
-The Mac host gets around this only by running x86_64 under Rosetta, which iOS lacks. Reaching
-the title on iOS needs a based memory model in the lifter/runtime (every guest access
-`MEM32(va)` → `guest_base + va`), not more host work.
+Native arm64 processes (macOS, iOS, the simulator on Apple silicon) keep a 4 GB PAGEZERO, so
+the flat layout (guest address == host address below 4 GB) is impossible there.
+`-DFF7_BASED_MEMORY=ON` builds the lift without `RECOMP_FLAT_MEMORY`: every lifted access is
+`g_mem_base + va`. `ff7_guest_window_init()` (`ff7_boot.c`) reserves the guest's
+`[0, 0x80000000)` as one `PROT_NONE` window, **4 GB aligned**, so a host pointer into it
+truncates to its guest address and only guest → host needs the base.
+
+The host side (Win32 shims, FF7 HLE, FFNx) is converted by `tools/based_memory_port.py`, run
+from `tools/apply_metal_overlay.sh`:
+
+- `G2H(va)` / `H2G(p)` (in pcrecomp's `recomp_types.h`). `G2H(0)` is `NULL`, and with
+  `g_mem_base == 0` both are the old casts, so flat builds (Android, Rosetta) are unchanged.
+- Regex passes over `(T *)(uintptr_t)X`, `reinterpret_cast<T *>(static_cast<uintptr_t>(X))`,
+  FFNx's `(T *)get_absolute_value(...)` and literal-address casts, plus a short list of edits
+  (fixed `mmap`s, `guest_abi.h`'s `gptr` conversions, `put_arg`'s guest-pointer test, `strcpy_s`).
+- `patches/ffnx-based-memory.patch`: the FFNx sites clang found with `-Wint-to-pointer-cast` and
+  `-Wformat` (a `gptr<char>` passed to `%s` arrives as its raw guest address), generated with
+  `based_memory_port.py warnings|formats` on FFNx `0adf0b32`.
+
+A guest address the port missed is dereferenced below 4 GB, which is PAGEZERO: it faults at
+once, and lldb shows the exact site.
+
+What remains for iOS: build the core for `arm64-apple-ios` / the simulator SDK, link it into
+the app with the same based memory, and check that the 2 GB `PROT_NONE` reservation (plus
+4 GB of alignment slack, released right away) fits the app's address space; iOS may need the
+`com.apple.developer.kernel.extended-virtual-addressing` entitlement.

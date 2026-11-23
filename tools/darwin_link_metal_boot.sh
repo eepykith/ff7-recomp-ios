@@ -34,6 +34,11 @@ fi
 echo "linking build dir=$B arch=${ARCH:-unknown}"
 
 DUP_LIST="$B/dup_syms_mangled.txt"
+# The curated list (FFNx header globals defined in several objects). The discovery fallback
+# below over-collects (thousands of symbols) and hides real definitions.
+if [[ ! -f "$DUP_LIST" && -f "$ROOT/tools/darwin_dup_syms.txt" ]]; then
+  cp "$ROOT/tools/darwin_dup_syms.txt" "$DUP_LIST"
+fi
 if [[ ! -f "$DUP_LIST" ]]; then
   # Fallback: discover duplicates across CMake objects (STD globals only).
   python3 - <<PY
@@ -126,8 +131,9 @@ if [[ "${ARCH}" == *x86_64* ]] || [[ "${ARCH}" == i386 ]]; then
   clang "${CC_ARCH[@]}" -c "$ROOT/src/mac/ff7_guest_reserve.s" -o "$RESERVE_O"
   LINK_EXTRA+=("$RESERVE_O" -Wl,-u,_ff7_guest_image_reserve)
 elif [[ "${ARCH}" == *arm64* ]]; then
-  echo "WARNING: native arm64 cannot use reduced PAGEZERO; guest mmap at 0x6B000000 will fail." >&2
-  echo "         Rebuild with -DCMAKE_OSX_ARCHITECTURES=x86_64 (Rosetta)." >&2
+  # Native arm64 keeps the 4 GB PAGEZERO; the core must be built with -DFF7_BASED_MEMORY=ON
+  # (guest window at g_mem_base, tools/based_memory_port.py).
+  CC_ARCH=(-arch arm64)
 fi
 
 # Ensure Mac Metal window object exists (ObjC++).
@@ -157,7 +163,7 @@ clang++ "${CC_ARCH[@]}" -o "$B/ff7_metal_boot" \
   -framework AppKit -framework CoreVideo -framework CoreFoundation \
   -framework CoreMedia -framework VideoToolbox -framework AudioToolbox \
   -Wl,-u,_ff7_boot_and_run -Wl,-undefined,dynamic_lookup \
-  "${LINK_EXTRA[@]}" \
+  ${LINK_EXTRA[@]+"${LINK_EXTRA[@]}"} \
   -lc++ -lz -lpthread
 
 codesign -s - --force "$B/ff7_metal_boot" >/dev/null
