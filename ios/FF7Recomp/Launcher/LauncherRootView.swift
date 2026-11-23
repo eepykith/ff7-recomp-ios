@@ -1,86 +1,98 @@
 import SwiftUI
 
+/// Root: game setup until a GamePackage is installed, then the launcher home.
 struct LauncherRootView: View {
-    @StateObject private var model = LauncherModel()
+    @StateObject private var model = AppModel()
+
+    var body: some View {
+        Group {
+            switch model.route {
+            case .setup:
+                GameSetupView(model: model)
+                    .transition(.opacity)
+            case .home:
+                LauncherHomeView(model: model)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.default, value: model.route)
+    }
+}
+
+struct LauncherHomeView: View {
+    @ObservedObject var model: AppModel
 
     var body: some View {
         NavigationStack {
             List {
-                Section("Game") {
-                    NavigationLink("Play") {
-                        GameHostView(packagePath: model.packagePath)
+                if let pkg = model.package {
+                    Section {
+                        PackageSummary(package: pkg)
                     }
-                    .disabled(!model.canAttemptPlay)
-
-                    LabeledContent("Package") {
-                        Text(model.packageLabel)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.trailing)
-                    }
-
-                    Button("Import GamePackage…") {
-                        model.showImporter = true
+                } else if let dir = model.bundledGameDir {
+                    Section {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Label("Bundled dev game", systemImage: "hammer.fill").font(.headline)
+                            Text(dir).font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(2)
+                        }
+                        .padding(.vertical, 4)
                     }
                 }
 
-                Section("Library") {
-                    NavigationLink("Mods") {
-                        PlaceholderScreen(
-                            title: "Mods",
-                            detail: "P4 — import .iro / folders through the shared C++ mod layer."
-                        )
+                Section {
+                    NavigationLink {
+                        GameHostView(packagePath: model.playPackagePath)
+                    } label: {
+                        Label("Play", systemImage: "play.fill")
+                            .font(.headline)
                     }
-                    NavigationLink("Save states") {
-                        PlaceholderScreen(
-                            title: "Save states",
-                            detail: "P2 — same .ff7s format as Android."
-                        )
-                    }
-                }
+                    .disabled(!model.canPlay)
 
-                Section("System") {
-                    NavigationLink("Settings") {
+                    NavigationLink {
+                        ModsView(library: model.modLibrary, gameLanguage: model.package?.manifest.language)
+                    } label: {
+                        Label("Mods", systemImage: "puzzlepiece.extension")
+                    }
+
+                    NavigationLink {
                         SettingsView(model: model)
+                    } label: {
+                        Label("Settings", systemImage: "gearshape")
                     }
-                    LabeledContent("Engine") {
-                        Text(model.engineVersion)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                if let message = model.statusMessage {
-                    Section("Status") {
-                        Text(message)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                } footer: {
+                    if model.package?.isStub == true {
+                        Text(model.bundledGameDir != nil
+                             ? "Stub package without game code; Play boots the bundled dev game instead."
+                             : "This is a stub package without game code; Play opens the engine surface only.")
                     }
                 }
             }
             .navigationTitle("FF7Recomp")
-            .fileImporter(
-                isPresented: $model.showImporter,
-                allowedContentTypes: [.ff7Package, .zip, .data],
-                allowsMultipleSelection: false
-            ) { result in
-                model.handleImport(result)
-            }
         }
-        .onAppear { model.refresh() }
     }
 }
 
-private struct PlaceholderScreen: View {
-    let title: String
-    let detail: String
+private struct PackageSummary: View {
+    let package: GamePackage
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(detail)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Image(systemName: "checkmark.seal.fill").foregroundStyle(.green)
+                Text("Game installed").font(.headline)
+            }
+            Text("Build \(package.manifest.buildID)")
+                .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
-            Spacer()
+            Text("\(languageName(package.manifest.language)) · core \(package.manifest.coreVersion) · exe \(package.manifest.exeFingerprint)…")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
-        .padding()
-        .navigationTitle(title)
+        .padding(.vertical, 4)
+    }
+
+    private func languageName(_ code: String) -> String {
+        Locale(identifier: "en").localizedString(forLanguageCode: code) ?? code
     }
 }
 
