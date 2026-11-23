@@ -5,7 +5,12 @@
 #
 # Apple ld64 cannot --allow-multiple-definition (FFNx header globals). This script:
 #   1) copies uniquely-pathed CMake objects (ar member names collide on macOS)
-#   2) localizes only the known duplicate globals (extras), keeping one definition
+#   2) weakens extra definitions listed in tools/darwin_dup_syms.txt (now empty). FFNx's
+#      header-defined globals are made C++17 `inline` at the source instead
+#      (FF7_IOS_HEADER_INLINE in apply_metal_overlay.sh), which keeps one copy as
+#      /FORCE:MULTIPLE and --allow-multiple-definition do. Do not localize duplicates: that gave
+#      each object a private copy and split shared state (the field opcode table, positions, ...).
+#      llvm-objcopy --weaken-symbol did not take effect on these Mach-O objects in testing.
 #   3) links with -undefined dynamic_lookup + -pagezero_size (Rosetta x86_64)
 #
 # Native arm64 cannot shrink PAGEZERO (kernel SIGKILL); guest flat 32-bit VAs need
@@ -103,8 +108,8 @@ for o in copied:
 for s in syms:
     owners = defs.get(s, [])
     for o in owners[1:]:
-        subprocess.check_call([objcopy, f"--localize-symbol={s}", str(o)])
-print(f"localized extras for {len(syms)} symbols across {len(copied)} objects")
+        subprocess.check_call([objcopy, f"--weaken-symbol={s}", str(o)])
+print(f"weakened extras for {len(syms)} symbols across {len(copied)} objects")
 PY
 
 "$LLVM_AR" rcs "$OUT/libffnx_dedup.a" "$OUT"/objs/*.o

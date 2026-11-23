@@ -334,3 +334,49 @@ endif()
 else:
     print("ffnx.cmake already has the FFmpeg movie stubs")
 PY7
+
+# FF7_IOS_HEADER_INLINE: FFNx defines some globals and functions in headers (each including file
+# gets a copy). Windows (/FORCE:MULTIPLE) and Android (--allow-multiple-definition) bind every
+# reference to one copy; ld64 has no such flag. Mark them C++17 `inline`, so the toolchain keeps
+# exactly one: without it FFNx's field opcode table, field positions, widescreen sizes, movie
+# timing and input listeners were split per source file (a new game's first field looped on
+# "original opcode table empty").
+python3 - <<'PY8'
+from pathlib import Path
+import os
+root = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "external"
+EDITS = [
+    ("FFNx/src/input.h", "std::vector<MouseListener*> mouseListeners;", "inline std::vector<MouseListener*> mouseListeners;"),
+    ("FFNx/src/input.h", "std::vector<KeyListener*> keyListeners;", "inline std::vector<KeyListener*> keyListeners;"),
+    ("FFNx/src/widescreen.h", "int wide_game_x = 0;", "inline int wide_game_x = 0;"),
+    ("FFNx/src/widescreen.h", "int wide_game_y = 0;", "inline int wide_game_y = 0;"),
+    ("FFNx/src/widescreen.h", "int wide_game_width = 854;", "inline int wide_game_width = 854;"),
+    ("FFNx/src/widescreen.h", "int wide_game_height = 480;", "inline int wide_game_height = 480;"),
+    ("FFNx/src/ff7/world/utils.h", "bool is_key_pressed(int current_key_status, int key)", "inline bool is_key_pressed(int current_key_status, int key)"),
+    ("FFNx/src/ff7/world/utils.h", "bool is_key_pressed_first_time(int current_key_status, int prev_key_status, int key)", "inline bool is_key_pressed_first_time(int current_key_status, int prev_key_status, int key)"),
+    ("FFNx/src/ff7/world/utils.h", "bool is_key_released(int current_key_status, int prev_key_status, int key)", "inline bool is_key_released(int current_key_status, int prev_key_status, int key)"),
+    ("FFNx/src/ff7/field/background.h", "    vector2<float>\n        field_curr_delta_world_pos,", "    inline vector2<float>\n        field_curr_delta_world_pos,"),
+    ("FFNx/src/ff7/field/model.h", "std::array<external_field_model_data, MAX_FIELD_MODELS> external_model_data;", "inline std::array<external_field_model_data, MAX_FIELD_MODELS> external_model_data;"),
+    ("FFNx/src/ff7/field/model.h", "uint32_t ff7_kawai_current_model_id = 0xFF;", "inline uint32_t ff7_kawai_current_model_id = 0xFF;"),
+    ("FFNx/src/ff7/field/opcode.h", "std::array<uint32_t, 256> original_opcode_table {0};", "inline std::array<uint32_t, 256> original_opcode_table {0};"),
+    ("FFNx/src/movies.h", "extern short movie_fps_ratio = 1;", "inline short movie_fps_ratio = 1;"),
+    ("FFNx/src/movies.h", "extern bool is_movie_bgfield = false;", "inline bool is_movie_bgfield = false;"),
+    ("FFNx/src/ff8/file.h", "uint32_t(*ff8_read_file)(uint32_t count, void* buffer, struct ff8_file* file);", "inline uint32_t(*ff8_read_file)(uint32_t count, void* buffer, struct ff8_file* file);"),
+    ("FFNx/src/ff8/file.h", "void (*ff8_close_file)(struct ff8_file* file);", "inline void (*ff8_close_file)(struct ff8_file* file);"),
+    ("deps/openpsf/include/openpsf/openpsf.h", "PsfFlags operator|(PsfFlags flags, PsfFlags other) noexcept {", "inline PsfFlags operator|(PsfFlags flags, PsfFlags other) noexcept {"),
+]
+n = 0
+for rel, old, new in EDITS:
+    p = root / rel
+    raw = p.read_bytes().decode("utf-8", "surrogateescape")
+    crlf = "\r\n" in raw
+    t = raw.replace("\r\n", "\n")
+    if new in t:
+        continue
+    if t.count(old) != 1:
+        raise SystemExit(f"{rel}: layout changed; update FF7_IOS_HEADER_INLINE in tools/apply_metal_overlay.sh")
+    t = t.replace(old, new, 1)
+    p.write_bytes((t.replace("\n", "\r\n") if crlf else t).encode("utf-8", "surrogateescape"))
+    n += 1
+print(f"header definitions made inline: {n}" if n else "header definitions already inline")
+PY8

@@ -17,7 +17,7 @@ the app, drawn by FFNx → bgfx → Metal into the app's `CAMetalLayer`.
 |---|---|
 | P0 toolchain, host ABI, launcher scaffold | Done |
 | P1 Metal title screen | **Done on Mac and the iOS simulator**; device builds, not yet run |
-| P2 playable slice (new game → Sector 7, controls, save states) | Next |
+| P2 playable slice (new game → Sector 7, controls, save states) | **In progress**: new game, first field, dialog and walking by touch |
 | P3 GamePackage workflow (Mac builds, iPhone imports) | Launcher screens done; package loading not yet |
 | P4 mods | Mods screen done (import, enable, order); not applied in-game yet |
 | P5–P6 launcher polish, catalogs, stretch goals | Not started |
@@ -28,17 +28,18 @@ What runs today:
 |---|---|
 | Mac, native arm64 (`ff7_metal_boot`) | Title screen |
 | Mac, Rosetta x86_64 (`ff7_metal_boot`) | Title screen |
-| iOS simulator (`FF7RecompBundled` app) | Launcher → Play → title screen |
+| iOS simulator (`FF7RecompBundled` app) | Launcher → Play → title → New Game → first field, played by touch |
 | iPhone (`FF7RecompBundled` app) | Builds and links (unsigned); not yet run on hardware |
 | Launcher shell (`FF7Recomp` app, no game) | Setup, home, mods and settings screens; 23 unit tests pass |
 
 Known gaps:
 
-- **No movies.** FFmpeg isn't built for Apple platforms yet, so movies end at once, and the intro
-  credits don't advance on their own. Use `FF7_QUICKBOOT=title` to go straight to the title.
-- **Play view layout.** The 4:3 image is stretched to the screen, and it keeps its boot size when
-  the device rotates.
-- **No Start button** on the touch pad yet, and sound is a silent stub on Apple platforms.
+- **No movies.** FFmpeg isn't built for Apple platforms yet, so movies end at once (the story
+  continues without them). The intro credits wait for Start.
+- **No sound.** The DirectSound mixer is a silent stub on Apple platforms.
+- **Dialog font spacing.** Some glyphs in dialog boxes are spaced wrongly with the 2026 Steam
+  files (the Android installer patches `window.bin` font widths; not ported yet).
+- **Controllers** are wired (Apple's GameController framework) but untested with real hardware.
 - **Device.** Running on an iPhone still needs a signing team, the game files on the device (P3
   import), and a check that iOS allows the game's 2 GB memory reservation (it may need the
   extended virtual addressing entitlement).
@@ -123,7 +124,10 @@ bash ../tools/ios_sim_link_game.sh              # app's Documents/game -> ../gam
 SIMCTL_CHILD_FF7_QUICKBOOT=title xcrun simctl launch --console-pty booted com.ff7recomp.ios.bundled
 ```
 
-Tap **Play** to reach the title screen. The engine's log prints in the terminal.
+Tap **Play**. The play view turns landscape and shows the game at 4:3 with an on-screen pad
+(d-pad, A/B/X/Y, L1/R1, Select/Start); a game controller works too. B is OK, A is cancel.
+`FF7_QUICKBOOT=title` (or `newgame`) skips ahead; leave it out to play from the intro. The
+engine's log prints in the terminal.
 
 For an iPhone, `bash tools/build_ios_core.sh device` builds the core, and the `FF7RecompBundled`
 scheme builds for `iphoneos`. Running it needs the steps under "Known gaps".
