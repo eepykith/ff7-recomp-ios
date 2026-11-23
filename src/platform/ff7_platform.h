@@ -44,6 +44,8 @@ int ff7_platform_pad_state(unsigned index, ff7_pad_state *out);
 void ff7_platform_set_pad(unsigned short buttons, unsigned char left_trigger,
                           unsigned char right_trigger, short lx, short ly,
                           short rx, short ry);
+void ff7_platform_pad_inject(unsigned short buttons);
+int ff7_platform_pad_buttons(void);
 void ff7_platform_pad_rumble(unsigned index, unsigned short left,
                              unsigned short right);
 
