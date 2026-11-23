@@ -1,0 +1,975 @@
+--- a/src/common.cpp
++++ b/src/common.cpp
+@@ -1615,21 +1615,21 @@
+ 		if (VREF(tex_header, palettes) > 1
+ 				&& ff8_is_remastered_font_asset()
+ 				&& _strnicmp(VREF(tex_header, file.pc_name) + 512, "hires\\sysfnt00.tex", sizeof("hires\\sysfnt00.tex") - 1) == 0) {
+-			_snprintf(remasteredFilename, sizeof(remasteredFilename), "zzz://textures\\%s\\%d_hd.png", VREF(tex_header, file.pc_name) + 512, VREF(tex_header, palette_index));
++			_snprintf(remasteredFilename, sizeof(remasteredFilename), "zzz://textures\\%s\\%d_hd.png", (const char *)(VREF(tex_header, file.pc_name) + 512), VREF(tex_header, palette_index));
+ 		} else if (VREF(tex_header, palettes) > 1
+ 				&& _strnicmp(VREF(tex_header, file.pc_name) + 512, "cards\\", sizeof("cards\\") - 1) != 0
+ 				&& _strnicmp(VREF(tex_header, file.pc_name) + 512, "field.fs\\field_hd_new\\wmset_014_0", sizeof("field.fs\\field_hd_new\\wmset_014_0") - 1) != 0) {
+-			_snprintf(remasteredFilename, sizeof(remasteredFilename), "zzz://textures\\%s\\%d.png", VREF(tex_header, file.pc_name) + 512, VREF(tex_header, palette_index));
++			_snprintf(remasteredFilename, sizeof(remasteredFilename), "zzz://textures\\%s\\%d.png", (const char *)(VREF(tex_header, file.pc_name) + 512), VREF(tex_header, palette_index));
+ 		} else if (VREF(tex_header, palette_index) == 0 && _strnicmp(VREF(tex_header, file.pc_name) + 512, "cards\\text_1", sizeof("cards\\text_1") - 1) == 0) {
+ 			_snprintf(remasteredFilename, sizeof(remasteredFilename), "zzz://textures\\cards\\text_1_mask%s.png", VREF(tex_header, file.pc_name) + 512 + sizeof("cards\\text_1") - 1);
+ 		} else {
+-			_snprintf(remasteredFilename, sizeof(remasteredFilename), "zzz://textures\\%s.png", VREF(tex_header, file.pc_name) + 512);
++			_snprintf(remasteredFilename, sizeof(remasteredFilename), "zzz://textures\\%s.png", (const char *)(VREF(tex_header, file.pc_name) + 512));
+ 		}
+ 	}
+ 
+ 	if((uint32_t)VREF(tex_header, file.pc_name) > 32 && !save_textures)
+ 	{
+-		if(trace_all || trace_loaders) ffnx_trace("texture file name: %s\n", VREF(tex_header, file.pc_name));
++		if(trace_all || trace_loaders) ffnx_trace("texture file name: %s\n", (const char *)(VREF(tex_header, file.pc_name)));
+ 
+ 		// Don't use palette index on fallback (for keeping compatibility with Tonberry mods)
+ 		if(ff8 && _strnicmp(VREF(tex_header, file.pc_name), "field/mapdata/", strlen("field/mapdata/") - 1) == 0) saveload_palette_index |= 0x80000000;
+@@ -2760,7 +2760,7 @@
+ // version check reads from a given offset in memory
+ uint32_t version_check(uint32_t offset)
+ {
+-	return (*(uint32_t *)(offset));
++	return (*(uint32_t *)G2H((offset)));
+ }
+ 
+ // figure out if we are running in FF7 or FF8 and detect which version
+@@ -3209,7 +3209,7 @@
+ 					steam_edition = true;
+ 					enable_steam_achievements = !macOsLauncher;
+ 
+-					if (macOsLauncher) replace_function(getProcessEntryPoint(), (void*)common_externals.start);
++					if (macOsLauncher) replace_function(getProcessEntryPoint(), (void*)G2H(common_externals.start));
+ 
+ 					// Read ff7sound.cfg
+ 					char ff7soundPath[260]{ 0 };
+@@ -3369,7 +3369,7 @@
+ 				steam_edition = true;
+ 				enable_steam_achievements = !macOsLauncher;
+ 
+-				if (macOsLauncher) replace_function(getProcessEntryPoint(), (void*)ff8_externals.start);
++				if (macOsLauncher) replace_function(getProcessEntryPoint(), (void*)G2H(ff8_externals.start));
+ 
+ 				// Detect if FF8 Stock Launcher
+ 				if (contains(getCopyrightInfoFromExe("FF8_Launcher.exe"), "SQUARE ENIX CO., LTD"))
+--- a/src/exe_data.cpp
++++ b/src/exe_data.cpp
+@@ -130,8 +130,8 @@
+ 
+ void ff8_dump_battle_scan_texts()
+ {
+-    uint8_t *data = (uint8_t *)ff8_externals.scan_text_data;
+-    uint16_t *offsets_rel_to_data = (uint16_t *)ff8_externals.scan_text_positions;
++    uint8_t *data = (uint8_t *)G2H(ff8_externals.scan_text_data);
++    uint16_t *offsets_rel_to_data = (uint16_t *)G2H(ff8_externals.scan_text_positions);
+     int text_count = int((uint16_t *)data - offsets_rel_to_data);
+     uint16_t data_offset = text_count * sizeof(uint32_t);
+     uint32_t offsets_rel_to_start[0x200] = {};
+@@ -171,8 +171,8 @@
+ 
+ void ff8_dump_card_names()
+ {
+-    uint8_t *data = *(uint8_t **)ff8_externals.card_name_positions;
+-    uint16_t *positions = *(uint16_t **)ff8_externals.card_name_positions;
++    uint8_t *data = *(uint8_t **)G2H(ff8_externals.card_name_positions);
++    uint16_t *positions = *(uint16_t **)G2H(ff8_externals.card_name_positions);
+     constexpr int text_count = 110;
+     uint16_t old_data_offset = (1 + text_count) * sizeof(uint16_t), new_data_offset = text_count * sizeof(uint32_t);
+     uint32_t offsets_rel_to_start[text_count] = {};
+@@ -344,7 +344,7 @@
+ uint8_t *ff8_battle_get_scan_text(uint8_t target_id)
+ {
+     uint8_t *direct_data_msd = ff8_override_msd_data(FF8_EXE_BATTLE_SCANS, ff8_exe_scan_texts, ff8_exe_scan_texts_file_absent);
+-    uint8_t *entities = (uint8_t *)ff8_externals.battle_entities_1D27BCB;
++    uint8_t *entities = (uint8_t *)G2H(ff8_externals.battle_entities_1D27BCB);
+ 
+     if (direct_data_msd != nullptr) {
+         uint32_t *positions = (uint32_t *)direct_data_msd;
+@@ -394,9 +394,9 @@
+         }
+     }
+ 
+-    uint16_t *positions = *(uint16_t **)ff8_externals.card_name_positions;
++    uint16_t *positions = *(uint16_t **)G2H(ff8_externals.card_name_positions);
+ 
+-    return *(char **)ff8_externals.card_name_positions + positions[card_id + 1];
++    return *(char **)G2H(ff8_externals.card_name_positions) + positions[card_id + 1];
+ }
+ 
+ static void ff8_dump_battle_actor_sounds()
+@@ -458,7 +458,7 @@
+         ff8_dump_card_names();
+ 
+         if (!ff8_get_exe_path(FF8_EXE_DRAW_POINT, dirname)) {
+-            ff8_dump_msd(dirname, *(uint8_t **)ff8_externals.drawpoint_messages);
++            ff8_dump_msd(dirname, *(uint8_t **)G2H(ff8_externals.drawpoint_messages));
+         }
+ 
+         ff8_dump_card_texts();
+--- a/src/ff7/battle/animations.cpp
++++ b/src/ff7/battle/animations.cpp
+@@ -820,7 +820,7 @@
+             {
+                 rot_matrix = ff7_externals.get_global_model_matrix_buffer_66100D();
+                 game_object = (ff7_game_obj *)common_externals.get_game_object();
+-                poly_set = (ff7_polygon_set*) materialRSD[1];
++                poly_set = (ff7_polygon_set*) G2H(materialRSD[1]);
+                 draw_chain = ff7_externals.get_draw_chain_68F860(&poly_set->field_14, poly_set->field_14.graphics_instance);
+                 if (draw_chain)
+                 {
+@@ -864,7 +864,7 @@
+                             if (field_C && field_C < 2)
+                             {
+                                 draw_chain->struc_173.setrenderstate = 1;
+-                                aux_gfx = (p_hundred*)*((DWORD*)&poly_set->struc_173 + field_C);
++                                aux_gfx = (p_hundred*)G2H(*((DWORD*)&poly_set->struc_173 + field_C));
+                             }
+                             if (palette_extra_data.field_28)
+                             {
+--- a/src/ff7/battle/camera.cpp
++++ b/src/ff7/battle/camera.cpp
+@@ -50,16 +50,16 @@
+         if (cameraScriptIdx == -1)
+             return isCameraFocalPoint ? ff7_externals.battle_camera_focal_scripts_8FEE30 : ff7_externals.battle_camera_position_scripts_8FEE2C;
+         else if (cameraScriptIdx == -2)
+-            return isCameraFocalPoint ? (byte *)ff7_externals.battle_camera_focal_scripts_901270[*ff7_externals.battle_camera_script_index] : (byte *)ff7_externals.battle_camera_position_scripts_9010D0[*ff7_externals.battle_camera_script_index];
++            return isCameraFocalPoint ? (byte *)G2H(ff7_externals.battle_camera_focal_scripts_901270[*ff7_externals.battle_camera_script_index]) : (byte *)G2H(ff7_externals.battle_camera_position_scripts_9010D0[*ff7_externals.battle_camera_script_index]);
+         else if (cameraScriptIdx == -3)
+         {
+-            int outerOffset = variationIndex * 4 + *(int *)(*ff7_externals.battle_camera_global_scripts_9A13BC + 0x8 + internalOffset) - *ff7_externals.battle_camera_script_offset;
+-            int finalOffset = *(int *)(*ff7_externals.battle_camera_global_scripts_9A13BC + outerOffset) - *ff7_externals.battle_camera_script_offset;
+-            return (byte *)(*ff7_externals.battle_camera_global_scripts_9A13BC + finalOffset);
++            int outerOffset = variationIndex * 4 + *(int *)G2H((*ff7_externals.battle_camera_global_scripts_9A13BC + 0x8 + internalOffset)) - *ff7_externals.battle_camera_script_offset;
++            int finalOffset = *(int *)G2H((*ff7_externals.battle_camera_global_scripts_9A13BC + outerOffset)) - *ff7_externals.battle_camera_script_offset;
++            return (byte *)G2H((*ff7_externals.battle_camera_global_scripts_9A13BC + finalOffset));
+         }
+-        int outerOffset = (3 * cameraScriptIdx + variationIndex) * 4 + *(int *)(*ff7_externals.battle_camera_global_scripts_9A13BC + internalOffset) - *ff7_externals.battle_camera_script_offset;
+-        int finalOffset = *(int *)(*ff7_externals.battle_camera_global_scripts_9A13BC + outerOffset) - *ff7_externals.battle_camera_script_offset;
+-        return (byte *)(*ff7_externals.battle_camera_global_scripts_9A13BC + finalOffset);
++        int outerOffset = (3 * cameraScriptIdx + variationIndex) * 4 + *(int *)G2H((*ff7_externals.battle_camera_global_scripts_9A13BC + internalOffset)) - *ff7_externals.battle_camera_script_offset;
++        int finalOffset = *(int *)G2H((*ff7_externals.battle_camera_global_scripts_9A13BC + outerOffset)) - *ff7_externals.battle_camera_script_offset;
++        return (byte *)G2H((*ff7_externals.battle_camera_global_scripts_9A13BC + finalOffset));
+     }
+ 
+     bool simulateCameraScript(byte *scriptPtr, short &currentPosition, short &framesToWait, const std::unordered_map<byte, int> &numArgsOpCode,
+--- a/src/ff7/field/kawai_eyetx.cpp
++++ b/src/ff7/field/kawai_eyetx.cpp
+@@ -170,7 +170,7 @@
+         facial_texture_cache &get_facial_texture_cache(int model_id, field_animation_data *animation)
+         {
+             auto &cache = facial_textures[model_id];
+-            const char *model_filename = (const char *)(*ff7_externals.field_models_data + 10380 * model_id + 512);
++            const char *model_filename = (const char *)G2H((*ff7_externals.field_models_data + 10380 * model_id + 512));
+             const auto &defaults = ff7_externals.field_models_eye_blink_buffer[animation->eye_texture_idx == 9 ? 0 : animation->eye_texture_idx];
+             const char *left_filename = defaults.static_left_eye_filename ? defaults.static_left_eye_filename : "";
+             const char *right_filename = defaults.static_right_eye_filename ? defaults.static_right_eye_filename : "";
+--- a/src/ff7/file.cpp
++++ b/src/ff7/file.cpp
+@@ -453,7 +453,7 @@
+ 
+ 	if(!file || !count) return false;
+ 
+-	if(trace_all || trace_files) ffnx_trace("reading %i bytes from %s (ALT)\n", count, file->name);
++	if(trace_all || trace_files) ffnx_trace("reading %i bytes from %s (ALT)\n", count, (const char *)(file->name));
+ 
+ 	if(file->context.use_lgp) return lgp_read(file->context.lgp_num, (char*)buffer, count);
+ 
+@@ -461,7 +461,7 @@
+ 
+ 	if(ferror(file->fd->fd))
+ 	{
+-		ffnx_error("could not read from file %s (%i)\n", file->name, ret);
++		ffnx_error("could not read from file %s (%i)\n", (const char *)(file->name), ret);
+ 		return -1;
+ 	}
+ 
+@@ -475,7 +475,7 @@
+ 
+ 	if(!file || !count) return false;
+ 
+-	if(trace_all || trace_files) ffnx_trace("reading %i bytes from %s\n", count, file->name);
++	if(trace_all || trace_files) ffnx_trace("reading %i bytes from %s\n", count, (const char *)(file->name));
+ 
+ 	if(file->context.use_lgp) return lgp_read(file->context.lgp_num, (char*)buffer, count);
+ 
+@@ -483,7 +483,7 @@
+ 
+ 	if(ret != count)
+ 	{
+-		ffnx_error("could not read from file %s (%i)\n", file->name, ret);
++		ffnx_error("could not read from file %s (%i)\n", (const char *)(file->name), ret);
+ 		return false;
+ 	}
+ 
+@@ -506,7 +506,7 @@
+ 
+ 	if(file->context.use_lgp) return false;
+ 
+-	if(trace_all || trace_files) ffnx_trace("writing %i bytes to %s\n", count, file->name);
++	if(trace_all || trace_files) ffnx_trace("writing %i bytes to %s\n", count, (const char *)(file->name));
+ 
+ 	// hack to emulate win95 style writes, a NULL buffer means we should write
+ 	// all zeroes
+@@ -522,7 +522,7 @@
+ 
+ 	if(ret != count)
+ 	{
+-		ffnx_error("could not write to file %s\n", file->name);
++		ffnx_error("could not write to file %s\n", (const char *)(file->name));
+ 		return false;
+ 	}
+ 
+@@ -534,7 +534,7 @@
+ {
+ 	if(!file) return 0;
+ 
+-	if(trace_all || trace_files) ffnx_trace("get_filesize %s\n", file->name);
++	if(trace_all || trace_files) ffnx_trace("get_filesize %s\n", (const char *)(file->name));
+ 
+ 	if(file->context.use_lgp) return lgp_get_filesize(file->fd, file->context.lgp_num);
+ 	else
+@@ -551,7 +551,7 @@
+ {
+ 	if(!file) return 0;
+ 
+-	if(trace_all || trace_files) ffnx_trace("tell %s\n", file->name);
++	if(trace_all || trace_files) ffnx_trace("tell %s\n", (const char *)(file->name));
+ 
+ 	if(file->context.use_lgp) return 0;
+ 
+@@ -563,12 +563,12 @@
+ {
+ 	if(!file) return;
+ 
+-	if(trace_all || trace_files) ffnx_trace("seek %s to %i\n", file->name, offset);
++	if(trace_all || trace_files) ffnx_trace("seek %s to %i\n", (const char *)(file->name), offset);
+ 
+ 	// it's not possible to seek within LGP archives
+ 	if(file->context.use_lgp) return;
+ 
+-	if(fseek(file->fd->fd, offset, SEEK_SET)) ffnx_error("could not seek file %s\n", file->name);
++	if(fseek(file->fd->fd, offset, SEEK_SET)) ffnx_error("could not seek file %s\n", (const char *)(file->name));
+ }
+ 
+ // construct modpath name from file context, file handle and filename
+--- a/src/ff7/graphics.cpp
++++ b/src/ff7/graphics.cpp
+@@ -145,7 +145,7 @@
+ 
+ 	if(!polygon_set->field_0) return;
+ 
+-	if(trace_all) ffnx_trace("field_78: %s (%i groups) (0x%x)\n", polygon_set->polygon_data ? polygon_set->polygon_data->pc_name : "unknown", polygon_set->numgroups, polygon_set);
++	if(trace_all) ffnx_trace("field_78: %s (%i groups) (0x%x)\n", (const char *)(polygon_set->polygon_data ? polygon_set->polygon_data->pc_name : "unknown"), polygon_set->numgroups, polygon_set);
+ 
+ 	matrix_set = polygon_set->matrix_set;
+ 
+--- a/src/ff7/japanese_text.cpp
++++ b/src/ff7/japanese_text.cpp
+@@ -354,7 +354,7 @@
+   vertices[3] = vertices[2];
+   vertices[3].position.y = y + height;
+   vertices[3].v = v + v_height;
+-  *(byte*)graphics_object->curr_total_n_shape = shape;
++  *(byte*)G2H(graphics_object->curr_total_n_shape) = shape;
+   graphics_object->field_7C = shape;
+   return true;
+ }
+@@ -795,7 +795,7 @@
+               character_bottom_right->alpha_mask = -16777216;
+               character_bottom_right->u = character_u + character_u_width;
+               character_bottom_right->v = character_v + 32.0f / 512.0f;
+-              *(byte *)graphics_object->curr_total_n_shape = 2 * character_n_shapes;
++              *(byte *)G2H(graphics_object->curr_total_n_shape) = 2 * character_n_shapes;
+               graphics_object->field_7C = 2 * character_n_shapes;
+               (*ff7_externals.field_do_draw_character_DC3CEC) = 1;
+             }
+@@ -1045,7 +1045,7 @@
+                 window_vertices[3].v = (double)graphics_object_v_in_byte / 256.0f + 0.0625; // no longer ignores graphics_object_v_in_byte
+               else
+                 window_vertices[3].v = (double)graphics_object_v_in_byte / 256.0f + 0.125; // no longer ignores graphics_object_v_in_byte
+-              *(byte *)graphics_object->curr_total_n_shape = 7;
++              *(byte *)G2H(graphics_object->curr_total_n_shape) = 7;
+               graphics_object->field_7C = 7;
+             }
+             (*ff7_externals.field_do_draw_text_boxes_DC3CE8) = 1;
+@@ -1453,11 +1453,11 @@
+       bottom_right->alpha_mask = -16777216;
+       bottom_right->u = vertex_u + vertex_u_width;
+       bottom_right->v = vertex_v + 32.0f / 512.0f;
+-      *(byte*)character_graphics_object->curr_total_n_shape = 2 * n_shapes;
++      *(byte*)G2H(character_graphics_object->curr_total_n_shape) = 2 * n_shapes;
+       character_graphics_object->field_7C = 2 * n_shapes;
+       if (offset_image_u == 144) // heart
+       {
+-        *(byte*)character_graphics_object->curr_total_n_shape = n_shapes & 7;
++        *(byte*)G2H(character_graphics_object->curr_total_n_shape) = n_shapes & 7;
+         character_graphics_object->field_7C = n_shapes & 7;
+       }
+     }
+@@ -2190,7 +2190,7 @@
+             v91->alpha_mask = -16777216;
+             v91->u = v102 + v98;
+             v91->v = v99 + 32.0f / 512.0f;
+-            *(byte *)a2->curr_total_n_shape = 14;
++            *(byte *)G2H(a2->curr_total_n_shape) = 14;
+             a2->field_7C = 14;
+           }
+           v135 = (attack_name_fixed_buffer *)((char *)v135 + 1);
+@@ -2249,7 +2249,7 @@
+       v82->alpha_mask = -16777216;
+       v82->u = 0.03125 + 0.0;
+       v82->v = 0.03125 + 0.8125;
+-      *(byte *)(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape = 0;
++      *(byte *)G2H((*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape) = 0;
+       (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->field_7C = 0;
+       (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_transform = (graphics_vertex *)((char *)(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_transform + (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_offset);
+       ++(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape;
+@@ -2289,7 +2289,7 @@
+       v78->alpha_mask = -16777216;
+       v78->u = 0.03125 + 0.09375;
+       v78->v = 0.03125 + 0.8125;
+-      *(byte *)(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape = 0;
++      *(byte *)G2H((*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape) = 0;
+       (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->field_7C = 0;
+       (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_transform = (graphics_vertex *)((char *)(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_transform + (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_offset);
+       ++(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape;
+@@ -2329,7 +2329,7 @@
+       v74->alpha_mask = -16777216;
+       v74->u = 0.03125 + 0.125;
+       v74->v = 0.03125 + 0.78125;
+-      *(byte *)(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape = 0;
++      *(byte *)G2H((*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape) = 0;
+       (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->field_7C = 0;
+       (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_transform = (graphics_vertex *)((char *)(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_transform + (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_offset);
+       ++(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape;
+@@ -2369,7 +2369,7 @@
+       v70->alpha_mask = -16777216;
+       v70->u = 0.03125 + 0.21875;
+       v70->v = 0.03125 + 0.78125;
+-      *(byte *)(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape = 0;
++      *(byte *)G2H((*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape) = 0;
+       (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->field_7C = 0;
+       (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_transform = (graphics_vertex *)((char *)(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_transform + (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_offset);
+       ++(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape;
+@@ -2409,7 +2409,7 @@
+       v66->alpha_mask = -16777216;
+       v66->u = 0.0 + 0.0625;
+       v66->v = 0.75 + 0.03125;
+-      *(byte *)(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape = 0;
++      *(byte *)G2H((*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape) = 0;
+       (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->field_7C = 0;
+       (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_transform = (graphics_vertex *)((char *)(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_transform + (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_offset);
+       ++(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape;
+@@ -2449,7 +2449,7 @@
+       v62->alpha_mask = -16777216;
+       v62->u = 0.0625 + 0.125;
+       v62->v = 0.03125 + 0.84375;
+-      *(byte *)(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape = 0;
++      *(byte *)G2H((*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape) = 0;
+       (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->field_7C = 0;
+       (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_transform = (graphics_vertex *)((char *)(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_transform + (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_offset);
+       ++(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape;
+@@ -2489,7 +2489,7 @@
+       v58->alpha_mask = -16777216;
+       v58->u = 0.21875 + 0.03125;
+       v58->v = 0.875 + 0.0625;
+-      *(byte *)(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape = 0;
++      *(byte *)G2H((*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape) = 0;
+       (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->field_7C = 0;
+       (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_transform = (graphics_vertex *)((char *)(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_transform + (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->vertex_offset);
+       ++(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape;
+@@ -2529,7 +2529,7 @@
+       v54->alpha_mask = -16777216;
+       v54->u = 0.03125 + 0.0;
+       v54->v = 0.0625 + 0.875;
+-      *(byte *)(*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape = 0;
++      *(byte *)G2H((*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->curr_total_n_shape) = 0;
+       (*ff7_externals.battle_graphics_data_ptr_9ADFD8)->btl_win_c_menu_border_graphics_object->field_7C = 0;
+     }
+     v116 = (*ff7_externals.battle_menu_data_DC3630)[menu_box_idx].menu_width - 12;
+@@ -3081,14 +3081,14 @@
+   if (select_shortcut)
+   {
+     *ff7_externals.name_menu_selected_pane_921ED4 = 1;
+-    *(uint32_t*)(ff7_externals.name_menu_pane_cursor_rows_DD453C + 1 * 0x38) = 5;
++    *(uint32_t*)G2H((ff7_externals.name_menu_pane_cursor_rows_DD453C + 1 * 0x38)) = 5;
+   }
+ 
+   if (*ff7_externals.name_menu_selected_pane_921ED4 == 1)
+   {
+     // cursor row of the right (menu) pane; the cursor state is one struct
+     // per pane, 0x38 bytes each
+-    uint32_t row = *(uint32_t*)(ff7_externals.name_menu_pane_cursor_rows_DD453C + 1 * 0x38);
++    uint32_t row = *(uint32_t*)G2H((ff7_externals.name_menu_pane_cursor_rows_DD453C + 1 * 0x38));
+     if (row <= 2 && ff7_externals.menu_input_check_6F53F1(JP_NAME_DECISION_MASK))
+       jp_name_apply_mode((int)row);
+   }
+--- a/src/ff7/loaders.cpp
++++ b/src/ff7/loaders.cpp
+@@ -76,9 +76,9 @@
+ 
+ 	for(i = 0; i < ret->num_frames; i++)
+ 	{
+-		ret->anim_frames[i].header = (anim_frame_header *)data_pointer;
++		ret->anim_frames[i].header = (anim_frame_header *)G2H(data_pointer);
+ 		data_pointer += sizeof(struct anim_frame_header);
+-		ret->anim_frames[i].data = (vector3<float> *)data_pointer;
++		ret->anim_frames[i].data = (vector3<float> *)G2H(data_pointer);
+ 		data_pointer += sizeof(vector3<float>) * ret->num_bones;
+ 	}
+ 
+@@ -393,7 +393,7 @@
+ 		}
+ 		if (!is_stock_palette)
+ 		{
+-			ffnx_trace("Shadow Flare: preserving custom palette for %s\n", tex_header->file.pc_name);
++			ffnx_trace("Shadow Flare: preserving custom palette for %s\n", (const char *)(tex_header->file.pc_name));
+ 			return;
+ 		}
+ 
+--- a/src/ff7/minigames.cpp
++++ b/src/ff7/minigames.cpp
+@@ -42,39 +42,39 @@
+   {
+     point = (point4d *)ff7_externals.battle_sub_661000(0);
+     tmd_obj = (tmd_object *)(&_this->model_data->tmdobjectlist + 7 * current_obj);
+-    ff7_externals.sub_733479((void*)*((DWORD*)*ff7_externals.snowboard_global_object_off_926290 + 0x9D), matrix);
++    ff7_externals.sub_733479((void*)G2H(*((DWORD*)G2H(*ff7_externals.snowboard_global_object_off_926290) + 0x9D)), matrix);
+ 
+     for (int32_t i = 0; i < tmd_obj->nverts; ++i )
+     {
+       if (_this->model_data->tmdheader.version == 0xFF)
+       {
+-        vertex.x = ((tmd_vertex_float*)tmd_obj->offsetverts)[i].vx;
+-        vertex.y = ((tmd_vertex_float*)tmd_obj->offsetverts)[i].vy;
+-        vertex.z = ((tmd_vertex_float*)tmd_obj->offsetverts)[i].vz;
++        vertex.x = ((tmd_vertex_float*)G2H(tmd_obj->offsetverts))[i].vx;
++        vertex.y = ((tmd_vertex_float*)G2H(tmd_obj->offsetverts))[i].vy;
++        vertex.z = ((tmd_vertex_float*)G2H(tmd_obj->offsetverts))[i].vz;
+       }
+       else
+       {
+-        vertex.x = (float)((tmd_vertex*)tmd_obj->offsetverts)[i].vx;
+-        vertex.y = (float)((tmd_vertex*)tmd_obj->offsetverts)[i].vy;
+-        vertex.z = (float)((tmd_vertex*)tmd_obj->offsetverts)[i].vz;
++        vertex.x = (float)((tmd_vertex*)G2H(tmd_obj->offsetverts))[i].vx;
++        vertex.y = (float)((tmd_vertex*)G2H(tmd_obj->offsetverts))[i].vy;
++        vertex.z = (float)((tmd_vertex*)G2H(tmd_obj->offsetverts))[i].vz;
+       }
+ 
+-      ff7_externals.sub_733564((void*)*((DWORD*)*ff7_externals.snowboard_global_object_off_926290 + 0x9D), &vertex, &point[i + 1]);
++      ff7_externals.sub_733564((void*)G2H(*((DWORD*)G2H(*ff7_externals.snowboard_global_object_off_926290) + 0x9D)), &vertex, &point[i + 1]);
+     }
+ 
+     switch ( obj_type )
+     {
+       case 0:
+-        ff7_externals.sub_7322D6((tmd_primitive_packet*)tmd_obj->offsetprimitives, tmd_obj->nprimitives, unk);
++        ff7_externals.sub_7322D6((tmd_primitive_packet*)G2H(tmd_obj->offsetprimitives), tmd_obj->nprimitives, unk);
+         break;
+       case 1:
+-        ff7_externals.sub_732429((tmd_primitive_packet*)tmd_obj->offsetprimitives, tmd_obj->nprimitives, unk);
++        ff7_externals.sub_732429((tmd_primitive_packet*)G2H(tmd_obj->offsetprimitives), tmd_obj->nprimitives, unk);
+         break;
+       case 2:
+-        ff7_externals.sub_732BB9((tmd_primitive_packet*)tmd_obj->offsetprimitives, tmd_obj->nprimitives, unk);
++        ff7_externals.sub_732BB9((tmd_primitive_packet*)G2H(tmd_obj->offsetprimitives), tmd_obj->nprimitives, unk);
+         break;
+       case 3:
+-        ff7_externals.sub_732546(_this, (tmd_primitive_packet*)tmd_obj->offsetprimitives, tmd_obj->nprimitives, unk);
++        ff7_externals.sub_732546(_this, (tmd_primitive_packet*)G2H(tmd_obj->offsetprimitives), tmd_obj->nprimitives, unk);
+         break;
+       default:
+         return;
+--- a/src/ff7/misc.cpp
++++ b/src/ff7/misc.cpp
+@@ -131,7 +131,7 @@
+ 		WaitMessage();
+ 
+ 	common_externals.get_time(&end_t);
+-	if ( game_object->field_794 ) common_externals.diff_time(&end_t, &start_t, (uint64_t*)(game_object->field_794 + 0x98));
++	if ( game_object->field_794 ) common_externals.diff_time(&end_t, &start_t, (uint64_t*)G2H((game_object->field_794 + 0x98)));
+ }
+ 
+ void field_text_box_window_opening_6317A9_autosize(short WINDOW_ID)
+--- a/src/ff7/universal_buttons.cpp
++++ b/src/ff7/universal_buttons.cpp
+@@ -703,7 +703,7 @@
+   vertices[3] = vertices[2];
+   vertices[3].position.y = y + height;
+   vertices[3].v += (float)sprite.height / sprite.texture_height;
+-  *(byte*)sprite.graphics_object->curr_total_n_shape = 7;
++  *(byte*)G2H(sprite.graphics_object->curr_total_n_shape) = 7;
+   sprite.graphics_object->field_7C = 7;
+   return true;
+ }
+--- a/src/ff7/widescreen.cpp
++++ b/src/ff7/widescreen.cpp
+@@ -104,10 +104,10 @@
+ 
+ void ifrit_first_wave_effect_widescreen_fix_sub_66A47E(int wave_data_pointer) {
+ 	int viewport_width_1_fix = ceil(255.f / game_width * wide_viewport_width) - 255;
+-	*(short*)(wave_data_pointer + 8) += wide_viewport_x;
+-	*(short*)(wave_data_pointer + 16) += wide_viewport_x + viewport_width_1_fix * 2;
+-	*(short*)(wave_data_pointer + 24) += wide_viewport_x;
+-	*(short*)(wave_data_pointer + 32) += wide_viewport_x + viewport_width_1_fix * 2;
++	*(short*)G2H((wave_data_pointer + 8)) += wide_viewport_x;
++	*(short*)G2H((wave_data_pointer + 16)) += wide_viewport_x + viewport_width_1_fix * 2;
++	*(short*)G2H((wave_data_pointer + 24)) += wide_viewport_x;
++	*(short*)G2H((wave_data_pointer + 32)) += wide_viewport_x + viewport_width_1_fix * 2;
+ 
+     ff7_externals.engine_draw_sub_66A47E(wave_data_pointer);
+ }
+@@ -115,10 +115,10 @@
+ void ifrit_second_third_wave_effect_widescreen_fix_sub_66A47E(int wave_data_pointer) {
+ 	int viewport_width_1_fix = ceil(255.f / game_width * wide_viewport_width) - 255;
+ 	int viewport_width_2_fix = ceil(65.f / game_width * wide_viewport_width) - 65;
+-	*(short*)(wave_data_pointer + 8) += wide_viewport_x + viewport_width_1_fix * 2;
+-	*(short*)(wave_data_pointer + 16) += wide_viewport_x + (viewport_width_1_fix + viewport_width_2_fix) * 2;
+-	*(short*)(wave_data_pointer + 24) += wide_viewport_x + viewport_width_1_fix * 2;
+-	*(short*)(wave_data_pointer + 32) += wide_viewport_x + (viewport_width_1_fix + viewport_width_2_fix) * 2;
++	*(short*)G2H((wave_data_pointer + 8)) += wide_viewport_x + viewport_width_1_fix * 2;
++	*(short*)G2H((wave_data_pointer + 16)) += wide_viewport_x + (viewport_width_1_fix + viewport_width_2_fix) * 2;
++	*(short*)G2H((wave_data_pointer + 24)) += wide_viewport_x + viewport_width_1_fix * 2;
++	*(short*)G2H((wave_data_pointer + 32)) += wide_viewport_x + (viewport_width_1_fix + viewport_width_2_fix) * 2;
+ 
+     ff7_externals.engine_draw_sub_66A47E(wave_data_pointer);
+ }
+--- a/src/ff7_data.h
++++ b/src/ff7_data.h
+@@ -91,7 +91,7 @@
+ 	uint32_t movie_module;
+ 	uint32_t file_module;
+ 
+-	if(*((uint32_t *)main_loop) != 0x81EC8B55) ffnx_unexpected("odd main loop prologue\n");
++	if(*((uint32_t *)G2H(main_loop)) != 0x81EC8B55) ffnx_unexpected("odd main loop prologue\n");
+ 
+ 	common_externals.get_time = (uint64_t (*)(uint64_t*))get_relative_call(common_externals.winmain, 0x2BE);
+ 	common_externals.diff_time = (uint64_t (*)(uint64_t*,uint64_t*,uint64_t*))get_relative_call(common_externals.winmain, 0x2F6);
+@@ -107,7 +107,7 @@
+ 	common_externals.stop_movie = movie_module + 0x2CB2;
+ 	common_externals.get_movie_frame = movie_module + 0x3713;
+ 
+-	ff7_externals.movie_object = (struct movie_obj *)(get_absolute_value(common_externals.prepare_movie, 0x42) - 0xC);
++	ff7_externals.movie_object = (struct movie_obj *)G2H((get_absolute_value(common_externals.prepare_movie, 0x42) - 0xC));
+ 
+ 	common_externals._mode = (WORD*)G2H(get_absolute_value(main_loop, 0x8C));
+ 	common_externals._previous_mode = (WORD *)G2H(get_absolute_value(main_loop, 0x1D8));
+@@ -154,8 +154,8 @@
+ 	ff7_externals.destroy_field_tiles = get_relative_call(ff7_externals.destroy_field_bk, 0x1E6);
+ 	ff7_externals.field_layers = (gptr<field_layer> *)G2H(get_absolute_value(ff7_externals.destroy_field_tiles, 0x46));
+ 
+-	ff7_externals.num_field_entities = (WORD *)(((uint32_t)ff7_externals.field_layers) - 0xC);
+-	ff7_externals.field_objects = (gptr<field_object> *)(((uint32_t)ff7_externals.field_layers) - 0x10);
++	ff7_externals.num_field_entities = (WORD *)G2H((((uint32_t)ff7_externals.field_layers) - 0xC));
++	ff7_externals.field_objects = (gptr<field_object> *)G2H((((uint32_t)ff7_externals.field_layers) - 0x10));
+ 
+ 	ff7_externals.field_id = (WORD *)G2H(get_absolute_value(field_main_loop, 0x326));
+ 
+@@ -339,8 +339,8 @@
+ 	ff7_externals.sub_5CF282 = get_relative_call(ff7_externals.sub_5CB2CC, 0x4E);
+ 	ff7_externals.get_equipment_stats = get_relative_call(ff7_externals.sub_5CF282, 0x2F0);
+ 
+-	ff7_externals.weapon_data_array = (weapon_data *)(get_absolute_value(ff7_externals.get_equipment_stats, 0x50) - 4);
+-	ff7_externals.armor_data_array = (armor_data *)(get_absolute_value(ff7_externals.get_equipment_stats, 0x78) - 2);
++	ff7_externals.weapon_data_array = (weapon_data *)G2H((get_absolute_value(ff7_externals.get_equipment_stats, 0x50) - 4));
++	ff7_externals.armor_data_array = (armor_data *)G2H((get_absolute_value(ff7_externals.get_equipment_stats, 0x78) - 2));
+ 
+ 	ff7_externals.field_sub_6388EE = get_relative_call(field_main_loop, 0xFF);
+ 	ff7_externals.field_draw_everything = get_relative_call(ff7_externals.field_sub_6388EE, 0x11);
+@@ -450,7 +450,7 @@
+ 	ff7_externals.name_menu_pane_cursor_rows_DD453C = get_absolute_value(ff7_externals.menu_sub_718DBE, 0x284);
+ 	ff7_externals.name_menu_action_jump_table_719B61 = get_absolute_value(ff7_externals.menu_sub_718DBE, 0x29B);
+ 	// the `ja` that guards the menu-action dispatch jumps to the shared continuation
+-	ff7_externals.name_menu_action_continue_71914C = ff7_externals.menu_sub_718DBE + 0x295 + *(int32_t *)(ff7_externals.menu_sub_718DBE + 0x291);
++	ff7_externals.name_menu_action_continue_71914C = ff7_externals.menu_sub_718DBE + 0x295 + *(int32_t *)G2H((ff7_externals.menu_sub_718DBE + 0x291));
+ 	// original US action targets, read from the (still unpatched) jump table
+ 	ff7_externals.name_menu_action_space_71905D = get_absolute_value(ff7_externals.name_menu_action_jump_table_719B61, 0 * 4);
+ 	ff7_externals.name_menu_action_delete_71906C = get_absolute_value(ff7_externals.name_menu_action_jump_table_719B61, 1 * 4);
+@@ -510,7 +510,7 @@
+ 	ff7_externals.sfx_fmt_header = (ff7_audio_fmt*)G2H(get_absolute_value(common_externals.sfx_load, 0x51));
+ 
+ 	common_externals.directsound_create = get_relative_call(common_externals.sfx_init, 0x11C);
+-	common_externals.directsound = (LPLPDIRECTSOUND)get_absolute_value(common_externals.directsound_create, 0x15);
++	common_externals.directsound = (LPLPDIRECTSOUND)G2H(get_absolute_value(common_externals.directsound_create, 0x15));
+ 	common_externals.directsound_createsoundbuffer = get_relative_call(common_externals.sfx_init, 0x16C);
+ 	common_externals.directsound_release = get_relative_call(common_externals.sfx_init, 0x182);
+ 
+@@ -569,7 +569,7 @@
+ 	ff7_externals.field_text_box_window_create_631586 = get_relative_call(ff7_externals.field_opcode_message_update_loop_630D50, 0x39);
+ 	ff7_externals.field_text_box_window_opening_6317A9 = (void (*)(short))get_relative_call(ff7_externals.field_opcode_message_update_loop_630D50, 0x5A);
+ 	ff7_externals.field_text_box_window_paging_631945 = (void (*)(short))get_relative_call(ff7_externals.field_opcode_message_update_loop_630D50, 0x6D);;
+-	ff7_externals.field_dialog_print_table_632C4E = (byte*)((uint32_t)ff7_externals.field_text_box_window_paging_631945 + 0x1309);
++	ff7_externals.field_dialog_print_table_632C4E = (byte*)G2H(((uint32_t)ff7_externals.field_text_box_window_paging_631945 + 0x1309));
+ 	ff7_externals.sub_6CB9B8 = (byte* (*)(int))get_relative_call((uint32_t)ff7_externals.field_text_box_window_paging_631945, 0x693);
+ 	ff7_externals.field_text_box_window_reverse_paging_632CAA = get_relative_call(ff7_externals.field_opcode_message_update_loop_630D50, 0x80);
+ 	ff7_externals.field_text_box_window_closing_632EB8 = get_relative_call(ff7_externals.field_opcode_message_update_loop_630D50, 0x235);
+@@ -675,7 +675,7 @@
+ 	ff7_externals.sfx_stop_channel_timer_handle = (UINT *)G2H(get_absolute_value(ff7_externals.sfx_stop_channel_6, 0x5));
+ 
+ 	ff7_externals.current_movie_frame = (WORD*)G2H(get_absolute_value(ff7_externals.field_loop_sub_63C17F, 0x133));
+-	ff7_externals.opening_movie_music_start_frame = (DWORD *)(ff7_externals.field_loop_sub_63C17F + 0x139);
++	ff7_externals.opening_movie_music_start_frame = (DWORD *)G2H((ff7_externals.field_loop_sub_63C17F + 0x139));
+ 	ff7_externals.opening_movie_play_midi_call = ff7_externals.field_loop_sub_63C17F + 0x145;
+ 
+ 	ff7_externals.byte_CC164C = (BYTE *)G2H(get_absolute_value(main_loop, 0x32A));
+@@ -1135,7 +1135,7 @@
+ 	ff7_externals.engine_set_game_engine_position_663707 = (void(*)(rotation_matrix*))get_relative_call(ff7_externals.run_ifrit_movement_596702, 0x176);
+ 	ff7_externals.engine_apply_translation_with_delta_662ECC = (void(*)(vector3<short>*, vector3<int>*, int*))get_relative_call(ff7_externals.run_ifrit_movement_596702, 0x193);
+ 	ff7_externals.byte_BCC788 = (byte*)G2H(get_absolute_value(ff7_externals.run_ifrit_movement_596702, 0x1C));
+-	ff7_externals.ifrit_vector3_int_ptr_BCC6A8 = (gptr<vector3<int>> *)get_absolute_value(ff7_externals.run_ifrit_movement_596702, 0x41);
++	ff7_externals.ifrit_vector3_int_ptr_BCC6A8 = (gptr<vector3<int>> *)G2H(get_absolute_value(ff7_externals.run_ifrit_movement_596702, 0x41));
+ 	ff7_externals.battle_ifrit_model_position = (vector3<short>*)G2H(get_absolute_value(ff7_externals.run_ifrit_movement_596702, 0x12D));
+ 	ff7_externals.ifrit_rot_matrix_BCC768 = (rotation_matrix*)G2H(get_absolute_value(ff7_externals.run_ifrit_movement_596702, 0x165));
+ 
+@@ -1274,7 +1274,7 @@
+ 	ff7_externals.animate_world_snake_75692A = get_relative_call(ff7_externals.run_world_snake_ai_script_7562FF, 0x16C);
+ 	ff7_externals.sub_753366 = (bool (*)(short, short))get_relative_call(ff7_externals.animate_world_snake_75692A, 0x93);
+ 	ff7_externals.world_draw_snake_texture_75D544 = (void (*)(short, short, short, short, world_snake_graphics_data*, short))get_relative_call(ff7_externals.animate_world_snake_75692A, 0x159);
+-	ff7_externals.world_snake_data_position_ptr_E2A18C = (gptr<vector4<short>> *)get_absolute_value(ff7_externals.update_world_snake_position_7564CD, 0x2F);
++	ff7_externals.world_snake_data_position_ptr_E2A18C = (gptr<vector4<short>> *)G2H(get_absolute_value(ff7_externals.update_world_snake_position_7564CD, 0x2F));
+ 	ff7_externals.world_snake_data_position_E29F80 = (vector4<short> *)G2H(get_absolute_value((uint32_t)ff7_externals.animate_world_snake_75692A, 0x2A));
+ 	ff7_externals.world_snake_graphics_data_E2A490 = (world_snake_graphics_data *)G2H(get_absolute_value(ff7_externals.animate_world_snake_75692A, 0x3A));
+ 	ff7_externals.world_snake_graphics_data_end_E2A6D0 = (world_snake_graphics_data *)G2H(get_absolute_value(ff7_externals.animate_world_snake_75692A, 0x4C));
+@@ -1383,7 +1383,7 @@
+ 	ff7_externals.get_world_camera_front_rot_74D298 = (int (*)())get_relative_call(ff7_externals.world_sub_75C0FD, 0xF);
+ 	ff7_externals.engine_apply_rotation_to_rot_matrix_662AD8 = (void (*)(vector3<short>*, transform_matrix*))get_relative_call(ff7_externals.world_sub_75C0FD, 0x28);
+ 	ff7_externals.world_get_world_current_camera_rotation_x_74D3C6 = (short (*)())get_relative_call(ff7_externals.world_sub_75C0FD, 0x30);
+-	ff7_externals.world_submit_draw_effects_75C283 = (int (_stdcall *)(world_texture_data *, int, vector3<short>*, short))get_relative_call(ff7_externals.world_sub_75C0FD, 0x175);
++	ff7_externals.world_submit_draw_effects_75C283 = (int (_stdcall *)(world_texture_data *, int, vector3<short>*, short))G2H(get_relative_call(ff7_externals.world_sub_75C0FD, 0x175));
+ 	ff7_externals.dword_E35648 = (gptr<world_effect_2d_list_node> *)G2H(get_absolute_value(ff7_externals.world_sub_75C0FD, 0x5B));
+ 	ff7_externals.byte_96D6A8 = (byte*)G2H(get_absolute_value(ff7_externals.world_sub_75C0FD, 0x169));
+ 
+--- a/src/field.cpp
++++ b/src/field.cpp
+@@ -231,7 +231,7 @@
+ 	// Loop through objects until we find the one that has a valid triangle ID
+ 	for(int i = 0; i < MAXBYTE; i++)
+ 	{
+-		common_externals.current_triangle_id = (int16_t*)(*(uint32_t *)ff8_externals.field_state_others + 0x264 * i + 0x1FA);
++		common_externals.current_triangle_id = (int16_t*)G2H((*(uint32_t *)ff8_externals.field_state_others + 0x264 * i + 0x1FA));
+ 		if (*common_externals.current_triangle_id != 0) break;
+ 	}
+ 
+@@ -393,7 +393,7 @@
+ 
+ 	if (ImGui::Button("Change") && !map_changing) {
+ 		// Injects a call into where the field entities are checked
+-		memcpy(map_patch_storage, (void*)common_externals.update_entities_call, 7); // Make a copy of the existing CALL
++		memcpy(map_patch_storage, (void*)G2H(common_externals.update_entities_call), 7); // Make a copy of the existing CALL
+ 		patch_code_dword(common_externals.update_entities_call, 0x00E89090); // Places 2 NOPs and a CALL
+ 		replace_call(common_externals.update_entities_call + 2, ff8 ? (void*)&map_jump_ff8 : (void*)&map_jump_ff7);
+ 		map_changing = true;
+--- a/src/gl/deferred.cpp
++++ b/src/gl/deferred.cpp
+@@ -501,7 +501,7 @@
+ 				VOBJ(texture_set, texture_set, current_state.texture_set);
+ 				VOBJ(tex_header, tex_header, VREF(texture_set, tex_header));
+ 
+-				if (trace_all) ffnx_trace("gl_defer_sorted_draw: texture_set true for texture %s%d\n", VREF(tex_header, file.pc_name), VREF(tex_header, palette_index));
++				if (trace_all) ffnx_trace("gl_defer_sorted_draw: texture_set true for texture %s%d\n", (const char *)(VREF(tex_header, file.pc_name)), VREF(tex_header, palette_index));
+ 
+ 				// texture format does not support alpha, re-order is not necessary
+ 				if (!VREF(texture_set, ogl.external) && VREF(tex_header, tex_format.alpha_bits) < 2) {
+--- a/src/hext.cpp
++++ b/src/hext.cpp
+@@ -41,7 +41,7 @@
+     if (ends_with(sparts[0], "^"))
+     {
+         std::stringstream ss;
+-        int *ptr = (int*)(std::stoi(sparts[0].substr(0, sparts[0].length() - 1), nullptr, 16) + inGlobalOffset);
++        int *ptr = (int*)G2H((std::stoi(sparts[0].substr(0, sparts[0].length() - 1), nullptr, 16) + inGlobalOffset));
+         ss << std::hex << *ptr;
+         sparts[0] = ss.str();
+     }
+@@ -182,7 +182,7 @@
+         int addr = getAddress(parts[0]);
+         int length = std::stoi(parts[1], nullptr, 16);
+ 
+-        VirtualProtect((LPVOID)addr, length, PAGE_EXECUTE_READWRITE, &dummy);
++        VirtualProtect((LPVOID)G2H(addr), length, PAGE_EXECUTE_READWRITE, &dummy);
+ 
+         return true;
+     }
+--- a/src/music.cpp
++++ b/src/music.cpp
+@@ -235,7 +235,7 @@
+ 
+ 	if (ff8)
+ 	{
+-		const char* current_party_leader = ff8_names[*(byte*)(ff8_externals.field_vars_stack_1CFE9B8 + 0xCB) == 62 ? 8 : 0].c_str();
++		const char* current_party_leader = ff8_names[*(byte*)G2H((ff8_externals.field_vars_stack_1CFE9B8 + 0xCB)) == 62 ? 8 : 0].c_str();
+ 
+ 		mode = getmode();
+ 
+--- a/src/sfx.cpp
++++ b/src/sfx.cpp
+@@ -647,7 +647,7 @@
+ 	if (trace_all || trace_sfx) ffnx_info("%s: Update SFX volumes %d\n", __func__, modifier);
+ 
+ 	// Set master sfx volume
+-	gptr<BYTE>* sfx_tmp_volume = (gptr<BYTE>*)(ff7_externals.config_menu_sub + ff7_externals.call_menu_sound_slider_loop_sfx_down + 0xA);   // FF7Recomp: guest cell
++	gptr<BYTE>* sfx_tmp_volume = (gptr<BYTE>*)G2H((ff7_externals.config_menu_sub + ff7_externals.call_menu_sound_slider_loop_sfx_down + 0xA));   // FF7Recomp: guest cell
+ 
+ 	*common_externals.master_sfx_volume = **sfx_tmp_volume + modifier;
+ 
+@@ -690,7 +690,7 @@
+ 
+ void sfx_clear_sound_locks()
+ {
+-	gptr<uint32_t>* flags = (gptr<uint32_t>*)(ff7_externals.battle_clear_sound_flags + 5);   // FF7Recomp: guest cell
++	gptr<uint32_t>* flags = (gptr<uint32_t>*)G2H((ff7_externals.battle_clear_sound_flags + 5));   // FF7Recomp: guest cell
+ 	// The last uint32_t wasn't reset by the original sub
+ 	memset((uint32_t*)*flags, 0, 5 * sizeof(uint32_t));
+ }
+--- a/src/voice.cpp
++++ b/src/voice.cpp
+@@ -407,7 +407,7 @@
+ 
+ 	if (ff7_externals.field_entity_id_list[window_id] == 0x0) return 0;
+ 
+-	byte id = *(byte*)ff7_externals.current_dialog_string_pointer[window_id];
++	byte id = *(byte*)G2H(ff7_externals.current_dialog_string_pointer[window_id]);
+ 
+ 	switch(id) {
+ 		case 0xEA: // CLOUD
+@@ -962,7 +962,7 @@
+ 	}
+ 	else if (_is_dialog_starting)
+ 	{
+-		std::string decoded_text = decode_ff7_text((char*)*ff7_externals.menu_tutorial_window_text_ptr);
++		std::string decoded_text = decode_ff7_text((char*)G2H(*ff7_externals.menu_tutorial_window_text_ptr));
+ 		std::string tokenized_dialogue = tokenize_text(decoded_text);
+ 
+ 		if (trace_all || trace_opcodes) ffnx_trace("[TUTOR]: id=%d,text=%s\n", dialog_id, decoded_text.c_str());
+@@ -999,7 +999,7 @@
+ 
+ int ff8_battle_action_voice(int task)
+ {
+-	const byte *action = *(const byte **)(task + 4);
++	const byte *action = *(const byte **)G2H((task + 4));
+ 	byte actor_id = action[0];
+ 	byte command_id = action[1];
+ 	uint16_t action_id = *(const uint16_t *)(action + 4);
+@@ -1021,7 +1021,7 @@
+ 	}
+ 	else if (actor_id < 11)
+ 	{
+-		uint16_t enemy_id = *(byte *)(ff8_externals.battle_entities_1D27BCB + 208 * actor_id);
++		uint16_t enemy_id = *(byte *)G2H((ff8_externals.battle_entities_1D27BCB + 208 * actor_id));
+ 		play_battle_enemy_action_voice(enemy_id, command_id, action_id, ff8_battle_voice_actor, ff8_battle_voice_command);
+ 	}
+ 
+@@ -1031,10 +1031,10 @@
+ int ff8_battle_command_voice(int task)
+ {
+ 	if (!*ff8_externals.battle_result_state_1CFF6E7 &&
+-		*(const short *)(task + 2) == 8 && *(const byte *)(task + 10) == 3 &&
+-		*(const byte *)(task + 11) == 86 && ff8_battle_voice_data.text_type == display_type::CHAR_CMD)
++		*(const short *)G2H((task + 2)) == 8 && *(const byte *)G2H((task + 10)) == 3 &&
++		*(const byte *)G2H((task + 11)) == 86 && ff8_battle_voice_data.text_type == display_type::CHAR_CMD)
+ 	{
+-		std::string decoded_text = ff8_decode_text(*(const char **)(task + 4));
++		std::string decoded_text = ff8_decode_text(*(const char **)G2H((task + 4)));
+ 		std::string tokenized_dialogue = tokenize_text(decoded_text);
+ 		set_voice_volume();
+ 		play_battle_cmd_voice(ff8_battle_voice_data.char_id, ff8_battle_voice_data.command_id,
+@@ -1105,9 +1105,9 @@
+ 
+ int ff8_opcode_voice_drawpoint(int unk)
+ {
+-	byte idx = *(byte *)(unk + 388);
++	byte idx = *(byte *)G2H((unk + 388));
+ 
+-	int magic_id = *(DWORD *)(unk + 4 * idx--);
++	int magic_id = *(DWORD *)G2H((unk + 4 * idx--));
+ 	static int window_id = 6;
+ 	static int default_option = 2;
+ 	ff8_win_obj *win = ff8_externals.windows + window_id;
+@@ -1132,10 +1132,10 @@
+ 
+ int ff8_opcode_voice_mes(int unk)
+ {
+-	byte idx = *(byte *)(unk + 388);
++	byte idx = *(byte *)G2H((unk + 388));
+ 
+-	int dialog_id = *(DWORD *)(unk + 4 * idx--);
+-	int window_id = *(DWORD *)(unk + 4 * idx);
++	int dialog_id = *(DWORD *)G2H((unk + 4 * idx--));
++	int window_id = *(DWORD *)G2H((unk + 4 * idx));
+ 	ff8_win_obj *win = ff8_externals.windows + window_id;
+ 	int message_current_opcode = win->state;
+ 	char* field_name = get_current_field_name();
+@@ -1149,12 +1149,12 @@
+ 
+ int ff8_opcode_voice_ames(int unk)
+ {
+-	byte idx = *(byte *)(unk + 388);
++	byte idx = *(byte *)G2H((unk + 388));
+ 
+ 	idx--; // Y Position of window
+ 	idx--; // X position of window
+-	int dialog_id = *(DWORD *)(unk + 4 * idx--);
+-	int window_id = *(DWORD *)(unk + 4 * idx);
++	int dialog_id = *(DWORD *)G2H((unk + 4 * idx--));
++	int window_id = *(DWORD *)G2H((unk + 4 * idx));
+ 	ff8_win_obj *win = ff8_externals.windows + window_id;
+ 	int message_current_opcode = win->state;
+ 	char* field_name = get_current_field_name();
+@@ -1168,12 +1168,12 @@
+ 
+ int ff8_opcode_voice_amesw(int unk)
+ {
+-	byte idx = *(byte *)(unk + 388);
++	byte idx = *(byte *)G2H((unk + 388));
+ 
+ 	idx--; // Y Position of window
+ 	idx--; // X position of window
+-	int dialog_id = *(DWORD *)(unk + 4 * idx--);
+-	int window_id = *(DWORD *)(unk + 4 * idx);
++	int dialog_id = *(DWORD *)G2H((unk + 4 * idx--));
++	int window_id = *(DWORD *)G2H((unk + 4 * idx));
+ 	ff8_win_obj *win = ff8_externals.windows + window_id;
+ 	int message_current_opcode = win->state;
+ 	char* field_name = get_current_field_name();
+@@ -1187,12 +1187,12 @@
+ 
+ int ff8_opcode_voice_ramesw(int unk)
+ {
+-	byte idx = *(byte *)(unk + 388);
++	byte idx = *(byte *)G2H((unk + 388));
+ 
+ 	idx--; // Y Position of window
+ 	idx--; // X position of window
+-	int dialog_id = *(DWORD *)(unk + 4 * idx--);
+-	int window_id = *(DWORD *)(unk + 4 * idx);
++	int dialog_id = *(DWORD *)G2H((unk + 4 * idx--));
++	int window_id = *(DWORD *)G2H((unk + 4 * idx));
+ 	ff8_win_obj *win = ff8_externals.windows + window_id;
+ 	int message_current_opcode = win->state;
+ 	char* field_name = get_current_field_name();
+@@ -1206,14 +1206,14 @@
+ 
+ int ff8_opcode_voice_ask(int unk)
+ {
+-	byte idx = *(byte *)(unk + 388);
++	byte idx = *(byte *)G2H((unk + 388));
+ 
+ 	idx--; // Line of cancel option
+-	int default_option = *(DWORD *)(unk + 4 * idx--); // Line of default option
++	int default_option = *(DWORD *)G2H((unk + 4 * idx--)); // Line of default option
+ 	idx--; // Line of last option
+ 	idx--; // Line of first option
+-	int dialog_id = *(DWORD *)(unk + 4 * idx--);
+-	int window_id = *(DWORD *)(unk + 4 * idx);
++	int dialog_id = *(DWORD *)G2H((unk + 4 * idx--));
++	int window_id = *(DWORD *)G2H((unk + 4 * idx));
+ 	ff8_win_obj *win = ff8_externals.windows + window_id;
+ 	int message_current_opcode = win->state;
+ 	char* field_name = get_current_field_name();
+@@ -1232,16 +1232,16 @@
+ 
+ int ff8_opcode_voice_aask(int unk)
+ {
+-	byte idx = *(byte *)(unk + 388);
++	byte idx = *(byte *)G2H((unk + 388));
+ 
+ 	idx--; // Y Position of window
+ 	idx--; // X position of window
+ 	idx--; // Line of cancel option
+-	int default_option = *(DWORD *)(unk + 4 * idx--); // Line of default option
++	int default_option = *(DWORD *)G2H((unk + 4 * idx--)); // Line of default option
+ 	idx--; // Line of last option
+ 	idx--; // Line of first option
+-	int dialog_id = *(DWORD *)(unk + 4 * idx--);
+-	int window_id = *(DWORD *)(unk + 4 * idx);
++	int dialog_id = *(DWORD *)G2H((unk + 4 * idx--));
++	int window_id = *(DWORD *)G2H((unk + 4 * idx));
+ 	ff8_win_obj *win = ff8_externals.windows + window_id;
+ 	int message_current_opcode = win->state;
+ 	char* field_name = get_current_field_name();
+@@ -1261,7 +1261,7 @@
+ 		if (ret == 3) // aask exit
+ 		{
+ 			// --- Only for unlocking chocobo achievement (only way to implement it) ---
+-			int chosen_option = *(DWORD*)(unk + 240);
++			int chosen_option = *(DWORD*)G2H((unk + 240));
+ 			WORD field_id = *common_externals.current_field_id;
+ 			bool is_field_chocobo_forest = field_id >= 287 && field_id <= 293 && field_id != 290;
+ 			if (is_field_chocobo_forest && dialog_id == 56 && chosen_option == 0) // capture chocobo
+--- a/src/world.cpp
++++ b/src/world.cpp
+@@ -116,10 +116,10 @@
+ 		int tPage, clut, texFlags, vertFlags;
+ 		bool texFlagsBool[8];
+ 		bool vertFlagsBool[8];
+-		tPage = (*((BYTE*)*currentCollideTriangle + 12) >> 4) & 0x0F;
+-		clut = *((BYTE*)*currentCollideTriangle + 12) &0x0F;
+-		texFlags = *((BYTE*)*currentCollideTriangle + 14);
+-		vertFlags = *((BYTE*)*currentCollideTriangle + 15);
++		tPage = (*((BYTE*)G2H(*currentCollideTriangle) + 12) >> 4) & 0x0F;
++		clut = *((BYTE*)G2H(*currentCollideTriangle) + 12) &0x0F;
++		texFlags = *((BYTE*)G2H(*currentCollideTriangle) + 14);
++		vertFlags = *((BYTE*)G2H(*currentCollideTriangle) + 15);
+ 
+ 		for (int i = 0; i < 8; i++)
+ 		{
+@@ -127,31 +127,31 @@
+ 			vertFlagsBool[i] = ((vertFlags >> 7 - i) & 0b1) == 1;
+ 		}
+ 
+-		ImGui::InputScalar("F1", ImGuiDataType_U8 ,(BYTE*)*currentCollideTriangle, &u8step, &u8stepTen, "%d");
++		ImGui::InputScalar("F1", ImGuiDataType_U8 ,(BYTE*)G2H(*currentCollideTriangle), &u8step, &u8stepTen, "%d");
+ 		ImGui::SameLine();
+-		ImGui::InputScalar("F2", ImGuiDataType_U8, (BYTE*)*currentCollideTriangle + 1, &u8step, &u8stepTen, "%d");
++		ImGui::InputScalar("F2", ImGuiDataType_U8, (BYTE*)G2H(*currentCollideTriangle) + 1, &u8step, &u8stepTen, "%d");
+ 		ImGui::SameLine();
+-		ImGui::InputScalar("F3", ImGuiDataType_U8, (BYTE*)*currentCollideTriangle + 2, &u8step, &u8stepTen, "%d");
++		ImGui::InputScalar("F3", ImGuiDataType_U8, (BYTE*)G2H(*currentCollideTriangle) + 2, &u8step, &u8stepTen, "%d");
+ 
+-		ImGui::InputScalar("N1", ImGuiDataType_U8, (BYTE*)*currentCollideTriangle + 3, &u8step, &u8stepTen, "%d");
++		ImGui::InputScalar("N1", ImGuiDataType_U8, (BYTE*)G2H(*currentCollideTriangle) + 3, &u8step, &u8stepTen, "%d");
+ 		ImGui::SameLine();
+-		ImGui::InputScalar("N2", ImGuiDataType_U8, (BYTE*)*currentCollideTriangle + 4, &u8step, &u8stepTen, "%d");
++		ImGui::InputScalar("N2", ImGuiDataType_U8, (BYTE*)G2H(*currentCollideTriangle) + 4, &u8step, &u8stepTen, "%d");
+ 		ImGui::SameLine();
+-		ImGui::InputScalar("N3", ImGuiDataType_U8, (BYTE*)*currentCollideTriangle + 5, &u8step, &u8stepTen, "%d");
++		ImGui::InputScalar("N3", ImGuiDataType_U8, (BYTE*)G2H(*currentCollideTriangle) + 5, &u8step, &u8stepTen, "%d");
+ 
+-		ImGui::InputScalar("U1", ImGuiDataType_U8, (BYTE*)*currentCollideTriangle + 6, &u8step, &u8stepTen, "%d");
++		ImGui::InputScalar("U1", ImGuiDataType_U8, (BYTE*)G2H(*currentCollideTriangle) + 6, &u8step, &u8stepTen, "%d");
+ 		ImGui::SameLine();
+-		ImGui::InputScalar("V1", ImGuiDataType_U8, (BYTE*)*currentCollideTriangle + 7, &u8step, &u8stepTen, "%d");
+-		ImGui::InputScalar("U2", ImGuiDataType_U8, (BYTE*)*currentCollideTriangle + 8, &u8step, &u8stepTen, "%d");
++		ImGui::InputScalar("V1", ImGuiDataType_U8, (BYTE*)G2H(*currentCollideTriangle) + 7, &u8step, &u8stepTen, "%d");
++		ImGui::InputScalar("U2", ImGuiDataType_U8, (BYTE*)G2H(*currentCollideTriangle) + 8, &u8step, &u8stepTen, "%d");
+ 		ImGui::SameLine();
+-		ImGui::InputScalar("V2", ImGuiDataType_U8, (BYTE*)*currentCollideTriangle + 9, &u8step, &u8stepTen, "%d");
+-		ImGui::InputScalar("U3", ImGuiDataType_U8, (BYTE*)*currentCollideTriangle + 10, &u8step, &u8stepTen, "%d");
++		ImGui::InputScalar("V2", ImGuiDataType_U8, (BYTE*)G2H(*currentCollideTriangle) + 9, &u8step, &u8stepTen, "%d");
++		ImGui::InputScalar("U3", ImGuiDataType_U8, (BYTE*)G2H(*currentCollideTriangle) + 10, &u8step, &u8stepTen, "%d");
+ 		ImGui::SameLine();
+-		ImGui::InputScalar("V3", ImGuiDataType_U8, (BYTE*)*currentCollideTriangle + 11, &u8step, &u8stepTen, "%d");
++		ImGui::InputScalar("V3", ImGuiDataType_U8, (BYTE*)G2H(*currentCollideTriangle) + 11, &u8step, &u8stepTen, "%d");
+ 
+ 		ImGui::InputInt("TPage", &tPage);
+ 		ImGui::InputInt("Clut", &clut);
+-		ImGui::InputScalar("Ground type", ImGuiDataType_U8, (BYTE*)*currentCollideTriangle + 13, &u8step, &u8stepTen, "%d");
++		ImGui::InputScalar("Ground type", ImGuiDataType_U8, (BYTE*)G2H(*currentCollideTriangle) + 13, &u8step, &u8stepTen, "%d");
+ 
+ 		ImGui::Text("TEXFLAGS:");
+ 		ImGui::Checkbox("TEXFLAGS_MISC", &texFlagsBool[0]);
+@@ -191,9 +191,9 @@
+ 		vertFlags |= vertFlagsBool[6] ? 0x02 : 00;
+ 		vertFlags |= vertFlagsBool[7] ? 0x01 : 00;
+ 
+-		*((BYTE*)*currentCollideTriangle + 12) = (BYTE)(tPage<<4 | clut);
+-		*((BYTE*)*currentCollideTriangle + 14) = (BYTE)texFlags;
+-		*((BYTE*)*currentCollideTriangle + 15) = (BYTE)vertFlags;
++		*((BYTE*)G2H(*currentCollideTriangle) + 12) = (BYTE)(tPage<<4 | clut);
++		*((BYTE*)G2H(*currentCollideTriangle) + 14) = (BYTE)texFlags;
++		*((BYTE*)G2H(*currentCollideTriangle) + 15) = (BYTE)vertFlags;
+ 	}
+ 
+ 

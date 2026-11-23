@@ -228,3 +228,43 @@ if marker not in t:
 else:
     print("quickboot.cpp already has the title target")
 PY4
+
+# FF7_IOS_BASED_MEMORY: -DFF7_BASED_MEMORY=ON builds the lift and runtime without
+# RECOMP_FLAT_MEMORY: every guest access is g_mem_base + va. Native arm64 (macOS and iOS) keeps
+# a 4 GB PAGEZERO, so the flat low-address layout the Android/Rosetta builds use is impossible.
+python3 - <<'PY5'
+from pathlib import Path
+import os
+root = Path(os.environ["ROOT"])
+cm = root / "external" / "ff7-recomp-android" / "cmake" / "ff7core.cmake"
+t = cm.read_text()
+marker = "# FF7_IOS_BASED_MEMORY"
+old = "set(FF7_GUEST_DEFS RECOMP_FLAT_MEMORY RECOMP_STRICT_ICALL)\n"
+if marker not in t:
+    if old not in t:
+        raise SystemExit("ff7core.cmake layout changed; update tools/apply_metal_overlay.sh")
+    t = t.replace(old, old + f"""{marker}
+option(FF7_BASED_MEMORY "Guest memory at g_mem_base + va (native arm64 Apple)" OFF)
+if(FF7_BASED_MEMORY)
+  list(REMOVE_ITEM FF7_GUEST_DEFS RECOMP_FLAT_MEMORY)
+  list(APPEND FF7_GUEST_DEFS FF7_BASED_MEMORY)
+endif()
+""", 1)
+    cm.write_text(t)
+    print("patched ff7core.cmake: FF7_BASED_MEMORY option")
+else:
+    print("ff7core.cmake already has FF7_BASED_MEMORY")
+PY5
+
+# FF7_IOS_BASED_MEMORY (host side): guest -> host conversions go through G2H, so the shims,
+# HLE and FFNx work with the guest at g_mem_base (native arm64). A no-op in flat builds.
+python3 -I "$ROOT/tools/based_memory_port.py" "$ROOT/external/ff7-recomp-android" | tail -1
+# The FFNx sites clang found with -Wint-to-pointer-cast / -Wformat (based_memory_port.py
+# warnings|formats, run once on FFNx 0adf0b32), stored as a patch on top of the transform.
+FFNX_DIR="$ROOT/external/ff7-recomp-android/external/FFNx"
+BM_PATCH="$ROOT/patches/ffnx-based-memory.patch"
+if (cd "$FFNX_DIR" && patch -p1 -R -f -s --dry-run < "$BM_PATCH" >/dev/null 2>&1); then
+  echo "ffnx-based-memory.patch already applied"
+else
+  (cd "$FFNX_DIR" && patch -p1 --forward -s < "$BM_PATCH") && echo "applied ffnx-based-memory.patch"
+fi
