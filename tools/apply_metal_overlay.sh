@@ -285,3 +285,52 @@ AND_DIR="$ROOT/external/ff7-recomp-android"
 apply_once "$AND_DIR"                    "$ROOT/patches/android-core-darwin.patch"
 apply_once "$AND_DIR/external/pcrecomp"  "$ROOT/patches/pcrecomp-darwin.patch"
 apply_once "$AND_DIR/external/FFNx"      "$ROOT/patches/ffnx-darwin.patch"
+
+# FF7_IOS_AUDIO_OBJCXX: on iOS miniaudio includes AVFoundation (its audio session), which
+# needs Objective-C++; compile SoLoud's miniaudio backend that way on Apple mobile targets.
+python3 - <<'PY6'
+from pathlib import Path
+import os
+root = Path(os.environ["ROOT"])
+cm = root / "external" / "ff7-recomp-android" / "cmake" / "ffnx_audio.cmake"
+t = cm.read_text()
+marker = "# FF7_IOS_AUDIO_OBJCXX"
+old = "target_compile_options(ffnx_soloud PRIVATE -w)\n"
+if marker not in t:
+    if old not in t:
+        raise SystemExit("ffnx_audio.cmake layout changed; update tools/apply_metal_overlay.sh")
+    t = t.replace(old, old + f"""{marker}
+if(CMAKE_SYSTEM_NAME MATCHES "iOS|tvOS|visionOS")
+  set_source_files_properties("${{SL}}/src/backend/miniaudio/soloud_miniaudio.cpp"
+                              PROPERTIES COMPILE_OPTIONS "-xobjective-c++")
+  target_link_libraries(ffnx_soloud PUBLIC "-framework AVFoundation" "-framework AudioToolbox")
+endif()
+""", 1)
+    cm.write_text(t)
+    print("patched ffnx_audio.cmake: miniaudio as Objective-C++ on iOS")
+else:
+    print("ffnx_audio.cmake already builds miniaudio as Objective-C++ on iOS")
+PY6
+
+# FF7_IOS_FFMPEG_STUBS: without FFmpeg, FFNx's movie player (video/movies.cpp) is not built but
+# its callers are. Movies end on their first frame (src/ffnx_overlay/ffmpeg_movie_stubs.cpp), so
+# the app links strictly instead of with -undefined dynamic_lookup.
+python3 - <<'PY7'
+from pathlib import Path
+import os
+root = Path(os.environ["ROOT"])
+cm = root / "external" / "ff7-recomp-android" / "cmake" / "ffnx.cmake"
+t = cm.read_text()
+marker = "# FF7_IOS_FFMPEG_STUBS"
+if marker not in t:
+    t += f"""
+{marker}
+if(APPLE AND NOT FF7_HAVE_FFMPEG)
+  target_sources(ffnx PRIVATE "{root}/src/ffnx_overlay/ffmpeg_movie_stubs.cpp")
+endif()
+"""
+    cm.write_text(t)
+    print("patched ffnx.cmake: FFmpeg movie stubs")
+else:
+    print("ffnx.cmake already has the FFmpeg movie stubs")
+PY7

@@ -107,7 +107,8 @@ pristine sources into a scratch tree: identical to the working tree, file for fi
 | CAMetalLayer window | Works (`src/mac/ff7_mac_metal_window.mm`) |
 | Metal shaders (`*.mtl.*`) | Works (`tools/compile_shaders_metal.sh`) |
 | Title screen | **Works on Mac, native arm64 and Rosetta x86_64**: FFNx logo, then the title (New Game / Continue) |
-| iOS device / simulator | **Next** — the core now runs native arm64; still to do: link it into the iOS app (see below) |
+| iOS simulator | **Works**: `FF7RecompBundled` links the core and reaches the title (see "iOS app") |
+| iOS device | Not yet: `tools/build_ios_core.sh device` is untested; then signing and the address-space check |
 
 Steam folder used here:
 `~/Library/Application Support/Steam/steamapps/common/FINAL FANTASY VII Steam Edition`
@@ -127,6 +128,33 @@ Steam folder used here:
   real selectors, and `tools/apply_metal_overlay.sh` builds it in and drops the stubs.
 - **Pad inject was sticky.** `ff7_platform_pad_inject` ORed into the player's pad and never
   released. It now keeps a separate mask, as on Android.
+
+### iOS app (simulator)
+
+`ios/project.yml` has two targets. `FF7Recomp` is the launcher shell alone. `FF7RecompBundled`
+links the whole core (your lift, the runtime, FFNx, bgfx/Metal) with `FF7_BUNDLE_GAME`, and
+with no package chosen boots `Documents/game`.
+
+```bash
+bash tools/build_ios_core.sh simulator    # -> build-ios-sim/libff7_bundle.a (based memory)
+cd ios && xcodegen generate
+xcodebuild -scheme FF7RecompBundled -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' -derivedDataPath ../build-ios-dd build
+xcrun simctl install booted ../build-ios-dd/Build/Products/Debug-iphonesimulator/FF7RecompBundled.app
+bash ../tools/ios_sim_link_game.sh        # Documents/game -> ../game (symlink; simulator only)
+SIMCTL_CHILD_FF7_QUICKBOOT=title xcrun simctl launch --console-pty booted com.ff7recomp.ios.bundled
+```
+
+Tap **Play**: the title screen draws on the play view's `CAMetalLayer`. The app links strictly
+(no `-undefined dynamic_lookup`); `src/ffnx_overlay/ffmpeg_movie_stubs.cpp` stands in for
+FFNx's FFmpeg movie player, so every movie ends on its first frame. Simulator only, arm64
+(Apple silicon).
+
+Known gaps: the 4:3 frame is stretched to the play view, and the swapchain keeps the size it
+booted with when the device rotates (P2: lock the play view to landscape and pass FFNx the
+view's size). On a device the game files must be imported for real (P3 GamePackage), the
+app needs a signing team, and the 2 GB guest reservation (plus 4 GB alignment slack) may need
+the `com.apple.developer.kernel.extended-virtual-addressing` entitlement.
 
 ### Based memory (native arm64)
 
@@ -152,7 +180,7 @@ from `tools/apply_metal_overlay.sh`:
 A guest address the port missed is dereferenced below 4 GB, which is PAGEZERO: it faults at
 once, and lldb shows the exact site.
 
-What remains for iOS: build the core for `arm64-apple-ios` / the simulator SDK, link it into
-the app with the same based memory, and check that the 2 GB `PROT_NONE` reservation (plus
-4 GB of alignment slack, released right away) fits the app's address space; iOS may need the
+The same based core runs in the iOS simulator ("iOS app" above). For a device, what remains is
+signing, and checking that the 2 GB `PROT_NONE` reservation (plus 4 GB of alignment slack,
+released right away) fits the app's address space; iOS may need the
 `com.apple.developer.kernel.extended-virtual-addressing` entitlement.

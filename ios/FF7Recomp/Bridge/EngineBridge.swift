@@ -25,12 +25,25 @@ enum EngineBridge {
     }
 
     static func boot(packagePath: String?) -> EngineState {
-        if let packagePath {
+        if let packagePath = packagePath ?? bundledGameDir() {
             packagePath.withCString { _ = ff7_host_boot($0) }
         } else {
             _ = ff7_host_boot(nil)
         }
         return snapshot()
+    }
+
+    /// Dev build with the lifted game linked in (FF7RecompBundled): with no package chosen,
+    /// boot the game folder at Documents/game (tools/ios_sim_link_game.sh on the simulator).
+    private static func bundledGameDir() -> String? {
+#if FF7_BUNDLE_GAME
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let dir = docs.appendingPathComponent("game")
+        return FileManager.default.fileExists(atPath: dir.appendingPathComponent("ff7_en.exe").path)
+            ? dir.path : nil
+#else
+        return nil
+#endif
     }
 
     static func shutdown() {

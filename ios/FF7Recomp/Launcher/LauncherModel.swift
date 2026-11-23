@@ -23,7 +23,7 @@ final class LauncherModel: ObservableObject {
 
     func refresh() {
         packagePath = PackageStore.shared.currentPackagePath()
-        let state = EngineBridge.probe(width: 1280, height: 720, fps: targetFPS)
+        let state = EngineBridge.probe(width: 1280, height: 720, fps: Int32(targetFPS))
         statusMessage = state.message
     }
 
