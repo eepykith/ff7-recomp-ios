@@ -75,6 +75,23 @@ advance on their own. `FF7_SNAPSHOT=/path/shot.png` writes the window to a PNG e
 `ff7_host_boot` starts `ff7_boot_and_run` on a **64 MB** detached pthread
 (`src/ios/ff7_ios_boot.c`). Do not commit `external/`, `generated/`, or `game/`.
 
+### Reproducing `external/`
+
+`external/` is never committed; this repo rebuilds it exactly:
+
+```bash
+bash tools/fetch_android_core.sh     # core pinned at 7218386
+bash tools/setup_android_core.sh     # nested repos pinned + the Android port's patches/transforms
+bash tools/apply_metal_overlay.sh    # Metal overlay, based memory, then patches/*.patch
+```
+
+`apply_metal_overlay.sh` ends with `patches/android-core-darwin.patch`,
+`patches/pcrecomp-darwin.patch` and `patches/ffnx-darwin.patch`: the Darwin edits made by hand
+during the first bring-up (thread ids, `MAP_FIXED_NOREPLACE`, stack bounds, the silent
+DirectSound mixer, Apple-mangled link stubs, Metal as FFNx's renderer, NEON by target arch, the
+`malloc.h` shim, bring-up logging). Every step is idempotent. Checked by replaying from
+pristine sources into a scratch tree: identical to the working tree, file for file.
+
 ### Darwin status (P1 bring-up)
 
 | Piece | Status |

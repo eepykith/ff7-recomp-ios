@@ -241,6 +241,27 @@ int ff7_boot_and_run(const char *game_dir) {
     ('src/host/ff7_boot.c',
      '#define _GNU_SOURCE\n',
      '#define _GNU_SOURCE\n#include <pthread.h>   /* ff7_guest_window_init (FF7_IOS_BASED_MEMORY) */\n'),
+    # recomp_types.h: the G2H / H2G helpers every converted cast uses.
+    ('external/pcrecomp/runtime/recomp32/recomp_types.h',
+     'extern ptrdiff_t g_mem_base;\n', G2H_DECL),
+    # put_arg: "is this a guest data pointer" was p <= 0xFFFFFFFF (true only for flat memory).
+    # Function pointers keep that test: guest functions stay small (un-based) addresses.
+    ('src/ffnx_bridge/guest_abi.h',
+     'template <typename T> inline T *ptr_of_raw(uint32_t va) {',
+     '''// FF7_IOS_BASED_MEMORY: a data pointer into guest memory (the window at g_mem_base)
+inline bool is_guest_data(const void *p) {
+    return p && reinterpret_cast<uintptr_t>(p) - static_cast<uintptr_t>(g_mem_base) <= 0xFFFFFFFFu;
+}
+template <typename T> inline T *ptr_of_raw(uint32_t va) {'''),
+    ('src/ffnx_bridge/guest_abi.h',
+     '*w++ = !a ? 0 : p <= 0xFFFFFFFFu ? static_cast<uint32_t>(p) : guest_string(a);',
+     '*w++ = !a ? 0 : is_guest_data(a) ? va_of(a) : guest_string(a);   // FF7_IOS_BASED_MEMORY'),
+    ('src/ffnx_bridge/guest_abi.h',
+     'if (reinterpret_cast<uintptr_t>(a) > 0xFFFFFFFFu) { *w++ = bounce_in(a); return; }',
+     'if (a && !is_guest_data(a)) { *w++ = bounce_in(a); return; }   // FF7_IOS_BASED_MEMORY'),
+    ('src/ffnx_bridge/guest_abi.h',
+     'if (reinterpret_cast<uintptr_t>(a) > 0xFFFFFFFFu) { *w++ = bounce_str(a); return; }',
+     'if (a && !is_guest_data(a)) { *w++ = bounce_str(a); return; }   // FF7_IOS_BASED_MEMORY'),
     # guest_alloc: the arena lives in the window; MAP_FIXED replaces the reservation.
     ('external/pcrecomp/runtime/win32hle/guest_alloc.c',
      '    if (p == MAP_FAILED || (uintptr_t)p != lo) {',
