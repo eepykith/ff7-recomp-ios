@@ -35,7 +35,7 @@ enum EngineBridge {
 
     /// Dev build with the lifted game linked in (FF7RecompBundled): with no package chosen,
     /// boot the game folder at Documents/game (tools/ios_sim_link_game.sh on the simulator).
-    private static func bundledGameDir() -> String? {
+    static func bundledGameDir() -> String? {
 #if FF7_BUNDLE_GAME
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let dir = docs.appendingPathComponent("game")

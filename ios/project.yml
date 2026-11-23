@@ -39,11 +39,19 @@ targets:
       path: FF7Recomp/Resources/Info.plist
       properties:
         CFBundleDisplayName: FF7Recomp
+        CFBundleDevelopmentRegion: en
+        CFBundleShortVersionString: "0.1.0"
+        LSRequiresIPhoneOS: true
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
           - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
         UTExportedTypeDeclarations:
@@ -55,6 +63,14 @@ targets:
             UTTypeTagSpecification:
               public.filename-extension:
                 - ff7pkg
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: com.ff7recomp.iro
+            UTTypeDescription: 7th Heaven IRO Mod
+            UTTypeConformsTo:
+              - public.data
+            UTTypeTagSpecification:
+              public.filename-extension:
+                - iro
 
   # Dev build with the lifted game linked in (your own ff7_en.exe, never distributed):
   #   bash tools/build_ios_core.sh simulator     # builds ../build-ios-sim/libff7_bundle.a
@@ -99,3 +115,33 @@ targets:
           - "-framework CoreAudio"
         DEAD_CODE_STRIPPING: NO
         "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64   # the core is built arm64 only
+
+  FF7RecompTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: FF7RecompTests
+    dependencies:
+      - target: FF7Recomp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ff7recomp.ios.tests
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  FF7Recomp:
+    build:
+      targets:
+        FF7Recomp: all
+        FF7RecompTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - FF7RecompTests
+  FF7RecompBundled:
+    build:
+      targets:
+        FF7RecompBundled: all
+    run:
+      config: Debug
