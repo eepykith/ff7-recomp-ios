@@ -136,6 +136,24 @@ elif [[ "${ARCH}" == *arm64* ]]; then
   CC_ARCH=(-arch arm64)
 fi
 
+# The core and everything under it, in link order (libff7_platform is the host's own).
+CORE_LIBS=(
+  "$B/libff7_core.a" "$OUT/libffnx_dedup.a"
+  "$B/libbgfx.a" "$B/libbimg_decode.a" "$B/libbimg.a" "$B/libbx.a" "$B/libastcenc.a"
+  "$B/libffnx_png.a" "$B/libffnx_imgui.a" "$B/libffnx_pugixml.a" "$B/libffnx_xxhash.a"
+  "$B/libffnx_soloud.a" "$B/libffnx_vgmstream.a" "$B/libffnx_lz4.a"
+  "$B/libffnx_ogg.a" "$B/libffnx_vorbis.a" "$B/libff7_rcheevos.a" "$B/libffnx-resources.a"
+)
+
+# FF7_LINK_MODE=bundle: merge the core into one static library for an app to link
+# (the iOS app: ios/project.yml), instead of linking ff7_metal_boot.
+if [[ "${FF7_LINK_MODE:-exe}" == bundle ]]; then
+  rm -f "$B/libff7_bundle.a"
+  libtool -static -no_warning_for_no_symbols -o "$B/libff7_bundle.a" "${CORE_LIBS[@]}"
+  echo "bundled $B/libff7_bundle.a ($(du -h "$B/libff7_bundle.a" | cut -f1))"
+  exit 0
+fi
+
 # Ensure Mac Metal window object exists (ObjC++).
 MAC_WIN_O="$B/CMakeFiles/ff7_metal_boot.dir/src/mac/ff7_mac_metal_window.mm.o"
 if [[ ! -f "$MAC_WIN_O" ]]; then
@@ -153,12 +171,7 @@ clang "${CC_ARCH[@]}" -c -O2 \
 
 clang++ "${CC_ARCH[@]}" -o "$B/ff7_metal_boot" \
   "$BOOT_O" "$MAC_WIN_O" \
-  "$B/libff7_platform.a" "$B/libff7_core.a" \
-  "$OUT/libffnx_dedup.a" \
-  "$B/libbgfx.a" "$B/libbimg_decode.a" "$B/libbimg.a" "$B/libbx.a" "$B/libastcenc.a" \
-  "$B/libffnx_png.a" "$B/libffnx_imgui.a" "$B/libffnx_pugixml.a" "$B/libffnx_xxhash.a" \
-  "$B/libffnx_soloud.a" "$B/libffnx_vgmstream.a" "$B/libffnx_lz4.a" \
-  "$B/libffnx_ogg.a" "$B/libffnx_vorbis.a" "$B/libff7_rcheevos.a" "$B/libffnx-resources.a" \
+  "$B/libff7_platform.a" "${CORE_LIBS[@]}" \
   -framework Metal -framework QuartzCore -framework Foundation -framework IOKit \
   -framework AppKit -framework CoreVideo -framework CoreFoundation \
   -framework CoreMedia -framework VideoToolbox -framework AudioToolbox \

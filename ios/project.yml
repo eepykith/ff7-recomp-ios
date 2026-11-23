@@ -55,3 +55,47 @@ targets:
             UTTypeTagSpecification:
               public.filename-extension:
                 - ff7pkg
+
+  # Dev build with the lifted game linked in (your own ff7_en.exe, never distributed):
+  #   bash tools/build_ios_core.sh simulator     # builds ../build-ios-sim/libff7_bundle.a
+  #   xcodegen generate && xcodebuild -scheme FF7RecompBundled -sdk iphonesimulator ...
+  #   bash tools/ios_sim_link_game.sh            # Documents/game -> ../game (simulator only)
+  FF7RecompBundled:
+    type: application
+    platform: iOS
+    sources:
+      - path: FF7Recomp
+      - path: ../src/platform
+        createIntermediateGroups: true
+      - path: ../src/ios
+        createIntermediateGroups: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ff7recomp.ios.bundled
+        PRODUCT_NAME: FF7RecompBundled
+        INFOPLIST_FILE: FF7Recomp/Resources/Info.plist
+        SWIFT_OBJC_BRIDGING_HEADER: FF7Recomp/Bridge/FF7Recomp-Bridging-Header.h
+        HEADER_SEARCH_PATHS:
+          - "$(SRCROOT)/../src/platform"
+          - "$(SRCROOT)/../src/ios"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+        GCC_PREPROCESSOR_DEFINITIONS: "$(inherited) FF7_BUNDLE_GAME=1 FF7_PLATFORM_ios=1"
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) FF7_BUNDLE_GAME"
+        "FF7_CORE_DIR[sdk=iphonesimulator*]": "$(SRCROOT)/../build-ios-sim"
+        "FF7_CORE_DIR[sdk=iphoneos*]": "$(SRCROOT)/../build-ios-device"
+        OTHER_LDFLAGS:
+          - "$(inherited)"
+          - "$(FF7_CORE_DIR)/libff7_bundle.a"
+          - "-lc++"
+          - "-lz"
+          - "-framework Metal"
+          - "-framework QuartzCore"
+          - "-framework CoreVideo"
+          - "-framework CoreMedia"
+          - "-framework VideoToolbox"
+          - "-framework AudioToolbox"
+          - "-framework AVFoundation"
+          - "-framework CoreAudio"
+        DEAD_CODE_STRIPPING: NO
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64   # the core is built arm64 only

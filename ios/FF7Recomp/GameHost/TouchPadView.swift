@@ -57,15 +57,15 @@ struct TouchPadView: View {
 
     private var stickX: Int16 {
         var x: Int32 = 0
-        if held & FF7_PAD_DPAD_LEFT != 0 { x -= 32767 }
-        if held & FF7_PAD_DPAD_RIGHT != 0 { x += 32767 }
+        if held & UInt16(FF7_PAD_DPAD_LEFT) != 0 { x -= 32767 }
+        if held & UInt16(FF7_PAD_DPAD_RIGHT) != 0 { x += 32767 }
         return Int16(clamping: x)
     }
 
     private var stickY: Int16 {
         var y: Int32 = 0
-        if held & FF7_PAD_DPAD_DOWN != 0 { y -= 32767 }
-        if held & FF7_PAD_DPAD_UP != 0 { y += 32767 }
+        if held & UInt16(FF7_PAD_DPAD_DOWN) != 0 { y -= 32767 }
+        if held & UInt16(FF7_PAD_DPAD_UP) != 0 { y += 32767 }
         return Int16(clamping: y)
     }
 }
