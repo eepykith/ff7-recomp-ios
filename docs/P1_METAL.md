@@ -108,7 +108,7 @@ pristine sources into a scratch tree: identical to the working tree, file for fi
 | Metal shaders (`*.mtl.*`) | Works (`tools/compile_shaders_metal.sh`) |
 | Title screen | **Works on Mac, native arm64 and Rosetta x86_64**: FFNx logo, then the title (New Game / Continue) |
 | iOS simulator | **Works**: `FF7RecompBundled` links the core and reaches the title (see "iOS app") |
-| iOS device | Not yet: `tools/build_ios_core.sh device` is untested; then signing and the address-space check |
+| iOS device | Core (`tools/build_ios_core.sh device`) and `FF7RecompBundled` build and link for `iphoneos` (unsigned); not yet run on hardware: needs a signing team, the game files, and the address-space check |
 
 Steam folder used here:
 `~/Library/Application Support/Steam/steamapps/common/FINAL FANTASY VII Steam Edition`
