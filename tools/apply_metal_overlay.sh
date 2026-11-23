@@ -263,8 +263,25 @@ python3 -I "$ROOT/tools/based_memory_port.py" "$ROOT/external/ff7-recomp-android
 # warnings|formats, run once on FFNx 0adf0b32), stored as a patch on top of the transform.
 FFNX_DIR="$ROOT/external/ff7-recomp-android/external/FFNx"
 BM_PATCH="$ROOT/patches/ffnx-based-memory.patch"
-if (cd "$FFNX_DIR" && patch -p1 -R -f -s --dry-run < "$BM_PATCH" >/dev/null 2>&1); then
+if (cd "$FFNX_DIR" && patch -p1 -R -f -s -V none --dry-run < "$BM_PATCH" >/dev/null 2>&1); then
   echo "ffnx-based-memory.patch already applied"
 else
-  (cd "$FFNX_DIR" && patch -p1 --forward -s < "$BM_PATCH") && echo "applied ffnx-based-memory.patch"
+  (cd "$FFNX_DIR" && patch -p1 --forward -s -V none < "$BM_PATCH") && echo "applied ffnx-based-memory.patch"
 fi
+
+# FF7_IOS_DARWIN_PORT: the Darwin portability edits of the first P1 bring-up (thread ids,
+# MAP_FIXED_NOREPLACE, stack bounds, silent DirectSound, Apple-mangled link stubs, the Metal
+# renderer choice, NEON by target arch, ...), as patches on top of everything above. Generated
+# as the difference between this script's result and the working Mac tree; core pinned in
+# tools/fetch_android_core.sh.
+apply_once() {   # dir patch
+  if (cd "$1" && patch -p1 -R -f -s -V none --dry-run < "$2" >/dev/null 2>&1); then
+    echo "$(basename "$2") already applied"
+  else
+    (cd "$1" && patch -p1 --forward -s -V none < "$2") && echo "applied $(basename "$2")"
+  fi
+}
+AND_DIR="$ROOT/external/ff7-recomp-android"
+apply_once "$AND_DIR"                    "$ROOT/patches/android-core-darwin.patch"
+apply_once "$AND_DIR/external/pcrecomp"  "$ROOT/patches/pcrecomp-darwin.patch"
+apply_once "$AND_DIR/external/FFNx"      "$ROOT/patches/ffnx-darwin.patch"

@@ -1,6 +1,6 @@
 --- a/src/common.cpp
 +++ b/src/common.cpp
-@@ -1615,21 +1615,21 @@
+@@ -1606,21 +1606,21 @@
  		if (VREF(tex_header, palettes) > 1
  				&& ff8_is_remastered_font_asset()
  				&& _strnicmp(VREF(tex_header, file.pc_name) + 512, "hires\\sysfnt00.tex", sizeof("hires\\sysfnt00.tex") - 1) == 0) {
@@ -26,7 +26,7 @@
  
  		// Don't use palette index on fallback (for keeping compatibility with Tonberry mods)
  		if(ff8 && _strnicmp(VREF(tex_header, file.pc_name), "field/mapdata/", strlen("field/mapdata/") - 1) == 0) saveload_palette_index |= 0x80000000;
-@@ -2760,7 +2760,7 @@
+@@ -2751,7 +2751,7 @@
  // version check reads from a given offset in memory
  uint32_t version_check(uint32_t offset)
  {
@@ -35,7 +35,7 @@
  }
  
  // figure out if we are running in FF7 or FF8 and detect which version
-@@ -3209,7 +3209,7 @@
+@@ -3200,7 +3200,7 @@
  					steam_edition = true;
  					enable_steam_achievements = !macOsLauncher;
  
@@ -44,7 +44,7 @@
  
  					// Read ff7sound.cfg
  					char ff7soundPath[260]{ 0 };
-@@ -3369,7 +3369,7 @@
+@@ -3360,7 +3360,7 @@
  				steam_edition = true;
  				enable_steam_achievements = !macOsLauncher;
  
@@ -643,7 +643,7 @@
  
 --- a/src/field.cpp
 +++ b/src/field.cpp
-@@ -231,7 +231,7 @@
+@@ -234,7 +234,7 @@
  	// Loop through objects until we find the one that has a valid triangle ID
  	for(int i = 0; i < MAXBYTE; i++)
  	{
@@ -652,7 +652,7 @@
  		if (*common_externals.current_triangle_id != 0) break;
  	}
  
-@@ -393,7 +393,7 @@
+@@ -396,7 +396,7 @@
  
  	if (ImGui::Button("Change") && !map_changing) {
  		// Injects a call into where the field entities are checked
@@ -900,7 +900,7 @@
  			if (is_field_chocobo_forest && dialog_id == 56 && chosen_option == 0) // capture chocobo
 --- a/src/world.cpp
 +++ b/src/world.cpp
-@@ -116,10 +116,10 @@
+@@ -119,10 +119,10 @@
  		int tPage, clut, texFlags, vertFlags;
  		bool texFlagsBool[8];
  		bool vertFlagsBool[8];
@@ -915,7 +915,7 @@
  
  		for (int i = 0; i < 8; i++)
  		{
-@@ -127,31 +127,31 @@
+@@ -130,31 +130,31 @@
  			vertFlagsBool[i] = ((vertFlags >> 7 - i) & 0b1) == 1;
  		}
  
@@ -960,7 +960,7 @@
  
  		ImGui::Text("TEXFLAGS:");
  		ImGui::Checkbox("TEXFLAGS_MISC", &texFlagsBool[0]);
-@@ -191,9 +191,9 @@
+@@ -194,9 +194,9 @@
  		vertFlags |= vertFlagsBool[6] ? 0x02 : 00;
  		vertFlags |= vertFlagsBool[7] ? 0x01 : 00;
  

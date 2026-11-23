@@ -1,0 +1,14 @@
+--- a/runtime/win32hle/host_lite.c
++++ b/runtime/win32hle/host_lite.c
+@@ -53,7 +53,11 @@
+  * One recursive mutex serialises the (global) register file. A thread holds it
+  * while running lifted code and across hle_call_guest; a shim that calls back
+  * into the guest nests the claim. */
++#if defined(__APPLE__)
++static pthread_mutex_t g_mach = PTHREAD_RECURSIVE_MUTEX_INITIALIZER;
++#else
+ static pthread_mutex_t g_mach = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
++#endif
+ 
+ typedef struct {
+     uint32_t eax, ecx, edx, esp, ebx, esi, edi, ebp, fs, cur;
