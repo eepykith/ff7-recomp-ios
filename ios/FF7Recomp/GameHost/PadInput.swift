@@ -1,6 +1,5 @@
 import Foundation
 import GameController
-import QuartzCore
 
 /// The game's one XInput-style pad (ff7_platform_set_pad), fed by the on-screen pad and any
 /// connected game controller at once: buttons are OR-ed; sticks and triggers come from the
@@ -22,57 +21,11 @@ final class PadInput {
 
     // MARK: touch
 
-    // The game reads the pad once per game frame (30 a second in the field, as few as 15 in
-    // battle), so a tap shorter than a frame could fall between two reads and be lost, and two
-    // quick taps could merge into one. Each touch press is therefore shown to the game for at
-    // least minPhase, and each release too before the next press: every tap arrives, in order,
-    // however fast. A press still reaches the game at once.
-    private static let minPhase: CFTimeInterval = 0.07
-    private var fingers: UInt16 = 0                              // what the fingers hold now
-    private var pending = [Int](repeating: 0, count: 16)          // taps not yet shown, per bit
-    private var lastEdge = [CFTimeInterval](repeating: 0, count: 16)
-    private var recheck = false
-
-    /// The on-screen pad's buttons under the fingers (main thread).
+    /// The on-screen pad's buttons under the fingers. Goes to the engine at once; the engine
+    /// keeps every tap visible for a game frame (ff7_platform_set_pad), so none is lost.
     func setTouchButtons(_ buttons: UInt16) {
-        let rising = buttons & ~fingers
-        for bit in 0..<16 where rising & (1 << bit) != 0 { pending[bit] += 1 }
-        fingers = buttons
-        stepTouch()
-    }
-
-    private func stepTouch() {
-        let now = CACurrentMediaTime()
-        lock.lock(); var shown = touchButtons; lock.unlock()
-        var busy = false
-        for bit in 0..<16 {
-            let m = UInt16(1) << bit
-            let since = now - lastEdge[bit]
-            if shown & m == 0 {
-                guard pending[bit] > 0 else { continue }
-                if since >= Self.minPhase {
-                    shown |= m
-                    pending[bit] -= 1
-                    lastEdge[bit] = now
-                }
-                busy = true
-            } else if fingers & m == 0 || pending[bit] > 0 {    // let go, or another tap waits
-                if since >= Self.minPhase {
-                    shown &= ~m
-                    lastEdge[bit] = now
-                }
-                busy = true
-            }
-        }
-        lock.lock(); let changed = shown != touchButtons; touchButtons = shown; lock.unlock()
-        if changed { push() }
-        if busy, !recheck {
-            recheck = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) { [weak self] in
-                self?.recheck = false
-                self?.stepTouch()
-            }
-        }
+        lock.lock(); touchButtons = buttons; lock.unlock()
+        push()
     }
 
     /// A short press (the status panel's Menu button): held 150 ms, long enough for the game,
@@ -108,12 +61,15 @@ final class PadInput {
         GCController.stopWirelessControllerDiscovery()
         GCController.controllers().forEach { $0.extendedGamepad?.valueChangedHandler = nil }
         lock.lock(); pad = ControllerState(); touchButtons = 0; lock.unlock()
-        fingers = 0
-        pending = [Int](repeating: 0, count: 16)
         push()
     }
 
+    /// Controller events arrive here instead of on the main thread, which is busy drawing the
+    /// play view and the status panel: a press reaches the engine without waiting for it.
+    private let controllerQueue = DispatchQueue(label: "ff7.controller", qos: .userInteractive)
+
     private func attach(_ controller: GCController) {
+        controller.handlerQueue = controllerQueue
         guard let gamepad = controller.extendedGamepad else { return }
         gamepad.valueChangedHandler = { [weak self] gamepad, _ in self?.controllerChanged(gamepad) }
         controllerChanged(gamepad)

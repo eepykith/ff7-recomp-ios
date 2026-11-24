@@ -264,7 +264,10 @@ def pack(payload: Path, out: Path) -> None:
     tmp = out.with_suffix(".ipa.part")
     if tmp.exists():
         tmp.unlink()
-    run(["ditto", "-c", "-k", "--zlibCompressionLevel", "1", "--keepParent", payload, tmp])
+    # no extended attributes or AppleDouble "._" files: they would break the app's signature
+    run(["xattr", "-cr", payload])
+    run(["ditto", "-c", "-k", "--norsrc", "--noextattr", "--noqtn", "--zlibCompressionLevel", "1",
+         "--keepParent", payload, tmp])
     tmp.replace(out)
 
 

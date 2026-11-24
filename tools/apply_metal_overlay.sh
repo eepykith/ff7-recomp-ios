@@ -328,6 +328,27 @@ apply_once "$AND_DIR/external/pcrecomp"  "$ROOT/patches/pcrecomp-darwin.patch"
 apply_once "$AND_DIR/external/FFNx"      "$ROOT/patches/ffnx-darwin.patch"
 ff7_surface_resize apply
 
+# FF7_IOS_PAD_FRAME: tell the platform layer each game frame, so a tap shorter than a frame
+# still reaches the game (ff7_platform_pad_frame in src/platform/ff7_platform.c).
+python3 - <<'PY14'
+from pathlib import Path
+import os
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "src" / "ffnx_port" / "companion.cpp"
+t = p.read_text()
+marker = "FF7_IOS_PAD_FRAME"
+old = 'extern "C" void ff7_companion_frame() {\n'
+new = ('extern "C" void ff7_platform_pad_frame(void) __attribute__((weak));   // FF7_IOS_PAD_FRAME\n'
+       + old +
+       "    if (ff7_platform_pad_frame) ff7_platform_pad_frame();\n")
+if marker in t:
+    print("companion.cpp already has FF7_IOS_PAD_FRAME")
+else:
+    if t.count(old) != 1:
+        raise SystemExit("companion.cpp layout changed; update FF7_IOS_PAD_FRAME in tools/apply_metal_overlay.sh")
+    p.write_text(t.replace(old, new, 1))
+    print("patched companion.cpp: FF7_IOS_PAD_FRAME")
+PY14
+
 # FF7_IOS_AUDIO_OBJCXX: on iOS miniaudio includes AVFoundation (its audio session), which
 # needs Objective-C++; compile SoLoud's miniaudio backend that way on Apple mobile targets.
 python3 - <<'PY6'

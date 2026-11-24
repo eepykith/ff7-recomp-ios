@@ -21,6 +21,77 @@ struct AppPaths {
     var mods: URL { root.appendingPathComponent("mods", isDirectory: true) }
     var modProfile: URL { mods.appendingPathComponent("profile.xml") }
     var modCache: URL { root.appendingPathComponent("modcache", isDirectory: true) }
+    var saveStates: URL { root.appendingPathComponent("savestates", isDirectory: true) }
+
+    /// The app's Documents folder: "FF7Recomp" in the Files app (On My iPhone), where the
+    /// player's own files live (UserFolders).
+    static var documents: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    }
+}
+
+/// The player's files in the Files app's FF7Recomp folder (On My iPhone > FF7Recomp), so they
+/// can be backed up, copied to another device or added to by hand:
+///   Saves/        the game's own saves (save00.ff7 ...)
+///   Save States/  the status panel's save states
+///   Mods/         7th Heaven mods (.iro archives and folders) and the mod order (profile.xml)
+/// The engine and the mods screen keep their paths: game/save, savestates and mods next to the
+/// game are links to these folders. Files already in the old places move over once.
+enum UserFolders {
+    static let saves = "Saves", saveStates = "Save States", mods = "Mods"
+
+    static func prepare(paths: AppPaths, documents: URL = AppPaths.documents) {
+        let fm = FileManager.default
+        var links: [(at: URL, to: URL)] = [
+            (paths.saveStates, documents.appendingPathComponent(saveStates, isDirectory: true)),
+            (paths.mods, documents.appendingPathComponent(mods, isDirectory: true)),
+        ]
+        // the game folder linked to a Mac folder (tools/ios_sim_link_game.sh): leave its saves
+        if (try? fm.destinationOfSymbolicLink(atPath: paths.game.path)) == nil {
+            links.insert((paths.game.appendingPathComponent("save", isDirectory: true),
+                          documents.appendingPathComponent(saves, isDirectory: true)), at: 0)
+        }
+        for link in links { place(link.at, in: link.to) }
+    }
+
+    /// Makes `at` a link to `target`, moving anything already in a real folder at `at` into it.
+    static func place(_ at: URL, in target: URL) {
+        let fm = FileManager.default
+        try? fm.createDirectory(at: target, withIntermediateDirectories: true)
+        // relative, so it survives iOS moving the app's container (an update, a restore)
+        let relative = relativePath(from: at.deletingLastPathComponent(), to: target)
+        if let dest = try? fm.destinationOfSymbolicLink(atPath: at.path) {
+            if dest == relative { return }
+            try? fm.removeItem(at: at)                        // an old or absolute link
+        } else {
+            var isDir: ObjCBool = false
+            if fm.fileExists(atPath: at.path, isDirectory: &isDir), isDir.boolValue {
+                for name in (try? fm.contentsOfDirectory(atPath: at.path)) ?? [] {
+                    let from = at.appendingPathComponent(name)
+                    var to = target.appendingPathComponent(name)
+                    if fm.fileExists(atPath: to.path) {         // keep both
+                        to = target.appendingPathComponent("\((name as NSString).deletingPathExtension) (moved)"
+                            + ((name as NSString).pathExtension.isEmpty ? "" : ".\((name as NSString).pathExtension)"))
+                    }
+                    try? fm.moveItem(at: from, to: to)
+                }
+                guard ((try? fm.contentsOfDirectory(atPath: at.path)) ?? []).isEmpty else { return }
+                try? fm.removeItem(at: at)
+            }
+        }
+        try? fm.createDirectory(at: at.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? fm.createSymbolicLink(atPath: at.path, withDestinationPath: relative)
+    }
+
+    /// "../../Documents/Mods" from a folder to a path in the same container.
+    static func relativePath(from dir: URL, to target: URL) -> String {
+        let a = dir.standardizedFileURL.resolvingSymlinksInPath().pathComponents
+        let b = target.standardizedFileURL.resolvingSymlinksInPath().pathComponents
+        var common = 0
+        while common < min(a.count, b.count), a[common] == b[common] { common += 1 }
+        let up = Array(repeating: "..", count: a.count - common)
+        return (up + b[common...]).joined(separator: "/")
+    }
 }
 
 /// The game's files in the app (AppPaths.game), as the Android launcher keeps them: the 2026

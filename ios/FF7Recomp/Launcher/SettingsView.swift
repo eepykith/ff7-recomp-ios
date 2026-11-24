@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var model: AppModel
     @State private var confirmRemove = false
+    @AppStorage(TouchPadMode.key) private var touchPadMode = TouchPadMode.auto
 
     var body: some View {
         Form {
@@ -14,6 +15,16 @@ struct SettingsView: View {
                 Text("Widescreen / CRT land in later milestones.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Picker("On-screen pad", selection: $touchPadMode) {
+                    ForEach(TouchPadMode.allCases) { Text($0.label).tag($0) }
+                }
+            } header: {
+                Text("Controls")
+            } footer: {
+                Text("A connected game controller plays the game either way; the on-screen pad and any controller work together.")
             }
 
             Section("Game files") {

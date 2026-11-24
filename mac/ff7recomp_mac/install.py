@@ -381,7 +381,8 @@ def build_ipa(exe: Path | None = None, relift: bool = False, out: Path | None = 
             shutil.copytree(app, payload / app.name, symlinks=True)
             if out.exists():
                 out.unlink()
-            run(["ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", str(payload), str(out)])
+            run(["xattr", "-cr", str(payload)])
+            run(["ditto", "-c", "-k", "--norsrc", "--noextattr", "--noqtn", "--keepParent", str(payload), str(out)])
         size = out.stat().st_size / 1e6
         print(f"\n{out} ({size:.0f} MB, unsigned)")
         print("Sign it and install it on your iPhone. On first launch FF7Recomp asks for the game files "

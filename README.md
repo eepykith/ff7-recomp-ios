@@ -24,7 +24,8 @@ goes upright: the picture in the top half, clear of the fold, and below it the A
 bottom-screen panel. It shows where the party is, play time, gil, each member's HP, MP and Limit
 (ATB and enemy HP in battle), and touch buttons: Menu, save and load state, speed 1×/2×/3×,
 random battles on/off and Battle+. The pad keeps to the side columns, so a thumb on it never lands
-on the panel. With a game controller the pad goes away.
+on the panel. With a game controller connected the pad goes away in every layout (Settings >
+Controls: hide with a controller, always show, never show).
 
 </td>
 </tr>
@@ -38,7 +39,7 @@ on the panel. With a game controller the pad goes away.
 | iPhone (iPhone 18 Pro) |
 |---|
 | ![iPhone 18 Pro in landscape: the 4:3 picture with the pad in the side bars](docs/screenshots/iphone18pro.jpg) |
-| On a regular iPhone the game plays in landscape, with the pad in the black bars beside the 4:3 picture. Every tap reaches the game, however fast. |
+| On a regular iPhone the game plays in landscape, with the pad in the black bars beside the 4:3 picture. Slide a thumb across the d-pad (8 directions) or the face buttons without lifting; any number of fingers at once; every tap reaches the game, however fast. |
 
 | First launch | FF7Recomp Builder (Mac) |
 |---|---|
@@ -78,12 +79,10 @@ Known gaps:
   SoLoud/miniaudio engine (music). The iOS audio session is miniaudio's default.
 - **Dialog font spacing** needs `tools/fix_font_widths.py` run once on the game files for the Mac
   and simulator builds (step 2); FF7Recomp Builder and the app's folder import apply it themselves.
-- **Controllers** are wired (Apple's GameController framework) but untested with real hardware.
+- **Controllers** work over Bluetooth (Apple's GameController framework); played through the
+  first reactor with one on an iPhone Duo.
 - **Quitting closes the app.** The lifted game boots once per process, so ✕ → Quit ends the app,
   sound included; open FF7Recomp again to play.
-- **Battle windows on the Duo's panel.** On Android's dual-screen AYN Thor the battle windows move
-  to the bottom screen and take taps; here they stay in the picture, and the panel shows ATB and
-  enemy HP.
 - **Signing.** The IPA is unsigned. Sign it with a profile that keeps the extended virtual
   addressing entitlement: the game reserves 4 GB of address space.
 
@@ -118,6 +117,18 @@ for you from your own FINAL FANTASY VII into an IPA, with your game files in it:
    4 GB of address space.
 4. Open FF7Recomp: it confirms your game files, and Play starts the game. Mods unlock once the
    game files are confirmed.
+
+Your own files are in the Files app under **On My iPhone › FF7Recomp**, to back up, move to
+another device or add to by hand:
+
+| Folder | What |
+|---|---|
+| `Saves` | the game's saves (`save00.ff7` …) |
+| `Save States` | save states (the status panel's Save/Load, or Select + L1 / Select + R1) |
+| `Mods` | 7th Heaven mods (`.iro` archives and folders) and the mod order (`profile.xml`) |
+
+The game files themselves stay inside the app. A build that kept saves or mods elsewhere moves
+them here on its first launch.
 
 The builder holds no game code and no game files (its engine is built without the game,
 `FF7_NO_GUEST`), so it can be shared. **The IPA it makes holds the game built from your copy and

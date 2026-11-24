@@ -51,6 +51,7 @@ final class AppModel: ObservableObject {
         #if DEBUG
         SampleData.applyLaunchArguments(paths: paths, library: modLibrary)
         #endif
+        UserFolders.prepare(paths: paths)
         refresh()
         // the first time, the setup screen shows the game files confirmed and Play
         route = canPlay && UserDefaults.standard.bool(forKey: Self.confirmedKey) ? .home : .setup
@@ -131,6 +132,7 @@ final class AppModel: ObservableObject {
     func play() {
         refresh()
         guard canPlay else { route = .setup; return }
+        UserFolders.prepare(paths: paths)
         files.installRuntime()
         UserDefaults.standard.set(true, forKey: Self.confirmedKey)
         route = .home

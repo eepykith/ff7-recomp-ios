@@ -4,6 +4,7 @@
 
 #include <pthread.h>
 #include <string.h>
+#include <time.h>
 
 static pthread_mutex_t g_win_mu = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_pad_mu = PTHREAD_MUTEX_INITIALIZER;
@@ -53,17 +54,82 @@ int ff7_platform_keyboard_state(unsigned char keys[256]) {
   return 0;
 }
 
+/* The game reads the pad once per game frame (30 a second in the field, as few as 15 in
+ * battle), so a press and release between two reads would be lost, and two quick taps would
+ * merge. What the game sees (g_pad.buttons) therefore follows the live buttons with these
+ * rules, at no cost in latency:
+ *   - a press shows at once;
+ *   - a press stays shown until a game frame has passed (ff7_platform_pad_frame, called by the
+ *     engine each game frame), so even the shortest tap is read;
+ *   - a press that comes while the button is still shown from the last one waits, and the
+ *     next frame shows the button released first, so every tap is a separate press.
+ * When no game frames come (the engine not running yet), releases show at once. */
+static unsigned short g_live;          /* what the fingers and the controller hold now */
+static unsigned short g_seen;          /* shown across a game frame: may be released at once */
+static unsigned short g_gap;           /* held released this frame between two taps */
+static unsigned char g_pending[16];    /* taps waiting for their own frame */
+static struct timespec g_last_frame;
+
+static int frames_running(void) {
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC, &now);
+  double dt = (double)(now.tv_sec - g_last_frame.tv_sec) +
+              (double)(now.tv_nsec - g_last_frame.tv_nsec) / 1e9;
+  return g_last_frame.tv_sec != 0 && dt < 0.25;
+}
+
 void ff7_platform_set_pad(unsigned short buttons, unsigned char left_trigger,
                           unsigned char right_trigger, short lx, short ly,
                           short rx, short ry) {
   pthread_mutex_lock(&g_pad_mu);
-  g_pad.buttons = buttons;
+  unsigned short rising = buttons & (unsigned short)~g_live;
+  unsigned short falling = g_live & (unsigned short)~buttons;
+  int running = frames_running();
+  g_live = buttons;
+  for (int bit = 0; bit < 16; bit++) {
+    unsigned short m = (unsigned short)(1u << bit);
+    if (rising & m) {
+      if (!running || (!(g_pad.buttons & m) && !(g_gap & m))) {
+        g_pad.buttons |= m;
+        g_seen &= (unsigned short)~m;
+      } else if (g_pending[bit] < 8) {
+        g_pending[bit]++;
+      }
+    }
+    if ((falling & m) && (!running || ((g_seen & m) && g_pending[bit] == 0))) {
+      g_pad.buttons &= (unsigned short)~m;
+    }
+  }
   g_pad.left_trigger = left_trigger;
   g_pad.right_trigger = right_trigger;
   g_pad.lx = lx;
   g_pad.ly = ly;
   g_pad.rx = rx;
   g_pad.ry = ry;
+  pthread_mutex_unlock(&g_pad_mu);
+}
+
+/* Once per game frame, on the game thread (FF7_IOS_PAD_FRAME in companion.cpp). */
+void ff7_platform_pad_frame(void) {
+  pthread_mutex_lock(&g_pad_mu);
+  clock_gettime(CLOCK_MONOTONIC, &g_last_frame);
+  unsigned short prev = g_pad.buttons, next = 0;
+  g_gap = 0;
+  for (int bit = 0; bit < 16; bit++) {
+    unsigned short m = (unsigned short)(1u << bit);
+    if (g_pending[bit] > 0) {
+      if (prev & m) {
+        g_gap |= m;                     /* a released frame, then the next tap */
+      } else {
+        next |= m;
+        g_pending[bit]--;
+      }
+    } else if (g_live & m) {
+      next |= m;
+    }
+  }
+  g_seen = prev & next;
+  g_pad.buttons = next;
   pthread_mutex_unlock(&g_pad_mu);
 }
 

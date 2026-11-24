@@ -23,6 +23,7 @@ struct GameHostView: View {
     /// true while the iPhone Duo's hinge is open or half open, false while shut; nil without a hinge.
     @State private var hingeOpen: Bool?
     @State private var controller = Self.hasGamepad()
+    @AppStorage(TouchPadMode.key) private var touchPadMode = TouchPadMode.auto
     @State private var companion = CompanionSnapshot.empty
     @State private var note: String?
 
@@ -30,7 +31,8 @@ struct GameHostView: View {
         GeometryReader { safeGeo in
             let safe = safeGeo.safeAreaInsets
             GeometryReader { geo in
-                let layout = PlayLayout(size: geo.size, safe: safe, controller: controller)
+                let layout = PlayLayout(size: geo.size, safe: safe,
+                                        padHidden: touchPadMode.hidesPad(controller: controller))
                 ZStack(alignment: .topLeading) {
                     Color.black
 
@@ -125,7 +127,7 @@ struct GameHostView: View {
     /// A controller the game can be played with (a full gamepad: d-pad, four face buttons,
     /// shoulders). Then the on-screen pad is not drawn, as on the AYN Thor.
     static func hasGamepad() -> Bool {
-        // FF7_TOUCHPAD=1 keeps the on-screen pad regardless (testing, or a controller nearby)
+        // FF7_TOUCHPAD=1: as if no controller were connected (testing, a controller nearby)
         if ProcessInfo.processInfo.environment["FF7_TOUCHPAD"] == "1" { return false }
         return GCController.controllers().contains { $0.extendedGamepad != nil }
     }

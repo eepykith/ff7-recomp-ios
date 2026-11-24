@@ -30,6 +30,7 @@ targets:
         PRODUCT_NAME: FF7Recomp
         INFOPLIST_FILE: FF7Recomp/Resources/Info.plist
         SWIFT_OBJC_BRIDGING_HEADER: FF7Recomp/Bridge/FF7Recomp-Bridging-Header.h
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         HEADER_SEARCH_PATHS:
           - "$(SRCROOT)/../src/platform"
           - "$(SRCROOT)/../src/ios"
@@ -89,6 +90,7 @@ targets:
         PRODUCT_NAME: FF7RecompBundled
         INFOPLIST_FILE: FF7Recomp/Resources/Info.plist
         SWIFT_OBJC_BRIDGING_HEADER: FF7Recomp/Bridge/FF7Recomp-Bridging-Header.h
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         HEADER_SEARCH_PATHS:
           - "$(SRCROOT)/../src/platform"
           - "$(SRCROOT)/../src/ios"
