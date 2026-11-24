@@ -66,7 +66,7 @@ targets:
 
   # The app with the lifted game linked in (your own ff7_en.exe, for your own devices only,
   # never distributed). Same bundle ID as the launcher, so installing it keeps the game files.
-  # tools/ff7recomp-mac install builds and installs it on an iPhone; for the simulator:
+  # FF7Recomp Builder (mac/builder) makes the IPA for an iPhone; for the simulator:
   #   bash tools/build_ios_core.sh simulator     # builds ../build-ios-sim/libff7_bundle.a
   #   bash tools/stage_ffnx_runtime.sh           # FFNx's shaders and settings -> ../build-ios-ffnx
   #   xcodegen generate && xcodebuild -scheme FF7RecompBundled -sdk iphonesimulator ...

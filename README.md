@@ -1,13 +1,17 @@
-# FF7Recomp iOS
+# FF7Recomp for iOS
 
-A native iOS port of [FF7Recomp](https://github.com/bhuiyah/ff7-recomp-android): FINAL FANTASY VII
-(Steam PC) statically recompiled to ARM64, rendered by FFNx through bgfx on Metal, with a launcher
-for game setup and 7th Heaven mods. **No game files are included**: you build the game from your
-own Steam copy.
+**FINAL FANTASY VII on iPhone, natively.** An iOS port of
+[FF7Recomp](https://github.com/bhuiyah/ff7-recomp-android): the Steam PC game statically
+recompiled to ARM64 and drawn by [FFNx](https://github.com/julianxhokaxhiu/FFNx) on Metal, with
+touch controls, game controller support, an iPhone Duo layout with a status panel, and a launcher
+for your saves and mods.
 
-iOS can't compile code on the device, so **FF7Recomp Builder**, a small Mac app, builds the game
-from your Steam copy into an IPA you sign and install (see [On an iPhone](#on-an-iphone)). Full
-plan: [`docs/IOS_PORT_PLAN.md`](docs/IOS_PORT_PLAN.md).
+**No game is included.** You build it from your own Steam copy of FINAL FANTASY VII with
+**FF7Recomp Builder**, a small Mac app ([download](https://github.com/eepykith/ff7-recomp-ios/releases)).
+iOS can't compile code on the phone, so the Mac does it once and makes an app to install.
+
+> Pre-release ([v0.1.0](https://github.com/eepykith/ff7-recomp-ios/releases/tag/v0.1.0)): tested
+> through the first reactor and its boss on an iPhone Duo. Expect rough edges.
 
 ## Screenshots
 
@@ -44,237 +48,107 @@ Controls: hide with a controller, always show, never show).
 | First launch | FF7Recomp Builder (Mac) |
 |---|---|
 | <img src="docs/screenshots/setup.jpg" alt="First launch: game files confirmed, Play" width="360"> | ![FF7Recomp Builder: your game found and checked, Xcode found, Build FF7Recomp.ipa](docs/screenshots/mac-builder.jpg) |
-| The app confirms the game files (the 1.02 US exe and its data), and Play starts the game. Mods unlock once the files are confirmed. | Finds your Steam copy, checks it, and builds FF7Recomp.ipa with the game and your game files in it (see "On an iPhone"). |
+| The app confirms the game files (the 1.02 US exe and its data), and Play starts the game. Mods unlock once the files are confirmed. | Finds your Steam copy, checks it, and builds FF7Recomp.ipa with the game and your game files in it (see [Get started](#get-started)). |
 
-## Where it stands
+## Get started
 
-**FF7Recomp plays on an iPhone** (tested on an iPhone Duo): the lifted game linked into the app,
-drawn by FFNx → bgfx → Metal into the app's `CAMetalLayer`, with sound, movies and touch controls.
+You need:
 
-| Milestone | State |
-|---|---|
-| P0 toolchain, host ABI, launcher scaffold | Done |
-| P1 Metal title screen | **Done** on Mac, the iOS simulator and iPhone |
-| P2 playable slice (new game → Sector 7, controls, save states) | **In progress**: new game, first field, dialog and walking by touch |
-| P3 setup (FF7Recomp Builder on the Mac makes the IPA) | **Done**: the builder's IPA installs and plays on an iPhone Duo |
-| P4 mods | Mods screen done (import, enable, order); not applied in-game yet |
-| P5–P6 launcher polish, catalogs, stretch goals | Not started |
+- A Mac with **Apple silicon** and **Xcode** (from the App Store, opened once).
+- **FINAL FANTASY VII from Steam**, as Steam installs it today (`FINAL FANTASY VII Steam Edition`,
+  the one with `ff7` inside). No patch or older version is needed; patched game files are not
+  supported.
+- A way to sign and install an IPA on your iPhone: a development profile, AltStore, SideStore or
+  similar.
 
-What runs today:
+Then:
 
-| Target | Result |
-|---|---|
-| Mac, native arm64 (`ff7_metal_boot`) | New game → first field; movies, sound effects and music |
-| Mac, Rosetta x86_64 (`ff7_metal_boot`) | New game → first field; movies, sound effects and music |
-| iOS simulator (`FF7RecompBundled` app) | Launcher → Play → title → New Game → first field, played by touch |
-| iPhone (`FF7RecompBundled` app) | Plays on an iPhone Duo: IPA from FF7Recomp Builder, signed with a development profile |
-| Launcher shell (`FF7Recomp` app, no game) | Setup (game files), home, mods and settings screens |
+1. Download **FF7Recomp Builder** from [Releases](https://github.com/eepykith/ff7-recomp-ios/releases),
+   unzip it and open it. It isn't notarized: the first time, right-click it → **Open** (or System
+   Settings → Privacy & Security → **Open Anyway**).
+2. It finds your Steam copy (or choose the folder), checks it is the 1.02 US build, and checks
+   Xcode is there. **Build FF7Recomp.ipa…** lifts the game to C, compiles it for iPhone, links it
+   with the engine and adds your game files. The first build takes a few minutes; the IPA is about
+   3 GB.
+3. Sign the IPA and install it. Keep the **extended virtual addressing** entitlement if your
+   profile has it: the game reserves 4 GB of address space.
+4. Open FF7Recomp. It confirms your game files, and **Play** starts the game.
 
-Known gaps:
+**The IPA holds the game built from your copy and your game files: it is for your own devices
+only. Never share it.** The builder itself holds no game code and no game files.
 
-- **Movies need FFmpeg built first** (`tools/build_ffmpeg_apple.sh`, step 2b). Without it they
-  end at once and the intro credits wait for Start. With it the Eidos logo and the opening movie
-  play on the Mac (arm64 and Rosetta) and in the iOS simulator.
-- **Sound** goes out through CoreAudio (sound effects, the DirectSound mixer) and FFNx's
-  SoLoud/miniaudio engine (music). The iOS audio session is miniaudio's default.
-- **Dialog font spacing** needs `tools/fix_font_widths.py` run once on the game files for the Mac
-  and simulator builds (step 2); FF7Recomp Builder and the app's folder import apply it themselves.
-- **Controllers** work over Bluetooth (Apple's GameController framework); played through the
-  first reactor with one on an iPhone Duo.
-- **Quitting closes the app.** The lifted game boots once per process, so ✕ → Quit ends the app,
-  sound included; open FF7Recomp again to play.
-- **Signing.** The IPA is unsigned. Sign it with a profile that keeps the extended virtual
-  addressing entitlement: the game reserves 4 GB of address space.
+### Your files
 
-## How it works
-
-- **The core** is the Android port's C/C++ engine: the lifted game, the Win32 shims, FFNx, and bgfx.
-  It lives in `external/` (never committed), and this repo rebuilds it exactly: a pinned Android core,
-  the Android port's own setup, then [`tools/apply_metal_overlay.sh`](tools/apply_metal_overlay.sh)
-  (Metal, Apple fixes, and the `patches/*.patch` files).
-- **Based guest memory.** The game's 32-bit memory lives in a 4 GB-aligned window at `g_mem_base`,
-  because iOS (and native arm64 macOS) can't map anything below 4 GB.
-  [`tools/based_memory_port.py`](tools/based_memory_port.py) converts the host code for this.
-- **The iOS app** has two targets. `FF7Recomp` is the launcher alone. `FF7RecompBundled` links the
-  whole core (your own lift, for your own devices only).
-
-Details: [`docs/P1_METAL.md`](docs/P1_METAL.md).
-
-## On an iPhone
-
-iOS can't compile code on the phone, so **FF7Recomp Builder**, a small Mac app, builds the game
-for you from your own FINAL FANTASY VII into an IPA, with your game files in it:
-
-1. On a Mac with Xcode installed (it needs Xcode's iOS SDK and compiler), open FF7Recomp Builder.
-   It finds your Steam install of the game (or choose the `FINAL FANTASY VII Steam Edition`
-   folder, the one with `ff7` inside) and checks `ff7_en` is the 1.02 US build. No patch or older
-   version is needed; patched game files are not supported.
-2. Build FF7Recomp.ipa. The builder lifts `ff7_en` to C, compiles it for iPhone, links it with the
-   engine it carries, and puts your `ff7_en.exe` and `data/` (English, French, German, Spanish,
-   with the dialog font fix) in the app. The first build takes a while; the IPA is about 3 GB.
-3. Sign the IPA and install it on your iPhone (a development profile, AltStore, SideStore...).
-   Keep the extended virtual addressing entitlement if your profile has it: the game reserves
-   4 GB of address space.
-4. Open FF7Recomp: it confirms your game files, and Play starts the game. Mods unlock once the
-   game files are confirmed.
-
-Your own files are in the Files app under **On My iPhone › FF7Recomp**, to back up, move to
-another device or add to by hand:
+In the Files app under **On My iPhone › FF7Recomp**, to back up, move to another device or add to
+by hand:
 
 | Folder | What |
 |---|---|
 | `Saves` | the game's saves (`save00.ff7` …) |
 | `Save States` | save states (the status panel's Save/Load, or Select + L1 / Select + R1) |
-| `Mods` | 7th Heaven mods (`.iro` archives and folders) and the mod order (`profile.xml`) |
+| `Mods` | 7th Heaven mods (`.iro` archives and folders) and their order (`profile.xml`) |
 
-The game files themselves stay inside the app. A build that kept saves or mods elsewhere moves
-them here on its first launch.
+### Controls
 
-The builder holds no game code and no game files (its engine is built without the game,
-`FF7_NO_GUEST`), so it can be shared. **The IPA it makes holds the game built from your copy and
-your game's files: for your own devices only, never share it.**
+- **Touch pad:** slide a thumb across the d-pad (8 directions) or the face buttons without lifting;
+  any number of fingers at once. The buttons are labelled as the game's own prompts: **B** (right)
+  is OK, **A** (bottom) is cancel and run, **Y** opens the menu.
+- **Game controllers** over Bluetooth. The touch pad hides while one is connected (Settings →
+  Controls: hide with a controller, always show, never show).
+- **✕ → Quit** closes the app (the game runs once per launch); open FF7Recomp again to play.
 
-To make the builder: set up the core (steps 1 and 2b below), then
+### iPhone Duo
 
-```bash
-bash tools/make_builder_kit.sh                 # the engine kit -> build-builder/kit
-cd mac/builder && xcodegen generate && xcodebuild -scheme FF7RecompBuilder -configuration Release \
-  -derivedDataPath ../../build-builder/dd build  # -> build-builder/dd/Build/Products/Release/FF7Recomp Builder.app
-```
+Open or half-folded and held upright, the game sits in the top half, clear of the fold, and the
+bottom half is a status panel (party HP/MP/Limit, location, play time, gil; ATB and enemy HP in
+battle) with quick buttons: Menu, save and load state, speed 1×/2×/3×, random battles on/off and
+Battle+. Turn it sideways or close it and the game fills the screen.
 
-Without the Mac app, `python3 mac/builder/build_ipa.py --kit build-builder/kit --game "<FF7 folder>"
---out FF7Recomp.ipa` does the same build. For development there are also `tools/ff7recomp-mac
-ipa` (an IPA without game files, which asks for them on the phone: Find my FF7 folder) and
-`tools/ff7recomp-mac install` (builds, signs and installs over a cable).
+## What works
 
-## Using it
+- The game from the intro through the first reactor and its boss, played on an iPhone Duo:
+  field, battles, menus, movies, music and sound, saves and save states.
+- Touch controls, Bluetooth controllers, the iPhone Duo's folded, half-folded and open screens.
+- Your saves, save states and mods in the Files app.
 
-You need a Mac with Apple silicon, Xcode, your Steam copy of FINAL FANTASY VII (the 2026 Steam
-Edition layout), and:
+Known gaps:
 
-```bash
-brew install cmake llvm xcodegen
-```
+- **Mods** are listed and ordered in the app but not yet applied in game.
+- Tested on an iPhone Duo and in the simulator; other iPhones and iPads are untested.
+- FF7Recomp Builder runs on Apple silicon Macs only, and isn't notarized.
 
-### 1. Set up the core
+## Roadmap
 
-```bash
-bash tools/fetch_android_core.sh     # Android core, pinned
-bash tools/setup_android_core.sh     # its dependencies and FFNx transforms
-bash tools/apply_metal_overlay.sh    # Metal, based memory, Apple patches
-```
+What comes next, roughly in order:
 
-### 2. Import and lift your game
+1. **Mods in game.** Mods you put in FF7Recomp › Mods load in the game (FFNx's 7th Heaven
+   support is already in the engine); check memory and storage with large texture packs.
+2. **Mod downloader.** Browse 7th Heaven's catalogs in the app, download and update mods (zip,
+   7z and `.iro`) in the background, with load order and conflict warnings, as the Android
+   launcher does.
+3. **iPhone behaviour.** Leaving the app mid-game, phone calls and the silent switch: pause the
+   game and its sound cleanly and resume.
+4. **A longer playthrough.** Play on past the first reactor through Midgar, fixing what breaks;
+   test more iPhones and iPads.
+5. **Builder for everyone.** Sign and notarize FF7Recomp Builder so macOS opens it without a
+   warning, and support Intel Macs.
+6. **Toward 1.0.** Settings for the picture (widescreen, filters), Steam Cloud saves, and in-app
+   help for signing and installing.
 
-```bash
-AND=external/ff7-recomp-android
-STEAM="$HOME/Library/Application Support/Steam/steamapps/common/FINAL FANTASY VII Steam Edition"
-python3 -I "$AND/tools/import_game.py" "$STEAM"
+## How it works
 
-mkdir -p "$AND/analysis"
-gunzip -c "$AND/config/catalog.json.gz" > "$AND/analysis/catalog.json"
-python3 -I "$AND/tools/run_lift.py" lift "$AND/game/ff7_en.exe" \
-  "$AND/analysis/catalog.json" "$AND/generated/recomp"
-python3 -I "$AND/tools/gen_extents.py" "$AND/generated/recomp"
-python3 -I "$AND/tools/gen_retn_table.py"
-```
-
-Then make the `game/` folder the engine runs from (gitignored), with the Metal shaders and FFNx's
-settings:
-
-```bash
-mkdir -p game
-ln -sfn "$PWD/$AND/game/data" game/data
-ln -sfn "$PWD/$AND/game/ff7_en.exe" game/ff7_en.exe
-cp "$AND/external/FFNx/misc/FFNx.toml" game/FFNx.toml
-make -C "$AND/external/bgfx" shaderc
-bash tools/compile_shaders_metal.sh  # writes game/shaders
-python3 -I tools/fix_font_widths.py game   # dialog font widths (M/W/m/w) in the 2026 files
-```
-
-`fix_font_widths.py` patches `data/lang-{en,fr,de,es}/kernel/window.bin` in place, as the Android
-installer does: the 2026 Steam files give M, W, m and w 8 pixels where the font draws them 11 wide,
-so dialog runs them into the next letter ("C'mon newcom≡r"). It is idempotent; `--check` only
-reports.
-
-### 2b. Build FFmpeg (movies)
-
-```bash
-bash tools/build_ffmpeg_apple.sh macos-arm64     # also: macos-x86_64, ios-simulator, ios-device
-```
-
-This builds FFmpeg n9.0.2 (FFNx's version) as static libraries for that target, decoding the
-movies' VP8 and Vorbis in software. Build the FFmpeg target before configuring (or re-run
-`cmake` on) the matching build folder; without it, FFNx uses movie stubs.
-
-### 3a. Run on the Mac
-
-```bash
-cmake -S . -B build-metal-arm64 -DFF7_BUNDLE_GAME=ON -DFF7_PLATFORM=mac \
-  -DCMAKE_OSX_ARCHITECTURES=arm64 -DFF7_BUILD_TESTS=OFF -DFF7_BASED_MEMORY=ON
-cmake --build build-metal-arm64 -j --target ffnx ff7_core ff7_platform
-FF7_BUILD_DIR=$PWD/build-metal-arm64 bash tools/darwin_link_metal_boot.sh
-FF7_QUICKBOOT=title ./build-metal-arm64/ff7_metal_boot game
-```
-
-### 3b. Run in the iOS simulator
-
-```bash
-bash tools/build_ios_core.sh simulator          # -> build-ios-sim/libff7_bundle.a
-bash tools/stage_ffnx_runtime.sh                # FFNx's shaders and settings for the app
-cd ios && xcodegen generate
-xcodebuild -scheme FF7RecompBundled -sdk iphonesimulator \
-  -destination 'generic/platform=iOS Simulator' -derivedDataPath ../build-ios-dd build
-xcrun simctl install booted ../build-ios-dd/Build/Products/Debug-iphonesimulator/FF7RecompBundled.app
-bash ../tools/ios_sim_link_game.sh              # the app's game folder -> ../game
-SIMCTL_CHILD_FF7_QUICKBOOT=title xcrun simctl launch --console-pty booted com.ff7recomp.ios
-```
-
-Tap **Play**. The play view turns landscape and shows the game at 4:3, as large as the screen
-allows, with an on-screen pad (d-pad, A/B/X/Y, L1/R1, Select/Start); a game controller works too.
-B is OK, A is cancel, ✕ quits to the launcher. On an iPhone the pad sits in the bars beside the
-picture; on screens near 4:3 (iPhone Duo, iPad) it lies over the picture's edges. The picture
-follows the screen when it changes size (iPhone Duo folding and unfolding, split screen). While
-the iPhone Duo's hinge is open or half open (SwiftUI's hinge status, iOS 27.1) the play view also
-turns upright: the picture sits in the top half and the bottom half is the Android port's
-bottom-screen panel, clear of the fold. Its centre column shows where the party is, play time,
-gil, and each member's HP, MP and Limit (ATB and the enemies' HP in battle), with touch buttons
-for Menu, save and load state, speed 1×/2×/3×, random battles on/off and Battle+. The pad keeps
-to the side columns, so a thumb on it never hits those buttons; with a game controller connected
-the pad is hidden (`FF7_TOUCHPAD=1` keeps it). Shut, the Duo goes back to landscape on the outer
-screen. An iPad turns upright the same way.
-`FF7_QUICKBOOT=title` (or `newgame`) skips ahead; leave it out to play from the intro. The
-engine's log prints in the terminal.
-
-For an iPhone, `bash tools/build_ios_core.sh device` builds the core, and the `FF7RecompBundled`
-scheme builds for `iphoneos`. Running it needs the steps under "Known gaps".
-
-### Launcher only (no game)
-
-```bash
-cd ios && xcodegen generate && open FF7Recomp.xcodeproj   # scheme FF7Recomp; Cmd-U runs the tests
-```
-
-## Layout
-
-```
-ios/              SwiftUI app (XcodeGen spec): launcher, setup, mods, play view
-src/platform/     Shared C host API (ff7_host_*, ff7_platform_*)
-src/ios/          Metal view, 64 MB game thread
-src/mac/          Mac Metal window + Rosetta guest reservation
-src/ffnx_overlay/ Sources added to FFNx on Apple (renderer selectors, movie stubs)
-mac/builder/      FF7Recomp Builder (Mac app) and build_ipa.py, its IPA pipeline
-mac/ff7recomp_mac ff7recomp-mac developer CLI (install, ipa)
-tools/            Setup, overlay, based-memory port, build and link scripts
-patches/          Apple patches applied on top of the Android core
-docs/             Port plan, build notes, P1 details
-```
+- **Static recompilation.** The lifter turns the game's 32-bit x86 code (`ff7_en.exe`) into C,
+  compiled for ARM64; Win32 is replaced by a small layer of its own, and the game's 32-bit memory
+  lives in a 4 GB-aligned window (iOS can't map anything below 4 GB).
+- **Rendering and sound.** [FFNx](https://github.com/julianxhokaxhiu/FFNx) draws through bgfx on
+  Metal, plays movies with FFmpeg and music with SoLoud; sound effects go out through CoreAudio.
+- **The core** comes from the Android port, fetched pinned and patched for Apple by the scripts
+  in `tools/` and `patches/`. Building from source: [`docs/BUILDING.md`](docs/BUILDING.md).
 
 ## Legal
 
-FF7Recomp for iOS is GPL-3.0 (`LICENSE`), like FFNx and the Android port it comes from.
+FF7Recomp for iOS is GPL-3.0 ([`LICENSE`](LICENSE)), like FFNx and the Android port it comes from.
 
-You need your own Steam copy of FINAL FANTASY VII. Builds that include the lifted game are for your
-own devices only and must not be distributed. Not affiliated with or endorsed by Square Enix.
-FINAL FANTASY is a trademark of Square Enix. Sideload / developer distribution only, not the App
-Store.
+You need your own Steam copy of FINAL FANTASY VII. Builds that include the game are for your own
+devices only and must not be distributed. Not affiliated with or endorsed by Square Enix.
+FINAL FANTASY is a trademark of Square Enix. Sideload only, not the App Store.

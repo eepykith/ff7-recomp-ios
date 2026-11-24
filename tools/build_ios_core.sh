@@ -24,6 +24,6 @@ esac
 cmake -S "$ROOT" -B "$B" \
   -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT="$SDK" -DCMAKE_OSX_ARCHITECTURES=arm64 \
   -DCMAKE_OSX_DEPLOYMENT_TARGET=17.0 \
-  -DFF7_BUNDLE_GAME=ON -DFF7_PLATFORM=ios -DFF7_BUILD_TESTS=OFF -DFF7_BASED_MEMORY=ON >/dev/null
+  -DFF7_BUNDLE_GAME=ON -DFF7_PLATFORM=ios -DFF7_BASED_MEMORY=ON >/dev/null
 cmake --build "$B" -j "$(sysctl -n hw.ncpu)" --target ff7_guest ff7_core ffnx
 FF7_LINK_MODE=bundle FF7_BUILD_DIR="$B" bash "$ROOT/tools/darwin_link_metal_boot.sh"

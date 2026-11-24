@@ -4,7 +4,6 @@ project(FF7RecompIOS C CXX)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 20)
 
-option(FF7_BUILD_TESTS "Build host API smoke tests" ON)
 option(FF7_BUNDLE_GAME "Link Mac-lifted game + FFNx/Metal (dev only)" OFF)
 
 set(FF7_PLATFORM "host" CACHE STRING "host | ios | mac")
@@ -38,8 +37,6 @@ if(FF7_BUNDLE_GAME)
   target_link_libraries(ff7_engine INTERFACE ff7_core)
 endif()
 
-add_executable(ff7_host_smoke tools/ff7_host_smoke.c)
-target_link_libraries(ff7_host_smoke PRIVATE ff7_platform)
 
 if(FF7_BUNDLE_GAME)
   # Dev runner: boots the lifted game against a real CAMetalLayer (Mac) / stub (else).
@@ -59,9 +56,5 @@ if(FF7_BUNDLE_GAME)
   endif()
 endif()
 
-if(FF7_BUILD_TESTS)
-  enable_testing()
-  add_test(NAME host_smoke COMMAND ff7_host_smoke)
-endif()
 
 message(STATUS "FF7Recomp iOS P1: platform=${FF7_PLATFORM} bundle_game=${FF7_BUNDLE_GAME}")

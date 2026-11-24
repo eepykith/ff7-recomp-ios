@@ -7,8 +7,8 @@ import zlib
 /// `<root>/mods/profile.xml` (read by `ff7_mods_load` as `<game>/../mods/profile.xml`), the IRO
 /// extraction cache in `<root>/modcache` and save states in `<root>/savestates`.
 ///
-/// The Mac build (tools/ff7recomp-mac install) reads `ff7_en.exe` from `<root>/game` on the
-/// iPhone, so this path is shared with it: Library/Application Support/FF7Recomp/game.
+/// The game files are in `<root>/game` (Library/Application Support/FF7Recomp/game): links to the
+/// ones FF7Recomp Builder put in the app, or a copy made by Find my FF7 folder.
 struct AppPaths {
     let root: URL
 

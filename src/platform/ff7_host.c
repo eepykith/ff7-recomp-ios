@@ -74,7 +74,7 @@ ff7_host_status ff7_host_boot(const char *package_path_or_null) {
     g_state.booted = 0;
     g_state.status = FF7_HOST_ERR_NO_GAME;
     set_message(
-        "no game package — build one with ff7recomp-mac, then import it");
+        "no game in this build: make one with FF7Recomp Builder");
     return g_state.status;
   }
 

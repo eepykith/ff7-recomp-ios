@@ -13,7 +13,6 @@ xcuserdata/
 generated/
 analysis/
 external/
-*.ff7pkg
 *.ff7s
 ff7_en.exe
 ff7.exe

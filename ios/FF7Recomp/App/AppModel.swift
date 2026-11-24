@@ -5,9 +5,8 @@ import UniformTypeIdentifiers
 /// App-wide state: are the game files here, is the game built into this app, and the
 /// services behind setup / launch / mods.
 ///
-/// Setup, as on Android: 1. the game files (from Steam, or from a copy of the install folder),
-/// 2. the game built for this iPhone (on a Mac: tools/ff7recomp-mac install, which installs
-/// this app again with the game in it; the files stay), 3. Play.
+/// Setup: the game is built into the app by FF7Recomp Builder on a Mac, usually with the game
+/// files too; without them the app asks for them (Find my FF7 folder). It confirms them, then Play.
 @MainActor
 final class AppModel: ObservableObject {
     enum Route { case setup, home }

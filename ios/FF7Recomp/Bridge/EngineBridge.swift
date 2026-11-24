@@ -34,7 +34,7 @@ enum EngineBridge {
         return snapshot()
     }
 
-    /// The game is compiled into this app: the Mac build (tools/ff7recomp-mac install) links
+    /// The game is compiled into this app: FF7Recomp Builder on the Mac links
     /// the lifted game in (FF7RecompBundled target). The launcher alone has no game code.
     static var hasGameCode: Bool {
 #if FF7_BUNDLE_GAME

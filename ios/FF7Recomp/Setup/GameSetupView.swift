@@ -6,8 +6,6 @@ struct GameSetupView: View {
     @ObservedObject var model: AppModel
     @State private var pickFolder = false
 
-    private let macCommand = "tools/ff7recomp-mac install"
-
     var body: some View {
         NavigationStack {
             List {
@@ -36,15 +34,9 @@ struct GameSetupView: View {
                     Section {
                         buildStatus
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("This build of FF7Recomp has no game in it. Your Mac builds the game from this iPhone's ff7_en.exe and installs FF7Recomp again with the game in it; your game files stay. Connect the iPhone to the Mac and run, in the FF7Recomp folder:")
+                            Text("This build of FF7Recomp has no game in it. iOS can't compile code on the phone, so FF7Recomp Builder, a Mac app, builds the game from your own Steam copy into an IPA to install instead of this one (github.com/eepykith/ff7-recomp-ios, Releases).")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
-                            Text(macCommand)
-                                .font(.callout.monospaced())
-                                .textSelection(.enabled)
-                                .padding(10)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
                         }
                         .padding(.vertical, 4)
                     } header: {

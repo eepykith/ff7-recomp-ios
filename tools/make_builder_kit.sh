@@ -29,7 +29,7 @@ echo "== the engine for iPhone, without the game"
 cmake -S "$ROOT" -B "$B" \
   -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphoneos -DCMAKE_OSX_ARCHITECTURES=arm64 \
   -DCMAKE_OSX_DEPLOYMENT_TARGET=17.0 \
-  -DFF7_BUNDLE_GAME=ON -DFF7_PLATFORM=ios -DFF7_BUILD_TESTS=OFF -DFF7_BASED_MEMORY=ON \
+  -DFF7_BUNDLE_GAME=ON -DFF7_PLATFORM=ios -DFF7_BASED_MEMORY=ON \
   -DFF7_NO_GUEST=ON \
   -DCMAKE_C_FLAGS="-ffile-prefix-map=$ROOT=." -DCMAKE_CXX_FLAGS="-ffile-prefix-map=$ROOT=." \
   -DCMAKE_OBJC_FLAGS="-ffile-prefix-map=$ROOT=." -DCMAKE_OBJCXX_FLAGS="-ffile-prefix-map=$ROOT=." \

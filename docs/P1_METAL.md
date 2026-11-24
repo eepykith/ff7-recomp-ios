@@ -51,7 +51,7 @@ python3 -I "$AND/tools/gen_retn_table.py"
 
 # Native arm64 (no Rosetta): the guest lives in a window at g_mem_base (FF7_BASED_MEMORY).
 cmake -S . -B build-metal-arm64 -DFF7_BUNDLE_GAME=ON -DFF7_PLATFORM=mac \
-  -DCMAKE_OSX_ARCHITECTURES=arm64 -DFF7_BUILD_TESTS=OFF -DFF7_BASED_MEMORY=ON
+  -DCMAKE_OSX_ARCHITECTURES=arm64 -DFF7_BASED_MEMORY=ON
 cmake --build build-metal-arm64 -j --target ffnx ff7_core ff7_platform
 FF7_BUILD_DIR=$PWD/build-metal-arm64 bash tools/darwin_link_metal_boot.sh
 make -C "$AND/external/bgfx" shaderc
@@ -61,7 +61,7 @@ FF7_QUICKBOOT=title ./build-metal-arm64/ff7_metal_boot game
 
 # Rosetta x86_64 flat build (the first bring-up; still works, g_mem_base stays 0):
 cmake -S . -B build-metal-x64 -DFF7_BUNDLE_GAME=ON -DFF7_PLATFORM=mac \
-  -DCMAKE_OSX_ARCHITECTURES=x86_64 -DFF7_BUILD_TESTS=OFF
+  -DCMAKE_OSX_ARCHITECTURES=x86_64
 cmake --build build-metal-x64 -j --target ffnx ff7_core ff7_platform
 bash tools/darwin_link_metal_boot.sh   # FF7_BUILD_DIR defaults to build-metal-x64
 FF7_QUICKBOOT=title ./build-metal-x64/ff7_metal_boot game
