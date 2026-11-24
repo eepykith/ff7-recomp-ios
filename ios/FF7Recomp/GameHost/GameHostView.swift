@@ -3,43 +3,60 @@ import SwiftUI
 /// Play surface. FF7MetalView presents a CAMetalLayer that FFNx draws into once the lifted game
 /// is linked (FF7RecompBundled); without it the layer clears to a status color.
 ///
-/// Landscape only: FFNx sizes its swapchain once at boot and pillarboxes its 4:3 frame only in
-/// a wide window, so the view locks to landscape and boots when the layer is landscape-sized.
+/// The Metal view is sized to the game's 4:3 picture (PlayLayout), with the on-screen pad in the
+/// columns beside it. When the screen changes size (iPhone Duo folding, split screen) the view
+/// follows and FFNx resets its swapchain to the new size (FF7_IOS_SURFACE_RESIZE).
+///
+/// Landscape only: the view locks to landscape and boots when the layer is landscape-sized.
 struct GameHostView: View {
     let packagePath: String?
 
+    @Environment(\.dismiss) private var dismiss
     @State private var status = "Starting…"
     @State private var showStatus = true
     @State private var booted = false
+    @State private var confirmQuit = false
 
     var body: some View {
-        ZStack {
-            MetalSurfaceView()
-                .ignoresSafeArea()
+        GeometryReader { safeGeo in
+            let safe = safeGeo.safeAreaInsets
+            GeometryReader { geo in
+                let layout = PlayLayout(size: geo.size, safe: safe)
+                ZStack(alignment: .topLeading) {
+                    Color.black
 
-            VStack {
-                if showStatus {
-                    Text(status)
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.white)
-                        .lineLimit(3)
-                        .multilineTextAlignment(.center)
-                        .padding(8)
-                        .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 8))
-                        .padding(.top, 8)
-                        .transition(.opacity)
+                    MetalSurfaceView()
+                        .frame(width: layout.picture.width, height: layout.picture.height)
+                        .offset(x: layout.picture.minX, y: layout.picture.minY)
+
+                    if showStatus {
+                        Text(status)
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.white)
+                            .lineLimit(3)
+                            .multilineTextAlignment(.center)
+                            .padding(8)
+                            .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 8))
+                            .frame(width: layout.picture.width)
+                            .offset(x: layout.picture.minX, y: layout.picture.minY + 8)
+                            .transition(.opacity)
+                    }
+
+                    TouchPadView(layout: layout) { confirmQuit = true }
                 }
-                Spacer()
             }
-
-            // Full screen: the pad lays itself out in the bars beside the 4:3 picture.
-            TouchPadView()
+            .ignoresSafeArea()
         }
         .background(Color.black)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar(.hidden, for: .navigationBar)
+        .navigationBarBackButtonHidden(true)
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
+        .confirmationDialog("Quit to the launcher?", isPresented: $confirmQuit, titleVisibility: .visible) {
+            Button("Quit", role: .destructive) { dismiss() }
+        } message: {
+            Text("Progress since your last save is lost.")
+        }
         .onAppear {
             OrientationLock.set(.landscape)
             PadInput.shared.startControllers()

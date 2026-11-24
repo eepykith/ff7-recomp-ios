@@ -1,65 +1,119 @@
 import SwiftUI
 
-/// On-screen pad, laid out in the black side bars beside the game's 4:3 picture so it never
-/// covers the picture (FF7's battle menu runs along the picture's bottom edge). The bars are
-/// measured from the whole screen, ignoring the safe area: on an iPhone in landscape each bar is
-/// ~170 pt, enough for full-size buttons when they use the bar to the screen edge. Controls sit
-/// in the bars' corners, clear of the Dynamic Island (mid-height on one edge). On wider screens
-/// (iPad) the bars are narrower and the buttons scale down; with no bar at all they overlay the
-/// picture as before.
+/// Where the game's 4:3 picture and the on-screen pad go on a screen of a given size. The
+/// picture is always as large as the screen allows. On a wide screen (an iPhone in landscape)
+/// the pad fits in the black bars beside it; where the bars are narrow (iPhone Duo, iPad) the pad
+/// lies over the picture's edges at full size, as touch games do.
 ///
-/// Left bar: L1 and Select in a row at the top, d-pad at the bottom. Right bar: Start and R1 at
-/// the top, face buttons at the bottom. Feeds PadInput, which merges it with any game controller.
+/// The d-pad and face buttons sit in the bottom corners, measured from the screen edge (the
+/// bottom corners are clear on every iPhone and iPad). The top rows (quit, L1/Select,
+/// Start/R1) sit below the top safe area, and lower still when the screen has side insets: the
+/// iPhone Duo's outer camera is in a top corner, an iPhone's Dynamic Island mid-height.
+///
+/// Recomputed whenever the screen changes size: rotation, iPhone Duo folding, split screen.
+struct PlayLayout {
+    static let button: CGFloat = 48          // d-pad / face button side at scale 1
+    static let gap: CGFloat = 4
+    static let cluster = button * 3 + gap * 2 // 152: one d-pad or face-button cluster
+    static let edge: CGFloat = 8              // margin to the screen edge and the picture
+
+    let picture: CGRect
+    let scale: CGFloat
+    let column: CGFloat        // width of one pad column (a cluster at this scale)
+    let leftX: CGFloat         // centre x of the d-pad
+    let rightX: CGFloat        // centre x of the face buttons
+    let rowLeftX: CGFloat      // centre x of L1 / Select
+    let rowRightX: CGFloat     // centre x of Start / R1 (and the quit button's column)
+    let topY: CGFloat          // top of the L1/Select and Start/R1 rows
+    let quitY: CGFloat         // top of the quit button
+    let bottomY: CGFloat       // bottom of the clusters
+
+    init(size: CGSize, safe: EdgeInsets) {
+        let width = min(size.width, size.height * 4 / 3)
+        let height = width * 3 / 4
+        picture = CGRect(x: (size.width - width) / 2, y: (size.height - height) / 2,
+                         width: width, height: height)
+        // In the bars when a cluster fits there at 85 % or more; otherwise over the picture,
+        // full size on a tall screen and 85 % on a short one (an iPhone Duo's outer screen).
+        let bar = picture.minX
+        let fit = (bar - 2 * Self.edge) / Self.cluster
+        let scale: CGFloat = fit >= 0.85 ? min(1, fit) : (size.height >= 600 ? 1 : 0.85)
+        self.scale = scale
+        column = Self.cluster * scale
+        let inset = max(Self.edge, (bar - column) / 2)      // centre the column in a wide bar
+        rowLeftX = inset + column / 2
+        rowRightX = size.width - inset - column / 2
+        if fit >= 0.85 {
+            leftX = rowLeftX
+            rightX = rowRightX
+        } else {
+            // Over the picture: the clusters keep inside the side safe area, which on an iPhone
+            // Duo's outer screen keeps them off the camera (in the bottom corner when the screen
+            // is turned that way). The top rows are low enough to clear a top-corner camera.
+            leftX = safe.leading + Self.edge + column / 2
+            rightX = size.width - safe.trailing - Self.edge - column / 2
+        }
+        let sideInsets = safe.leading > 0 || safe.trailing > 0
+        quitY = safe.top + 2 * Self.edge
+        topY = sideInsets ? safe.top + 72 : quitY + 36 * scale + Self.edge   // below quit
+        bottomY = size.height - Self.edge
+    }
+}
+
+/// On-screen pad, laid out by PlayLayout in the columns beside the picture.
+///
+/// Quit in the top-right corner. Left: L1 and Select at the top; d-pad at the bottom. Right: Start and R1 at the
+/// top, face buttons at the bottom. Feeds PadInput, which merges it with any game controller.
 ///
 /// FF7 PC on a pad: A (bottom) cancel, B (right) OK, X (left) menu, Y (top) extra,
 /// Start pause, Select help, L1/R1 page / switch target.
 struct TouchPadView: View {
+    let layout: PlayLayout
+    let onQuit: () -> Void
+
     @State private var held: UInt16 = 0
 
-    private static let button: CGFloat = 48          // d-pad / face button side at scale 1
-    private static let gap: CGFloat = 4
-    private static let cluster = button * 3 + gap * 2 // 152: one d-pad or face-button cluster
-    private static let edge: CGFloat = 8              // margin to the screen edge and the picture
-    private static let topRow: CGFloat = 72           // below the back button, above the Dynamic Island
-
     var body: some View {
-        GeometryReader { geo in
-            let size = geo.size
-            let pictureWidth = min(size.width, size.height * 4 / 3)
-            let bar = (size.width - pictureWidth) / 2
-            // Fit a cluster in the bar; never below 70 % (then it overlaps the picture a little).
-            let scale = max(0.7, min(1, (bar - Self.edge * 2) / Self.cluster))
-            let clusterSide = Self.cluster * scale
-            let inset = max(Self.edge, (bar - clusterSide) / 2)   // centre clusters in the bar
-
-            ZStack {
-                // left bar
-                HStack(spacing: Self.gap * 2 * scale) {
-                    padButton("L1", bit: UInt16(FF7_PAD_LEFT_SHOULDER), scale: scale, wide: true)
-                    padButton("Select", bit: UInt16(FF7_PAD_BACK), scale: scale, wide: true)
-                }
-                .position(x: inset + clusterSide / 2, y: Self.topRow + Self.button * scale / 2)
-
-                cluster(scale: scale, round: false, labels: ("▲", "◀", "▶", "▼"),
-                        bits: (UInt16(FF7_PAD_DPAD_UP), UInt16(FF7_PAD_DPAD_LEFT),
-                               UInt16(FF7_PAD_DPAD_RIGHT), UInt16(FF7_PAD_DPAD_DOWN)))
-                    .position(x: inset + clusterSide / 2, y: size.height - Self.edge - clusterSide / 2)
-
-                // right bar
-                HStack(spacing: Self.gap * 2 * scale) {
-                    padButton("Start", bit: UInt16(FF7_PAD_START), scale: scale, wide: true)
-                    padButton("R1", bit: UInt16(FF7_PAD_RIGHT_SHOULDER), scale: scale, wide: true)
-                }
-                .position(x: size.width - inset - clusterSide / 2, y: Self.topRow + Self.button * scale / 2)
-
-                cluster(scale: scale, round: true, labels: ("Y", "X", "B", "A"),
-                        bits: (UInt16(FF7_PAD_Y), UInt16(FF7_PAD_X),
-                               UInt16(FF7_PAD_B), UInt16(FF7_PAD_A)))
-                    .position(x: size.width - inset - clusterSide / 2,
-                              y: size.height - Self.edge - clusterSide / 2)
+        let s = layout.scale
+        let rowHeight = 40 * s
+        let quitSide = 36 * s
+        ZStack(alignment: .topLeading) {
+            // quit, in the top-right corner (clear of cameras and the Dynamic Island)
+            Button(action: onQuit) {
+                Image(systemName: "xmark")
+                    .font(.callout.weight(.semibold))
+                    .frame(width: quitSide, height: quitSide)
+                    .background(Color.white.opacity(0.14), in: Circle())
+                    .foregroundStyle(.white.opacity(0.9))
             }
+            .accessibilityLabel("Quit")
+            .position(x: layout.rowRightX + layout.column / 2 - quitSide / 2, y: layout.quitY + quitSide / 2)
+
+            // left column
+            HStack(spacing: PlayLayout.gap * 2 * s) {
+                padButton("L1", bit: UInt16(FF7_PAD_LEFT_SHOULDER), wide: true)
+                padButton("Select", bit: UInt16(FF7_PAD_BACK), wide: true)
+            }
+            .position(x: layout.rowLeftX, y: layout.topY + rowHeight / 2)
+
+            cluster(round: false, labels: ("▲", "◀", "▶", "▼"),
+                    bits: (UInt16(FF7_PAD_DPAD_UP), UInt16(FF7_PAD_DPAD_LEFT),
+                           UInt16(FF7_PAD_DPAD_RIGHT), UInt16(FF7_PAD_DPAD_DOWN)))
+                .position(x: layout.leftX, y: layout.bottomY - layout.column / 2)
+
+            // right column: Start / R1 level with L1 / Select
+            HStack(spacing: PlayLayout.gap * 2 * s) {
+                padButton("Start", bit: UInt16(FF7_PAD_START), wide: true)
+                padButton("R1", bit: UInt16(FF7_PAD_RIGHT_SHOULDER), wide: true)
+            }
+            .position(x: layout.rowRightX, y: layout.topY + rowHeight / 2)
+
+            cluster(round: true, labels: ("Y", "X", "B", "A"),
+                    bits: (UInt16(FF7_PAD_Y), UInt16(FF7_PAD_X),
+                           UInt16(FF7_PAD_B), UInt16(FF7_PAD_A)))
+                .position(x: layout.rightX, y: layout.bottomY - layout.column / 2)
         }
-        .ignoresSafeArea()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onDisappear {
             held = 0
             PadInput.shared.setTouchButtons(0)
@@ -67,26 +121,28 @@ struct TouchPadView: View {
     }
 
     /// A diamond of four buttons: top, left, right, bottom.
-    private func cluster(scale: CGFloat, round: Bool, labels: (String, String, String, String),
+    private func cluster(round: Bool, labels: (String, String, String, String),
                          bits: (UInt16, UInt16, UInt16, UInt16)) -> some View {
-        let b = Self.button * scale, g = Self.gap * scale
+        let s = layout.scale
+        let b = PlayLayout.button * s, g = PlayLayout.gap * s
         return VStack(spacing: g) {
-            padButton(labels.0, bit: bits.0, scale: scale, round: round)
+            padButton(labels.0, bit: bits.0, round: round)
             HStack(spacing: g) {
-                padButton(labels.1, bit: bits.1, scale: scale, round: round)
+                padButton(labels.1, bit: bits.1, round: round)
                 Color.clear.frame(width: b, height: b)
-                padButton(labels.2, bit: bits.2, scale: scale, round: round)
+                padButton(labels.2, bit: bits.2, round: round)
             }
-            padButton(labels.3, bit: bits.3, scale: scale, round: round)
+            padButton(labels.3, bit: bits.3, round: round)
         }
     }
 
-    private func padButton(_ title: String, bit: UInt16, scale: CGFloat, wide: Bool = false,
-                           small: Bool = false, round: Bool = false) -> some View {
-        let w = (wide ? 72 : Self.button) * scale
-        let h = (small ? 30 : (wide ? 40 : Self.button)) * scale
+    private func padButton(_ title: String, bit: UInt16, wide: Bool = false,
+                           round: Bool = false) -> some View {
+        let s = layout.scale
+        let w = (wide ? 72 : PlayLayout.button) * s
+        let h = (wide ? 40 : PlayLayout.button) * s
         return Text(title)
-            .font(small ? .caption.weight(.semibold) : .callout.weight(.semibold))
+            .font(.callout.weight(.semibold))
             .minimumScaleFactor(0.6)
             .frame(width: w, height: h)
             .background((held & bit) != 0 ? Color.white.opacity(0.45) : Color.white.opacity(0.14))

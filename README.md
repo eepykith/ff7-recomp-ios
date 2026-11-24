@@ -143,8 +143,11 @@ bash ../tools/ios_sim_link_game.sh              # app's Documents/game -> ../gam
 SIMCTL_CHILD_FF7_QUICKBOOT=title xcrun simctl launch --console-pty booted com.ff7recomp.ios.bundled
 ```
 
-Tap **Play**. The play view turns landscape and shows the game at 4:3 with an on-screen pad
-(d-pad, A/B/X/Y, L1/R1, Select/Start); a game controller works too. B is OK, A is cancel.
+Tap **Play**. The play view turns landscape and shows the game at 4:3, as large as the screen
+allows, with an on-screen pad (d-pad, A/B/X/Y, L1/R1, Select/Start); a game controller works too.
+B is OK, A is cancel, ✕ quits to the launcher. On an iPhone the pad sits in the bars beside the
+picture; on screens near 4:3 (iPhone Duo, iPad) it lies over the picture's edges. The picture
+follows the screen when it changes size (iPhone Duo folding and unfolding, split screen).
 `FF7_QUICKBOOT=title` (or `newgame`) skips ahead; leave it out to play from the intro. The
 engine's log prints in the terminal.
 

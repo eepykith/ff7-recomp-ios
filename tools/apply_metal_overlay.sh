@@ -281,10 +281,52 @@ apply_once() {   # dir patch
     (cd "$1" && patch -p1 --forward -s -V none < "$2") && echo "applied $(basename "$2")"
   fi
 }
+# FF7_IOS_SURFACE_RESIZE: follow the app's surface when it changes size while the game runs
+# (iPhone Duo folding and unfolding, iPad split screen and Stage Manager). FFNx sized its
+# swapchain once at boot; on Windows a WM_SIZE message resets the renderer, and this does the
+# same from the render thread, once per frame, when ff7_platform_window() reports a new size.
+# ffnx-darwin.patch rewrites renderer.cpp whole, so the block is taken out while that patch's
+# "already applied" check runs and put back after it.
+ff7_surface_resize() {   # apply|undo
+python3 - "$1" <<'PY13'
+from pathlib import Path
+import os, sys
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "external" / "FFNx" / "src" / "renderer.cpp"
+t = p.read_text()
+marker = "FF7_IOS_SURFACE_RESIZE"
+old = "    bgfx::frame(frameFlags);\n"
+new = (old +
+       "#if defined(FFNX_ANDROID) && defined(__APPLE__)\n"
+       "    {   // FF7_IOS_SURFACE_RESIZE: the app's surface changed size (fold, split screen)\n"
+       "        int w = 0, h = 0;\n"
+       "        ff7_platform_window(&w, &h);\n"
+       "        if (w > 0 && h > 0 && (w != (int)window_size_x || h != (int)window_size_y)) {\n"
+       "            window_size_x = w;\n"
+       "            window_size_y = h;\n"
+       "            reset();\n"
+       "        }\n"
+       "    }\n"
+       "#endif\n")
+if sys.argv[1] == "undo":
+    if marker in t:
+        p.write_text(t.replace(new, old, 1))
+    raise SystemExit(0)
+if marker not in t:
+    if t.count(old) != 1:
+        raise SystemExit("renderer.cpp layout changed; update FF7_IOS_SURFACE_RESIZE in tools/apply_metal_overlay.sh")
+    p.write_text(t.replace(old, new, 1))
+    print("patched renderer.cpp: FF7_IOS_SURFACE_RESIZE")
+else:
+    print("renderer.cpp already has FF7_IOS_SURFACE_RESIZE")
+PY13
+}
+
 AND_DIR="$ROOT/external/ff7-recomp-android"
+ff7_surface_resize undo
 apply_once "$AND_DIR"                    "$ROOT/patches/android-core-darwin.patch"
 apply_once "$AND_DIR/external/pcrecomp"  "$ROOT/patches/pcrecomp-darwin.patch"
 apply_once "$AND_DIR/external/FFNx"      "$ROOT/patches/ffnx-darwin.patch"
+ff7_surface_resize apply
 
 # FF7_IOS_AUDIO_OBJCXX: on iOS miniaudio includes AVFoundation (its audio session), which
 # needs Objective-C++; compile SoLoud's miniaudio backend that way on Apple mobile targets.
@@ -513,3 +555,4 @@ for rel, old, new in EDITS:
     n += 1
 print(f"Darwin hand edits applied: {n}" if n else "Darwin hand edits already applied")
 PY12
+

@@ -48,9 +48,9 @@
 - (void)layoutSubviews {
   [super layoutSubviews];
   CAMetalLayer *layer = (CAMetalLayer *)self.layer;
-  CGFloat scale = self.window.screen.scale;
+  CGFloat scale = self.traitCollection.displayScale;
   if (scale <= 0) {
-    scale = UIScreen.mainScreen.scale;
+    scale = self.window.screen.scale;
   }
   layer.contentsScale = scale;
   CGSize drawable = CGSizeMake(self.bounds.size.width * scale,
