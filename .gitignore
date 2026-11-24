@@ -9,7 +9,7 @@ DerivedData/
 xcuserdata/
 
 # Packages / game data (never commit)
-game/
+/game/
 generated/
 analysis/
 external/

@@ -135,7 +135,7 @@ Steam folder used here:
 
 `ios/project.yml` has two targets. `FF7Recomp` is the launcher shell alone. `FF7RecompBundled`
 links the whole core (your lift, the runtime, FFNx, bgfx/Metal) with `FF7_BUNDLE_GAME`, and
-with no package chosen boots `Documents/game`.
+boots its game folder, `Library/Application Support/FF7Recomp/game`.
 
 ```bash
 bash tools/build_ios_core.sh simulator    # -> build-ios-sim/libff7_bundle.a (based memory)
@@ -143,8 +143,8 @@ cd ios && xcodegen generate
 xcodebuild -scheme FF7RecompBundled -sdk iphonesimulator \
   -destination 'generic/platform=iOS Simulator' -derivedDataPath ../build-ios-dd build
 xcrun simctl install booted ../build-ios-dd/Build/Products/Debug-iphonesimulator/FF7RecompBundled.app
-bash ../tools/ios_sim_link_game.sh        # Documents/game -> ../game (symlink; simulator only)
-SIMCTL_CHILD_FF7_QUICKBOOT=title xcrun simctl launch --console-pty booted com.ff7recomp.ios.bundled
+bash ../tools/ios_sim_link_game.sh        # the app's game folder -> ../game (symlink; simulator only)
+SIMCTL_CHILD_FF7_QUICKBOOT=title xcrun simctl launch --console-pty booted com.ff7recomp.ios
 ```
 
 Tap **Play**: the title screen draws on the play view's `CAMetalLayer`. The app links strictly
@@ -155,7 +155,7 @@ in for it and every movie ends on its first frame. Simulator only, arm64
 
 Known gaps: the 4:3 frame is stretched to the play view, and the swapchain keeps the size it
 booted with when the device rotates (P2: lock the play view to landscape and pass FFNx the
-view's size). On a device the game files must be imported for real (P3 GamePackage), the
+view's size). On a device the game files must be imported for real (Game files in the app), the
 app needs a signing team, and the 2 GB guest reservation (plus 4 GB alignment slack) may need
 the `com.apple.developer.kernel.extended-virtual-addressing` entitlement.
 

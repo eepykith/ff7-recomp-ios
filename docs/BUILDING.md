@@ -25,14 +25,16 @@ python3 -m unittest tests/test_validate.py
 ## Mac companion CLI
 
 ```bash
-# Point at your Steam FF7 folder (must contain ff7_en.exe).
-python3 tools/ff7recomp-mac validate "/path/to/FINAL FANTASY VII"
+# An unsigned FF7Recomp.ipa with the game in it, to sign yourself (README, "On an iPhone").
+python3 tools/ff7recomp-mac ipa
 
-# Write a stub .ff7pkg (manifest + exe fingerprint only — no game bytes).
-python3 tools/ff7recomp-mac build-package "/path/to/FINAL FANTASY VII" -o GamePackage.ff7pkg
+# Or build, sign and install on the connected iPhone in one go.
+python3 tools/ff7recomp-mac install
+python3 tools/ff7recomp-mac install --simulator booted     # or a simulator
+
+# Check a Steam FF7 folder.
+python3 tools/ff7recomp-mac validate "/path/to/FINAL FANTASY VII Steam Edition"
 ```
-
-Import the `.ff7pkg` in the iOS app under **Game → Import GamePackage…**.
 
 ## iOS app (Mac + Xcode)
 

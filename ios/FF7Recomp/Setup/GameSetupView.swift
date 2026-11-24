@@ -1,204 +1,181 @@
 import SwiftUI
 
-/// First launch: explains the Mac build step and imports the resulting GamePackage.
+/// Setting the game up: FF7Recomp asks for the game files, checks them, confirms them, and
+/// Play starts the game. (A build without the game in it also shows how the Mac builds it.)
 struct GameSetupView: View {
     @ObservedObject var model: AppModel
-    @State private var showImporter = false
+    @State private var pickFolder = false
 
-    private let command = #"python3 -m ff7recomp_mac build-package "<Steam FF7 folder>" -o FF7.ff7pkg"#
+    private let macCommand = "tools/ff7recomp-mac install"
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    header
-                    steps
-                    StatusCard(status: model.setupStatus)
-                    actions
-                    Text("You need your own Steam copy of FINAL FANTASY VII. This app ships no game files and is not affiliated with Square Enix.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+            List {
+                Section {
+                    filesStatus
+                    if model.filesBuiltIn {
+                        EmptyView()
+                    } else if let job = model.job {
+                        JobRow(job: job) { model.cancelJob() }
+                    } else {
+                        Button {
+                            pickFolder = true
+                        } label: {
+                            Label("Find my FF7 folder…", systemImage: "folder")
+                        }
+                    }
+                } header: {
+                    Text("Game files")
+                } footer: {
+                    if !model.filesBuiltIn {
+                    Text("FF7Recomp needs the game files from your own Steam copy. Copy the FINAL FANTASY VII install folder to this iPhone (Files app: On My iPhone, a USB drive or iCloud Drive) and pick it here: the folder as Steam installs it today (\"FINAL FANTASY VII Steam Edition\", the one with ff7 inside). No patch or older version is needed; patched game files are not supported.")
+                    }
                 }
-                .padding(20)
-                .frame(maxWidth: 640)
-                .frame(maxWidth: .infinity)
+
+                if !model.hasGameCode {
+                    Section {
+                        buildStatus
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("This build of FF7Recomp has no game in it. Your Mac builds the game from this iPhone's ff7_en.exe and installs FF7Recomp again with the game in it; your game files stay. Connect the iPhone to the Mac and run, in the FF7Recomp folder:")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                            Text(macCommand)
+                                .font(.callout.monospaced())
+                                .textSelection(.enabled)
+                                .padding(10)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+                        }
+                        .padding(.vertical, 4)
+                    } header: {
+                        Text("Game build")
+                    }
+                }
+
+                if model.hasFiles {
+                    Section {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Label("Game files confirmed", systemImage: "checkmark.seal.fill")
+                                .font(.headline)
+                                .foregroundStyle(.green)
+                            Text("FINAL FANTASY VII 1.02 US (Steam)\(model.filesBuiltIn ? ", built into this app from your copy" : ""). ff7_en.exe checked (SHA-1 \(GameFiles.exeSHA1.prefix(8))…), with its data in English, French, German and Spanish. Mods are unlocked.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                            Button {
+                                model.play()
+                            } label: {
+                                Label("Play", systemImage: "play.fill")
+                                    .font(.headline)
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.large)
+                            .disabled(!model.canPlay || model.isWorking)
+                        }
+                        .padding(.vertical, 6)
+                    } footer: {
+                        Text("You need your own Steam copy of FINAL FANTASY VII. This app ships no game files and is not affiliated with Square Enix.")
+                    }
+                } else {
+                    Section {
+                    } footer: {
+                        Text("You need your own Steam copy of FINAL FANTASY VII. This app ships no game files and is not affiliated with Square Enix.")
+                    }
+                }
             }
             .navigationTitle("Game setup")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                // Back to the launcher when it can still play (a package, or the bundled dev game; e.g. a replacement
-                // import failed); the ready state has its own Continue button.
-                if model.canPlay, !isReady, !model.isWorking {
+                if model.canPlay, !model.isWorking {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Back") { model.continueToLauncher() }
+                        Button("Done") { model.continueToLauncher() }
                     }
                 }
             }
-            .fileImporter(
-                isPresented: $showImporter,
-                allowedContentTypes: [.ff7Package, .zip, .folder],
-                allowsMultipleSelection: false
-            ) { result in
-                model.handleImport(result)
+            .fileImporter(isPresented: $pickFolder, allowedContentTypes: [.folder],
+                          allowsMultipleSelection: false) { result in
+                model.importFolder(result)
             }
+            .alert("Game files", isPresented: Binding(get: { model.message != nil },
+                                                      set: { if !$0 { model.message = nil } })) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(model.message ?? "")
+            }
+            .onAppear { model.refresh() }
         }
-    }
-
-    private var isReady: Bool {
-        if case .ready = model.setupStatus { return true }
-        return false
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: "shippingbox.and.arrow.backward")
-                .font(.system(size: 44))
-                .foregroundStyle(.tint)
-            Text("Set up your game")
-                .font(.largeTitle.bold())
-            Text("iOS can't compile code on the device, so the game is built on a Mac from your own copy and then imported here.")
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private var steps: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            StepRow(number: 1, title: "Build on your Mac") {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Run the companion from the repository's `mac/` folder, pointing it at your Steam install:")
-                    Text(command)
-                        .font(.caption.monospaced())
-                        .fixedSize(horizontal: false, vertical: true)
-                        .textSelection(.enabled)
-                        .padding(10)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
-                }
-            }
-            StepRow(number: 2, title: "Copy it to this device") {
-                Text("Send the .ff7pkg with AirDrop, iCloud Drive, or Finder's Files tab.")
-            }
-            StepRow(number: 3, title: "Import it") {
-                Text("The app checks the manifest and every file's SHA-256 before installing.")
-            }
-        }
-        .font(.callout)
     }
 
     @ViewBuilder
-    private var actions: some View {
-        VStack(spacing: 12) {
-            if isReady {
-                Button {
-                    model.continueToLauncher()
-                } label: {
-                    Text("Continue").frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+    private var filesStatus: some View {
+        switch model.filesState {
+        case .ready:
+            StatusRow(symbol: "checkmark.circle.fill", tint: .green, title: "Game files here",
+                      detail: "FINAL FANTASY VII 1.02 (Steam), English, French, German and Spanish")
+        case .wrongExe(let sha):
+            StatusRow(symbol: "exclamationmark.triangle.fill", tint: .orange, title: "Not the right ff7_en",
+                      detail: "Its SHA-1 starts \(sha)…; FF7Recomp is made from the 1.02 US build. Import the files again.")
+        case .missing:
+            StatusRow(symbol: "circle.dashed", tint: .secondary, title: "No game files yet", detail: nil)
+        }
+    }
 
-                Button("Import a different package…") { showImporter = true }
-                    .disabled(model.isWorking)
-            } else {
-                Button {
-                    showImporter = true
-                } label: {
-                    Label("Import GamePackage", systemImage: "square.and.arrow.down")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .disabled(model.isWorking)
-            }
-
-            #if DEBUG
-            Button("Install sample package (debug)") { model.installSamplePackage() }
-                .font(.footnote)
-                .disabled(model.isWorking)
-            #endif
+    @ViewBuilder
+    private var buildStatus: some View {
+        if model.hasGameCode {
+            StatusRow(symbol: "checkmark.circle.fill", tint: .green, title: "Built for this iPhone",
+                      detail: "Engine \(model.engineVersion)")
+        } else {
+            StatusRow(symbol: "desktopcomputer", tint: .secondary, title: "Not built yet",
+                      detail: model.hasFiles ? "Ready for the Mac build." : "The Mac build needs the game files first.")
         }
     }
 }
 
-private struct StepRow<Content: View>: View {
-    let number: Int
+private struct StatusRow: View {
+    let symbol: String
+    let tint: Color
     let title: String
-    @ViewBuilder let content: Content
+    let detail: String?
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Text("\(number)")
-                .font(.headline)
-                .frame(width: 28, height: 28)
-                .background(Circle().fill(.tint.opacity(0.15)))
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.headline)
-                content.foregroundStyle(.secondary)
-            }
-        }
-    }
-}
-
-private struct StatusCard: View {
-    let status: AppModel.SetupStatus
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            icon
-                .font(.title2)
-                .frame(width: 28)
-            VStack(alignment: .leading, spacing: 4) {
+            Image(systemName: symbol).font(.title3).foregroundStyle(tint).frame(width: 26)
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.headline)
                 if let detail {
-                    Text(detail)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    Text(detail).font(.footnote).foregroundStyle(.secondary)
                 }
             }
-            Spacer(minLength: 0)
         }
-        .padding(16)
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12))
+        .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
     }
+}
 
-    @ViewBuilder
-    private var icon: some View {
-        switch status {
-        case .notInstalled:
-            Image(systemName: "circle.dashed").foregroundStyle(.secondary)
-        case .working:
-            ProgressView()
-        case .ready:
-            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-        case .failed:
-            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-        }
-    }
+private struct JobRow: View {
+    let job: AppModel.Job
+    let onStop: () -> Void
 
-    private var title: String {
-        switch status {
-        case .notInstalled: return "No game installed"
-        case .working(let stage): return stage.rawValue
-        case .ready: return "Ready to play"
-        case .failed: return "Import failed"
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(job.title).font(.headline)
+                Spacer()
+                Button("Stop", role: .destructive, action: onStop).buttonStyle(.borderless)
+            }
+            if let fraction = job.fraction {
+                ProgressView(value: fraction)
+                Text("\(job.detail): \(Int((fraction * 100).rounded())) %")
+                    .font(.footnote).foregroundStyle(.secondary)
+            } else {
+                ProgressView()
+                if !job.detail.isEmpty {
+                    Text(job.detail).font(.footnote).foregroundStyle(.secondary)
+                }
+            }
         }
-    }
-
-    private var detail: String? {
-        switch status {
-        case .notInstalled:
-            return "Import a GamePackage built by the Mac companion."
-        case .working:
-            return "Large packages can take a minute."
-        case .ready(let pkg):
-            var lines = ["Build \(pkg.manifest.buildID) · \(pkg.manifest.language.uppercased()) · core \(pkg.manifest.coreVersion)"]
-            if pkg.isStub { lines.append("Stub package: no game code yet (P3).") }
-            return lines.joined(separator: "\n")
-        case .failed(let message):
-            return message
-        }
+        .padding(.vertical, 4)
     }
 }
 

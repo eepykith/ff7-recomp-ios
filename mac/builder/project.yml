@@ -1,0 +1,39 @@
+name: FF7RecompBuilder
+options:
+  bundleIdPrefix: com.ff7recomp
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  # FF7Recomp Builder: builds FF7Recomp.ipa from the player's own FINAL FANTASY VII on their Mac
+  # (iOS cannot compile code on the phone). It carries the kit (tools/make_builder_kit.sh: the
+  # engine without the game, the app's code, the lifter) and build_ipa.py, and no game code.
+  FF7RecompBuilder:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources
+      - path: build_ipa.py
+        buildPhase: resources
+      - path: ../../build-builder/kit
+        type: folder
+        buildPhase: resources
+        optional: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ff7recomp.builder
+        PRODUCT_NAME: FF7Recomp Builder
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: FF7Recomp Builder
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
+        INFOPLIST_KEY_NSHumanReadableCopyright: "GPL-3.0. Not affiliated with Square Enix."
+        # It runs Xcode's compiler and the Mac's python3 on folders the player picks.
+        ENABLE_APP_SANDBOX: NO
+        ENABLE_HARDENED_RUNTIME: NO
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual

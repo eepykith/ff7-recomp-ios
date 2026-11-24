@@ -8,7 +8,7 @@ final class ModsModel: ObservableObject {
     @Published private(set) var importing = false
 
     let library: ModLibrary
-    /// The game's language (from the installed package); falls back to the saved profile's.
+    /// The game's language, if known; falls back to the saved profile's.
     private let gameLanguage: String?
     private(set) var language = "en"
 

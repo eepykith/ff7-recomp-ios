@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Root: game setup until a GamePackage is installed, then the launcher home.
+/// Root: game setup until the game files are here and the game is built in, then the launcher home.
 struct LauncherRootView: View {
     @StateObject private var model = AppModel()
 
@@ -25,34 +25,27 @@ struct LauncherHomeView: View {
     var body: some View {
         NavigationStack {
             List {
-                if let pkg = model.package {
-                    Section {
-                        PackageSummary(package: pkg)
-                    }
-                } else if let dir = model.bundledGameDir {
-                    Section {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Label("Bundled dev game", systemImage: "hammer.fill").font(.headline)
-                            Text(dir).font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(2)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
-
                 Section {
-                    NavigationLink {
-                        GameHostView(packagePath: model.playPackagePath)
+                    Button {
+                        model.play()
                     } label: {
                         Label("Play", systemImage: "play.fill")
                             .font(.headline)
                     }
                     .disabled(!model.canPlay)
 
-                    NavigationLink {
-                        ModsView(library: model.modLibrary, gameLanguage: model.package?.manifest.language)
+                    Button {
+                        model.showSetup()
                     } label: {
-                        Label("Mods", systemImage: "puzzlepiece.extension")
+                        Label("Game files", systemImage: "externaldrive")
                     }
+
+                    NavigationLink {
+                        ModsView(library: model.modLibrary, gameLanguage: nil)
+                    } label: {
+                        Label("Mods", systemImage: model.modsUnlocked ? "puzzlepiece.extension" : "lock.fill")
+                    }
+                    .disabled(!model.modsUnlocked)
 
                     NavigationLink {
                         SettingsView(model: model)
@@ -60,39 +53,16 @@ struct LauncherHomeView: View {
                         Label("Settings", systemImage: "gearshape")
                     }
                 } footer: {
-                    if model.package?.isStub == true {
-                        Text(model.bundledGameDir != nil
-                             ? "Stub package without game code; Play boots the bundled dev game instead."
-                             : "This is a stub package without game code; Play opens the engine surface only.")
+                    if !model.modsUnlocked {
+                        Text("Mods unlock once the game files are confirmed.")
                     }
                 }
             }
             .navigationTitle("FF7Recomp")
-        }
-    }
-}
-
-private struct PackageSummary: View {
-    let package: GamePackage
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Image(systemName: "checkmark.seal.fill").foregroundStyle(.green)
-                Text("Game installed").font(.headline)
+            .navigationDestination(isPresented: $model.playing) {
+                GameHostView(gameDir: model.paths.game.path)
             }
-            Text("Build \(package.manifest.buildID)")
-                .font(.caption.monospaced())
-                .foregroundStyle(.secondary)
-            Text("\(languageName(package.manifest.language)) · core \(package.manifest.coreVersion) · exe \(package.manifest.exeFingerprint)…")
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 4)
-    }
-
-    private func languageName(_ code: String) -> String {
-        Locale(identifier: "en").localizedString(forLanguageCode: code) ?? code
     }
 }
 

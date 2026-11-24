@@ -1,3 +1,4 @@
+import GameController
 import SwiftUI
 
 /// Play surface. FF7MetalView presents a CAMetalLayer that FFNx draws into once the lifted game
@@ -7,21 +8,29 @@ import SwiftUI
 /// columns beside it. When the screen changes size (iPhone Duo folding, split screen) the view
 /// follows and FFNx resets its swapchain to the new size (FF7_IOS_SURFACE_RESIZE).
 ///
-/// Landscape only: the view locks to landscape and boots when the layer is landscape-sized.
+/// Landscape only on phone-shaped screens. The iPhone Duo may also turn upright while its hinge
+/// is open or half open (the hinge status, iOS 27.1), with the picture on top and the pad below;
+/// shut, it goes back to landscape on the outer screen. Without a hinge, a large screen near 4:3
+/// (an iPad) may turn upright too.
+/// Boots when the Metal layer is wider than tall, which the 4:3 picture is either way.
 struct GameHostView: View {
-    let packagePath: String?
+    let gameDir: String?
 
-    @Environment(\.dismiss) private var dismiss
     @State private var status = "Starting…"
     @State private var showStatus = true
     @State private var booted = false
     @State private var confirmQuit = false
+    /// true while the iPhone Duo's hinge is open or half open, false while shut; nil without a hinge.
+    @State private var hingeOpen: Bool?
+    @State private var controller = Self.hasGamepad()
+    @State private var companion = CompanionSnapshot.empty
+    @State private var note: String?
 
     var body: some View {
         GeometryReader { safeGeo in
             let safe = safeGeo.safeAreaInsets
             GeometryReader { geo in
-                let layout = PlayLayout(size: geo.size, safe: safe)
+                let layout = PlayLayout(size: geo.size, safe: safe, controller: controller)
                 ZStack(alignment: .topLeading) {
                     Color.black
 
@@ -42,8 +51,47 @@ struct GameHostView: View {
                             .transition(.opacity)
                     }
 
+                    if let panel = layout.panel {
+                        CompanionPanel(state: companion)
+                            .frame(width: panel.width, height: panel.height)
+                            .overlay(alignment: .bottom) {
+                                if let note {
+                                    Text(note)
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundStyle(Color(red: 1, green: 0.88, blue: 0.38))
+                                        .padding(.horizontal, 10).padding(.vertical, 4)
+                                        .background(.black.opacity(0.7), in: Capsule())
+                                        .padding(.bottom, 6)
+                                        .transition(.opacity)
+                                }
+                            }
+                            .offset(x: panel.minX, y: panel.minY)
+                    }
+                    if let deck = layout.deck {
+                        CompanionDeck(state: companion, columns: layout.deckColumns) { text in
+                            withAnimation { note = text }
+                            Task {
+                                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                                withAnimation { if note == text { note = nil } }
+                            }
+                        }
+                        .frame(width: deck.width, height: deck.height)
+                        .offset(x: deck.minX, y: deck.minY)
+                    }
+
                     TouchPadView(layout: layout) { confirmQuit = true }
                 }
+                .task(id: layout.panel != nil) {
+                    // the panel's state, ten times a second while it is on screen
+                    while layout.panel != nil && !Task.isCancelled {
+                        let next = CompanionSnapshot.read()
+                        if next != companion { companion = next }
+                        try? await Task.sleep(nanoseconds: 100_000_000)
+                    }
+                }
+                .onAppear { lockOrientation(for: geo.size) }
+                .onChange(of: allowsPortrait(geo.size)) { lockOrientation(for: geo.size) }
+                .watchHinge { hingeOpen = $0 }
             }
             .ignoresSafeArea()
         }
@@ -52,21 +100,57 @@ struct GameHostView: View {
         .navigationBarBackButtonHidden(true)
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
-        .confirmationDialog("Quit to the launcher?", isPresented: $confirmQuit, titleVisibility: .visible) {
-            Button("Quit", role: .destructive) { dismiss() }
+        .confirmationDialog("Quit the game?", isPresented: $confirmQuit, titleVisibility: .visible) {
+            Button("Quit", role: .destructive) { Self.quitGame() }
         } message: {
-            Text("Progress since your last save is lost.")
+            Text("FF7Recomp closes. Open it again to play. Progress since your last save is lost.")
         }
         .onAppear {
-            OrientationLock.set(.landscape)
             PadInput.shared.startControllers()
         }
         .task { await bootWhenLandscape() }
+        .onReceive(NotificationCenter.default.publisher(for: .GCControllerDidConnect)) { _ in
+            controller = Self.hasGamepad()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .GCControllerDidDisconnect)) { _ in
+            controller = Self.hasGamepad()
+        }
         .onDisappear {
             PadInput.shared.stopControllers()
             EngineBridge.shutdown()
             OrientationLock.set(.all)
         }
+    }
+
+    /// A controller the game can be played with (a full gamepad: d-pad, four face buttons,
+    /// shoulders). Then the on-screen pad is not drawn, as on the AYN Thor.
+    static func hasGamepad() -> Bool {
+        // FF7_TOUCHPAD=1 keeps the on-screen pad regardless (testing, or a controller nearby)
+        if ProcessInfo.processInfo.environment["FF7_TOUCHPAD"] == "1" { return false }
+        return GCController.controllers().contains { $0.extendedGamepad != nil }
+    }
+
+    /// Upright play: on the iPhone Duo, while the hinge is open or half open. Without a hinge,
+    /// only on a large screen near 4:3: the shorter side at least 600 pt and the longer under 1.6
+    /// times it (an iPad), not a regular iPhone (about 2.2:1).
+    private func allowsPortrait(_ size: CGSize) -> Bool {
+        if let hingeOpen { return hingeOpen }
+        let short = min(size.width, size.height), long = max(size.width, size.height)
+        return short >= 600 && long / short < 1.6
+    }
+
+    private func lockOrientation(for size: CGSize) {
+        guard size.width > 0, size.height > 0 else { return }
+        OrientationLock.set(allowsPortrait(size) ? [.landscape, .portrait] : .landscape)
+    }
+
+    /// Ends the game: the lifted game boots once per process (its guest memory is fixed), so
+    /// it cannot stop and start again inside the app, and leaving its thread running kept its
+    /// sound playing. Closing the app stops it all; the next launch starts fresh.
+    static func quitGame() {
+        PadInput.shared.stopControllers()
+        EngineBridge.shutdown()
+        exit(0)
     }
 
     /// Waits (up to 3 s) for the Metal layer to report a landscape size, then boots once.
@@ -80,7 +164,7 @@ struct GameHostView: View {
         }
         booted = true
         let probe = EngineBridge.probe(width: 1920, height: 1080, fps: 60)
-        let result = EngineBridge.boot(packagePath: packagePath)
+        let result = EngineBridge.boot(gameDir: gameDir)
         status = result.message.isEmpty ? probe.message : result.message
         if result.booted {
             try? await Task.sleep(nanoseconds: 3_000_000_000)
@@ -95,4 +179,19 @@ private struct MetalSurfaceView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: FF7MetalView, context: Context) {}
+}
+
+private extension View {
+    /// Reports the iPhone Duo's hinge: true when open or half open, false when shut, nil when the
+    /// device has no hinge. Does nothing before iOS 27.1.
+    @ViewBuilder
+    func watchHinge(_ action: @escaping (Bool?) -> Void) -> some View {
+        if #available(iOS 27.1, *) {
+            onHingeChange { _, context in
+                action(context.hinge.map { $0.status != .closed })
+            }
+        } else {
+            self
+        }
+    }
 }

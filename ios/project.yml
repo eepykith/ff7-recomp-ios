@@ -54,15 +54,6 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
-        UTExportedTypeDeclarations:
-          - UTTypeIdentifier: com.ff7recomp.gamepackage
-            UTTypeDescription: FF7Recomp Game Package
-            UTTypeConformsTo:
-              - public.data
-              - public.archive
-            UTTypeTagSpecification:
-              public.filename-extension:
-                - ff7pkg
         UTImportedTypeDeclarations:
           - UTTypeIdentifier: com.ff7recomp.iro
             UTTypeDescription: 7th Heaven IRO Mod
@@ -72,10 +63,13 @@ targets:
               public.filename-extension:
                 - iro
 
-  # Dev build with the lifted game linked in (your own ff7_en.exe, never distributed):
+  # The app with the lifted game linked in (your own ff7_en.exe, for your own devices only,
+  # never distributed). Same bundle ID as the launcher, so installing it keeps the game files.
+  # tools/ff7recomp-mac install builds and installs it on an iPhone; for the simulator:
   #   bash tools/build_ios_core.sh simulator     # builds ../build-ios-sim/libff7_bundle.a
+  #   bash tools/stage_ffnx_runtime.sh           # FFNx's shaders and settings -> ../build-ios-ffnx
   #   xcodegen generate && xcodebuild -scheme FF7RecompBundled -sdk iphonesimulator ...
-  #   bash tools/ios_sim_link_game.sh            # Documents/game -> ../game (simulator only)
+  #   bash tools/ios_sim_link_game.sh            # the app's game folder -> ../game (simulator only)
   FF7RecompBundled:
     type: application
     platform: iOS
@@ -85,9 +79,13 @@ targets:
         createIntermediateGroups: true
       - path: ../src/ios
         createIntermediateGroups: true
+      - path: ../build-ios-ffnx/ffnx      # FFNx's run-time files (stage_ffnx_runtime.sh)
+        type: folder
+        buildPhase: resources
+        optional: true
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.ff7recomp.ios.bundled
+        PRODUCT_BUNDLE_IDENTIFIER: com.ff7recomp.ios   # the same app: a Mac build installs over the launcher and keeps the game files
         PRODUCT_NAME: FF7RecompBundled
         INFOPLIST_FILE: FF7Recomp/Resources/Info.plist
         SWIFT_OBJC_BRIDGING_HEADER: FF7Recomp/Bridge/FF7Recomp-Bridging-Header.h

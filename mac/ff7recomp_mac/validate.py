@@ -61,5 +61,4 @@ def validate_game_dir(path: Path) -> ValidationResult:
 
     size = exe.stat().st_size
     messages.append(f"found {exe.name} ({size} bytes)")
-    messages.append("P0 validate only — lift/link runs in a later milestone")
     return ValidationResult(True, game_dir, exe, messages)

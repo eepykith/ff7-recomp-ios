@@ -16,21 +16,12 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section("Game package") {
-                if let pkg = model.package {
-                    LabeledContent("Build", value: pkg.manifest.buildID)
-                    LabeledContent("Language", value: pkg.manifest.language.uppercased())
-                    LabeledContent("Core", value: pkg.manifest.coreVersion)
-                    LabeledContent("Executable") {
-                        Text(pkg.manifest.exeFingerprint + "…").font(.body.monospaced())
-                    }
-                    if let created = pkg.manifest.createdAt {
-                        LabeledContent("Built", value: created)
-                    }
-                }
-                Button("Import a new package…") { model.showSetup() }
-                Button("Remove game", role: .destructive) { confirmRemove = true }
-                    .disabled(model.package == nil)
+            Section("Game files") {
+                LabeledContent("Files", value: model.hasFiles ? "Here" : "Not here")
+                LabeledContent("Game build", value: model.hasGameCode ? "Built in" : "Not built")
+                Button("Game files…") { model.showSetup() }
+                Button("Remove game files", role: .destructive) { confirmRemove = true }
+                    .disabled(model.filesState == .missing)
             }
 
             Section("About") {
@@ -41,10 +32,10 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Settings")
-        .confirmationDialog("Remove the installed game?", isPresented: $confirmRemove, titleVisibility: .visible) {
-            Button("Remove game", role: .destructive) { model.removeGame() }
+        .confirmationDialog("Remove the game files?", isPresented: $confirmRemove, titleVisibility: .visible) {
+            Button("Remove game files", role: .destructive) { model.removeFiles() }
         } message: {
-            Text("The GamePackage is deleted from this device. Mods and saves are kept.")
+            Text("ff7_en.exe and the data folder are deleted from this iPhone. Mods, saves and save states are kept.")
         }
     }
 }

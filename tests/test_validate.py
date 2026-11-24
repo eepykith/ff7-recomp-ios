@@ -7,7 +7,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "mac"))
 
-from ff7recomp_mac.package import build_package  # noqa: E402
 from ff7recomp_mac.validate import validate_game_dir  # noqa: E402
 
 
@@ -23,7 +22,7 @@ class ValidateTests(unittest.TestCase):
         self.assertFalse(result.ok)
         empty.rmdir()
 
-    def test_finds_exe_and_packages(self) -> None:
+    def test_finds_exe(self) -> None:
         game = ROOT / "tests" / "_fake_game"
         game.mkdir(exist_ok=True)
         exe = game / "ff7_en.exe"
@@ -32,12 +31,6 @@ class ValidateTests(unittest.TestCase):
             result = validate_game_dir(game)
             self.assertTrue(result.ok)
             self.assertEqual(result.exe_path, exe)
-
-            out = ROOT / "tests" / "_out.ff7pkg"
-            written = build_package(game, out)
-            self.assertTrue(written.exists())
-            self.assertEqual(written.suffix, ".ff7pkg")
-            written.unlink()
         finally:
             exe.unlink(missing_ok=True)
             game.rmdir()
@@ -45,3 +38,19 @@ class ValidateTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class InstallTests(unittest.TestCase):
+    def test_no_apple_id_stops_before_building(self) -> None:
+        from ff7recomp_mac import install as inst
+        target = inst.Target("device", "x", "test iPhone")
+        orig = (inst.pick_target, inst.xcode_team, inst.build_app)
+        built = []
+        inst.pick_target = lambda d, s: target
+        inst.xcode_team = lambda: None
+        inst.build_app = lambda t, team: built.append(1)
+        try:
+            self.assertEqual(inst.install(), 1)
+            self.assertEqual(built, [])
+        finally:
+            inst.pick_target, inst.xcode_team, inst.build_app = orig
