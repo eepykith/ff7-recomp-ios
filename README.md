@@ -272,6 +272,8 @@ docs/             Port plan, build notes, P1 details
 
 ## Legal
 
+FF7Recomp for iOS is GPL-3.0 (`LICENSE`), like FFNx and the Android port it comes from.
+
 You need your own Steam copy of FINAL FANTASY VII. Builds that include the lifted game are for your
 own devices only and must not be distributed. Not affiliated with or endorsed by Square Enix.
 FINAL FANTASY is a trademark of Square Enix. Sideload / developer distribution only, not the App

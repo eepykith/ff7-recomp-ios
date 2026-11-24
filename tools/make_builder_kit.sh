@@ -30,7 +30,10 @@ cmake -S "$ROOT" -B "$B" \
   -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphoneos -DCMAKE_OSX_ARCHITECTURES=arm64 \
   -DCMAKE_OSX_DEPLOYMENT_TARGET=17.0 \
   -DFF7_BUNDLE_GAME=ON -DFF7_PLATFORM=ios -DFF7_BUILD_TESTS=OFF -DFF7_BASED_MEMORY=ON \
-  -DFF7_NO_GUEST=ON >/dev/null
+  -DFF7_NO_GUEST=ON \
+  -DCMAKE_C_FLAGS="-ffile-prefix-map=$ROOT=." -DCMAKE_CXX_FLAGS="-ffile-prefix-map=$ROOT=." \
+  -DCMAKE_OBJC_FLAGS="-ffile-prefix-map=$ROOT=." -DCMAKE_OBJCXX_FLAGS="-ffile-prefix-map=$ROOT=." \
+  >/dev/null   # the kit is shared: no paths of this Mac in it (see the check at the end)
 cmake --build "$B" -j "$(sysctl -n hw.ncpu)" --target ff7_guest ff7_core ffnx >/dev/null
 FF7_LINK_MODE=bundle FF7_BUILD_DIR="$B" bash "$ROOT/tools/darwin_link_metal_boot.sh" | tail -1
 if ar t "$B/libff7_bundle.a" | grep -q '^recomp_'; then
@@ -146,6 +149,14 @@ arm64
 -include
 @KIT@/include/portable_guest.h
 ARGS
+
+echo "== no debug info, no paths of this Mac"
+strip -S "$KIT/lib/libff7_engine.a" 2>/dev/null
+for o in "$KIT"/app/objects/*.o; do strip -S "$o"; done
+LEAKS="$(grep -rlaF "$HOME" "$KIT" || true)"
+if [[ -n "$LEAKS" ]]; then
+  echo "the kit still holds paths under $HOME:" >&2; echo "$LEAKS" >&2; exit 1
+fi
 
 VERSION="$(cd "$KIT" && find . -type f ! -name VERSION ! -name LIFT_VERSION -print0 | sort -z | xargs -0 shasum | shasum | cut -c1-16)"
 echo "$VERSION" > "$KIT/VERSION"
