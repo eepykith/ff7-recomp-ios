@@ -5,20 +5,57 @@ A native iOS port of [FF7Recomp](https://github.com/bhuiyah/ff7-recomp-android):
 for game setup and 7th Heaven mods. **No game files are included**: you build the game from your
 own Steam copy.
 
-iOS can't compile code on the device, so a Mac builds the game from your `ff7_en.exe` and installs
-it on the iPhone; the iPhone gets the game files itself. Full plan: [`docs/IOS_PORT_PLAN.md`](docs/IOS_PORT_PLAN.md).
+iOS can't compile code on the device, so **FF7Recomp Builder**, a small Mac app, builds the game
+from your Steam copy into an IPA you sign and install (see [On an iPhone](#on-an-iphone)). Full
+plan: [`docs/IOS_PORT_PLAN.md`](docs/IOS_PORT_PLAN.md).
+
+## Screenshots
+
+Running in the iOS simulator from a build made by FF7Recomp Builder. The game is the player's own
+Steam copy, played by touch.
+
+<table>
+<tr>
+<td width="40%"><img src="docs/screenshots/duo-portrait.jpg" alt="iPhone Duo open and upright: the game in the top half, the status panel and touch pad below"></td>
+<td>
+
+**iPhone Duo, open or half-folded and upright.** While the hinge is open or half open the game
+goes upright: the picture in the top half, clear of the fold, and below it the Android port's
+bottom-screen panel. It shows where the party is, play time, gil, each member's HP, MP and Limit
+(ATB and enemy HP in battle), and touch buttons: Menu, save and load state, speed 1×/2×/3×,
+random battles on/off and Battle+. The pad keeps to the side columns, so a thumb on it never lands
+on the panel. With a game controller the pad goes away.
+
+</td>
+</tr>
+</table>
+
+| iPhone Duo open, landscape | iPhone Duo closed (outer screen) |
+|---|---|
+| ![iPhone Duo open in landscape: the 4:3 picture fills the screen, the pad over its edges](docs/screenshots/duo-open-landscape.jpg) | ![iPhone Duo closed: the game on the outer screen with the pad clear of the camera](docs/screenshots/duo-closed.jpg) |
+| The picture fills the screen and the pad lies over its edges. | The outer screen switches to landscape; the pad stays clear of the camera. |
+
+| iPhone (iPhone 18 Pro) |
+|---|
+| ![iPhone 18 Pro in landscape: the 4:3 picture with the pad in the side bars](docs/screenshots/iphone18pro.jpg) |
+| On a regular iPhone the game plays in landscape, with the pad in the black bars beside the 4:3 picture. Every tap reaches the game, however fast. |
+
+| First launch | FF7Recomp Builder (Mac) |
+|---|---|
+| <img src="docs/screenshots/setup.jpg" alt="First launch: game files confirmed, Play" width="360"> | ![FF7Recomp Builder: your game found and checked, Xcode found, Build FF7Recomp.ipa](docs/screenshots/mac-builder.jpg) |
+| The app confirms the game files (the 1.02 US exe and its data), and Play starts the game. Mods unlock once the files are confirmed. | Finds your Steam copy, checks it, and builds FF7Recomp.ipa with the game and your game files in it (see "On an iPhone"). |
 
 ## Where it stands
 
-**The FF7 title screen runs in the iOS app on the iOS simulator**, from the lifted game linked into
-the app, drawn by FFNx → bgfx → Metal into the app's `CAMetalLayer`.
+**FF7Recomp plays on an iPhone** (tested on an iPhone Duo): the lifted game linked into the app,
+drawn by FFNx → bgfx → Metal into the app's `CAMetalLayer`, with sound, movies and touch controls.
 
 | Milestone | State |
 |---|---|
 | P0 toolchain, host ABI, launcher scaffold | Done |
-| P1 Metal title screen | **Done on Mac and the iOS simulator**; device builds, not yet run |
+| P1 Metal title screen | **Done** on Mac, the iOS simulator and iPhone |
 | P2 playable slice (new game → Sector 7, controls, save states) | **In progress**: new game, first field, dialog and walking by touch |
-| P3 setup (FF7Recomp Builder on the Mac makes the IPA) | Builder, kit and IPA pipeline work; game files built in or imported; not yet run on an iPhone |
+| P3 setup (FF7Recomp Builder on the Mac makes the IPA) | **Done**: the builder's IPA installs and plays on an iPhone Duo |
 | P4 mods | Mods screen done (import, enable, order); not applied in-game yet |
 | P5–P6 launcher polish, catalogs, stretch goals | Not started |
 
@@ -29,7 +66,7 @@ What runs today:
 | Mac, native arm64 (`ff7_metal_boot`) | New game → first field; movies, sound effects and music |
 | Mac, Rosetta x86_64 (`ff7_metal_boot`) | New game → first field; movies, sound effects and music |
 | iOS simulator (`FF7RecompBundled` app) | Launcher → Play → title → New Game → first field, played by touch |
-| iPhone (`FF7RecompBundled` app) | Builds and links (unsigned); not yet run on hardware |
+| iPhone (`FF7RecompBundled` app) | Plays on an iPhone Duo: IPA from FF7Recomp Builder, signed with a development profile |
 | Launcher shell (`FF7Recomp` app, no game) | Setup (game files), home, mods and settings screens |
 
 Known gaps:
@@ -37,15 +74,18 @@ Known gaps:
 - **Movies need FFmpeg built first** (`tools/build_ffmpeg_apple.sh`, step 2b). Without it they
   end at once and the intro credits wait for Start. With it the Eidos logo and the opening movie
   play on the Mac (arm64 and Rosetta) and in the iOS simulator.
-- **Sound on a real iPhone is untested.** Sound effects (the DirectSound mixer) go out through
-  CoreAudio and music through FFNx's SoLoud/miniaudio engine; both are heard in the iOS simulator
-  (`FF7_DSOUND_STATS=1` logs the mixer's buffers). The iOS audio session is miniaudio's default.
-- **Dialog font spacing** needs `tools/fix_font_widths.py` run once on the game files (step 2);
-  the iOS app's own import (P3) doesn't apply it yet.
+- **Sound** goes out through CoreAudio (sound effects, the DirectSound mixer) and FFNx's
+  SoLoud/miniaudio engine (music). The iOS audio session is miniaudio's default.
+- **Dialog font spacing** needs `tools/fix_font_widths.py` run once on the game files for the Mac
+  and simulator builds (step 2); FF7Recomp Builder and the app's folder import apply it themselves.
 - **Controllers** are wired (Apple's GameController framework) but untested with real hardware.
-- **Device.** Running on an iPhone still needs a signing team, the game files on the device (P3
-  import), and a check that iOS allows the game's 2 GB memory reservation (it may need the
-  extended virtual addressing entitlement).
+- **Quitting closes the app.** The lifted game boots once per process, so ✕ → Quit ends the app,
+  sound included; open FF7Recomp again to play.
+- **Battle windows on the Duo's panel.** On Android's dual-screen AYN Thor the battle windows move
+  to the bottom screen and take taps; here they stay in the picture, and the panel shows ATB and
+  enemy HP.
+- **Signing.** The IPA is unsigned. Sign it with a profile that keeps the extended virtual
+  addressing entitlement: the game reserves 4 GB of address space.
 
 ## How it works
 
