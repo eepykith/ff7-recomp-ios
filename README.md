@@ -36,12 +36,10 @@ Known gaps:
 
 - **Movies need FFmpeg built first** (`tools/build_ffmpeg_apple.sh`, step 2b). Without it they
   end at once and the intro credits wait for Start. With it the Eidos logo and the opening movie
-  play on the Mac (arm64 and Rosetta); the iOS simulator core builds and links with it but has not
-  been run through a movie yet.
-- **Sound is checked by counters, not by ear.** Sound effects (the DirectSound mixer) go out
-  through CoreAudio and produce non-silent buffers (`FF7_DSOUND_STATS=1` logs them); music plays
-  through FFNx's SoLoud/miniaudio engine (`trace_music` shows the tracks loading). Nobody has
-  listened to either on an iPhone yet, and the iOS audio session is miniaudio's default.
+  play on the Mac (arm64 and Rosetta) and in the iOS simulator.
+- **Sound on a real iPhone is untested.** Sound effects (the DirectSound mixer) go out through
+  CoreAudio and music through FFNx's SoLoud/miniaudio engine; both are heard in the iOS simulator
+  (`FF7_DSOUND_STATS=1` logs the mixer's buffers). The iOS audio session is miniaudio's default.
 - **Dialog font spacing** needs `tools/fix_font_widths.py` run once on the game files (step 2);
   the iOS app's own import (P3) doesn't apply it yet.
 - **Controllers** are wired (Apple's GameController framework) but untested with real hardware.
