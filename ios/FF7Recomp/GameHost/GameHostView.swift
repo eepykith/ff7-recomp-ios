@@ -30,10 +30,10 @@ struct GameHostView: View {
                         .transition(.opacity)
                 }
                 Spacer()
-                TouchPadView()
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 12)
             }
+
+            // Full screen: the pad lays itself out in the bars beside the 4:3 picture.
+            TouchPadView()
         }
         .background(Color.black)
         .navigationBarTitleDisplayMode(.inline)
