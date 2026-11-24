@@ -26,19 +26,24 @@ What runs today:
 
 | Target | Result |
 |---|---|
-| Mac, native arm64 (`ff7_metal_boot`) | Title screen |
-| Mac, Rosetta x86_64 (`ff7_metal_boot`) | Title screen |
+| Mac, native arm64 (`ff7_metal_boot`) | New game → first field; movies, sound effects and music |
+| Mac, Rosetta x86_64 (`ff7_metal_boot`) | New game → first field; movies, sound effects and music |
 | iOS simulator (`FF7RecompBundled` app) | Launcher → Play → title → New Game → first field, played by touch |
 | iPhone (`FF7RecompBundled` app) | Builds and links (unsigned); not yet run on hardware |
 | Launcher shell (`FF7Recomp` app, no game) | Setup, home, mods and settings screens; 23 unit tests pass |
 
 Known gaps:
 
-- **No movies.** FFmpeg isn't built for Apple platforms yet, so movies end at once (the story
-  continues without them). The intro credits wait for Start.
-- **No sound.** The DirectSound mixer is a silent stub on Apple platforms.
-- **Dialog font spacing.** Some glyphs in dialog boxes are spaced wrongly with the 2026 Steam
-  files (the Android installer patches `window.bin` font widths; not ported yet).
+- **Movies need FFmpeg built first** (`tools/build_ffmpeg_apple.sh`, step 2b). Without it they
+  end at once and the intro credits wait for Start. With it the Eidos logo and the opening movie
+  play on the Mac (arm64 and Rosetta); the iOS simulator core builds and links with it but has not
+  been run through a movie yet.
+- **Sound is checked by counters, not by ear.** Sound effects (the DirectSound mixer) go out
+  through CoreAudio and produce non-silent buffers (`FF7_DSOUND_STATS=1` logs them); music plays
+  through FFNx's SoLoud/miniaudio engine (`trace_music` shows the tracks loading). Nobody has
+  listened to either on an iPhone yet, and the iOS audio session is miniaudio's default.
+- **Dialog font spacing** needs `tools/fix_font_widths.py` run once on the game files (step 2);
+  the iOS app's own import (P3) doesn't apply it yet.
 - **Controllers** are wired (Apple's GameController framework) but untested with real hardware.
 - **Device.** Running on an iPhone still needs a signing team, the game files on the device (P3
   import), and a check that iOS allows the game's 2 GB memory reservation (it may need the
@@ -100,7 +105,23 @@ ln -sfn "$PWD/$AND/game/ff7_en.exe" game/ff7_en.exe
 cp "$AND/external/FFNx/misc/FFNx.toml" game/FFNx.toml
 make -C "$AND/external/bgfx" shaderc
 bash tools/compile_shaders_metal.sh  # writes game/shaders
+python3 -I tools/fix_font_widths.py game   # dialog font widths (M/W/m/w) in the 2026 files
 ```
+
+`fix_font_widths.py` patches `data/lang-{en,fr,de,es}/kernel/window.bin` in place, as the Android
+installer does: the 2026 Steam files give M, W, m and w 8 pixels where the font draws them 11 wide,
+so dialog runs them into the next letter ("C'mon newcom≡r"). It is idempotent; `--check` only
+reports.
+
+### 2b. Build FFmpeg (movies)
+
+```bash
+bash tools/build_ffmpeg_apple.sh macos-arm64     # also: macos-x86_64, ios-simulator, ios-device
+```
+
+This builds FFmpeg n9.0.2 (FFNx's version) as static libraries for that target, decoding the
+movies' VP8 and Vorbis in software. Build the FFmpeg target before configuring (or re-run
+`cmake` on) the matching build folder; without it, FFNx uses movie stubs.
 
 ### 3a. Run on the Mac
 

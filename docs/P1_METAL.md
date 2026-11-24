@@ -67,9 +67,10 @@ bash tools/darwin_link_metal_boot.sh   # FF7_BUILD_DIR defaults to build-metal-x
 FF7_QUICKBOOT=title ./build-metal-x64/ff7_metal_boot game
 ```
 
-`FF7_QUICKBOOT=title` presses Start through the credits and stops on the title screen. FFmpeg
-is not built for Darwin yet, so the intro movies are no-op stubs and the credits never
-advance on their own. `FF7_SNAPSHOT=/path/shot.png` writes the window to a PNG every 5 s
+`FF7_QUICKBOOT=title` presses Start through the credits and stops on the title screen. Without
+FFmpeg (`tools/build_ffmpeg_apple.sh`) the intro movies are no-op stubs and the credits never
+advance on their own. `FF7_QUICKBOOT=newgame` skips the opening movie unless
+`FF7_QUICKBOOT_KEEP_FMV=1`; `FF7_DSOUND_STATS=1` logs the sound-effect mixer's CoreAudio output. `FF7_SNAPSHOT=/path/shot.png` writes the window to a PNG every 5 s
 (same-process capture; no Screen Recording grant needed).
 
 `ff7_host_boot` starts `ff7_boot_and_run` on a **64 MB** detached pthread
@@ -87,10 +88,11 @@ bash tools/apply_metal_overlay.sh    # Metal overlay, based memory, then patches
 
 `apply_metal_overlay.sh` ends with `patches/android-core-darwin.patch`,
 `patches/pcrecomp-darwin.patch` and `patches/ffnx-darwin.patch`: the Darwin edits made by hand
-during the first bring-up (thread ids, `MAP_FIXED_NOREPLACE`, stack bounds, the silent
-DirectSound mixer, Apple-mangled link stubs, Metal as FFNx's renderer, NEON by target arch, the
+during the first bring-up (thread ids, `MAP_FIXED_NOREPLACE`, stack bounds, the DirectSound
+mixer's CoreAudio output (`src/hle_overlay/ff7_dsound_coreaudio.c`), Apple-mangled link stubs, Metal as FFNx's renderer, NEON by target arch, the
 `malloc.h` shim, bring-up logging). Every step is idempotent. Checked by replaying from
-pristine sources into a scratch tree: identical to the working tree, file for file.
+pristine sources into a scratch tree: identical to the working tree, file for file, apart from
+the two cmake lines that name this repo's own path.
 
 ### Darwin status (P1 bring-up)
 
@@ -146,8 +148,9 @@ SIMCTL_CHILD_FF7_QUICKBOOT=title xcrun simctl launch --console-pty booted com.ff
 ```
 
 Tap **Play**: the title screen draws on the play view's `CAMetalLayer`. The app links strictly
-(no `-undefined dynamic_lookup`); `src/ffnx_overlay/ffmpeg_movie_stubs.cpp` stands in for
-FFNx's FFmpeg movie player, so every movie ends on its first frame. Simulator only, arm64
+(no `-undefined dynamic_lookup`). With `tools/build_ffmpeg_apple.sh ios-simulator` built first,
+FFNx's real movie player is linked in; otherwise `src/ffnx_overlay/ffmpeg_movie_stubs.cpp` stands
+in for it and every movie ends on its first frame. Simulator only, arm64
 (Apple silicon).
 
 Known gaps: the 4:3 frame is stretched to the play view, and the swapchain keeps the size it

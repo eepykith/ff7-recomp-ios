@@ -380,3 +380,136 @@ for rel, old, new in EDITS:
     n += 1
 print(f"header definitions made inline: {n}" if n else "header definitions already inline")
 PY8
+
+# FF7_IOS_DSOUND_COREAUDIO: the DirectSound HLE mixer (src/hle/ff7_dsound.c) plays the game's
+# sound effects through AAudio on Android. On Apple, android-core-darwin.patch splits its mix loop
+# into mix_frames() (the AAudio callback calls it unchanged) and has mixer_start() open a CoreAudio
+# output unit, src/hle_overlay/ff7_dsound_coreaudio.c, built into ff7_core here. If no output can
+# be opened the mixer stays silent and the game runs on.
+python3 - <<'PY9'
+from pathlib import Path
+import os
+root = Path(os.environ["ROOT"])
+cm = root / "external" / "ff7-recomp-android" / "cmake" / "ff7core.cmake"
+t = cm.read_text()
+marker = "# FF7_IOS_DSOUND_COREAUDIO"
+old = "if(ANDROID)\n  target_link_libraries(ff7_core PUBLIC aaudio)    # ff7_dsound.c mixer\nendif()\n"
+if marker not in t:
+    if t.count(old) != 1:
+        raise SystemExit("ff7core.cmake layout changed; update FF7_IOS_DSOUND_COREAUDIO in tools/apply_metal_overlay.sh")
+    t = t.replace(old, old + f"""{marker}: the mixer's CoreAudio output on Apple (this repo's src/hle_overlay)
+if(APPLE)
+  target_sources(ff7_core PRIVATE "{root}/src/hle_overlay/ff7_dsound_coreaudio.c")
+  target_link_libraries(ff7_core PUBLIC "-framework AudioToolbox")
+endif()
+""", 1)
+    cm.write_text(t)
+    print("patched ff7core.cmake: CoreAudio mixer source on Apple")
+else:
+    print("ff7core.cmake already builds the CoreAudio mixer")
+PY9
+
+# FF7_IOS_FFMPEG_APPLE: on Apple, FFNx's FFmpeg comes from tools/build_ffmpeg_apple.sh
+# (build/ffmpeg-apple-<target> in the Android tree). When that target's libraries exist, FFNx
+# builds its real movie player (video/movies.cpp, video/ntscj.cpp) and the stubs above drop out;
+# otherwise nothing changes. -DFF7_FFMPEG_DIR=... overrides the folder.
+python3 - <<'PY10'
+from pathlib import Path
+import os
+root = Path(os.environ["ROOT"])
+cm = root / "external" / "ff7-recomp-android" / "cmake" / "ffnx.cmake"
+t = cm.read_text()
+marker = "# FF7_IOS_FFMPEG_APPLE"
+old = 'set(FF7_FFMPEG_DIR "${FF7_ROOT}/build/ffmpeg-android")\n'
+if marker not in t:
+    if t.count(old) != 1:
+        raise SystemExit("ffnx.cmake layout changed; update FF7_IOS_FFMPEG_APPLE in tools/apply_metal_overlay.sh")
+    t = t.replace(old, f"""{marker}: tools/build_ffmpeg_apple.sh (ff7-recomp-ios)
+if(APPLE AND NOT FF7_FFMPEG_DIR)
+  if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    if(CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+      set(FF7_FFMPEG_DIR "${{FF7_ROOT}}/build/ffmpeg-apple-ios-simulator")
+    else()
+      set(FF7_FFMPEG_DIR "${{FF7_ROOT}}/build/ffmpeg-apple-ios-device")
+    endif()
+  elseif(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
+    set(FF7_FFMPEG_DIR "${{FF7_ROOT}}/build/ffmpeg-apple-macos-x86_64")
+  else()
+    set(FF7_FFMPEG_DIR "${{FF7_ROOT}}/build/ffmpeg-apple-macos-arm64")
+  endif()
+endif()
+if(NOT FF7_FFMPEG_DIR)
+{old}endif()
+""", 1)
+    cm.write_text(t)
+    print("patched ffnx.cmake: FFmpeg from tools/build_ffmpeg_apple.sh on Apple")
+else:
+    print("ffnx.cmake already looks for tools/build_ffmpeg_apple.sh's FFmpeg")
+# The FFmpeg folder in use, for tools/darwin_link_metal_boot.sh (empty file: no FFmpeg).
+marker2 = "# FF7_IOS_FFMPEG_DIR_FILE"
+t = cm.read_text()
+if marker2 not in t:
+    t += f"""
+{marker2}: tells tools/darwin_link_metal_boot.sh which FFmpeg libraries to link
+if(APPLE)
+  if(FF7_HAVE_FFMPEG)
+    file(WRITE "${{CMAKE_BINARY_DIR}}/ff7_ffmpeg_dir.txt" "${{FF7_FFMPEG_DIR}}")
+  else()
+    file(WRITE "${{CMAKE_BINARY_DIR}}/ff7_ffmpeg_dir.txt" "")
+  endif()
+endif()
+"""
+    cm.write_text(t)
+    print("patched ffnx.cmake: records the FFmpeg folder for the Apple link")
+PY10
+
+# FF7_IOS_QUICKBOOT_KEEP_FMV: FF7_QUICKBOOT=newgame skips the opening movie. With
+# FF7_QUICKBOOT_KEEP_FMV=1 it lets it play (checking FFmpeg movies: tools/build_ffmpeg_apple.sh).
+python3 - <<'PY11'
+from pathlib import Path
+import os
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "src" / "ffnx_port" / "quickboot.cpp"
+t = p.read_text()
+marker = "FF7_QUICKBOOT_KEEP_FMV"
+old = "        if (ff7_externals.movie_object && ff7_externals.movie_object->is_playing) {\n"
+if marker not in t:
+    if t.count(old) != 1:
+        raise SystemExit("quickboot.cpp layout changed; update FF7_IOS_QUICKBOOT_KEEP_FMV in tools/apply_metal_overlay.sh")
+    t = t.replace(old, "        if (ff7_externals.movie_object && ff7_externals.movie_object->is_playing\n"
+                       f"            && !std::getenv(\"{marker}\")) {{   // FF7_IOS_QUICKBOOT_KEEP_FMV\n", 1)
+    p.write_text(t)
+    print("patched quickboot.cpp: FF7_QUICKBOOT_KEEP_FMV")
+else:
+    print("quickboot.cpp already has FF7_QUICKBOOT_KEEP_FMV")
+PY11
+
+# FF7_IOS_DARWIN_HAND_EDITS: two Darwin edits made by hand during bring-up that no step above
+# reproduced (found by replaying external/ from pristine): pcrecomp's guest arena maps with
+# MAP_FIXED_NOREPLACE / MAP_NORESERVE, which Darwin lacks, and openpsf keeps string literals
+# in a `char *` (an error in C++11 and later).
+python3 - <<'PY12'
+from pathlib import Path
+import os
+ext = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "external"
+EDITS = [
+    ("pcrecomp/runtime/win32hle/guest_alloc.c",
+     "#ifndef MAP_FIXED_NOREPLACE\n#define MAP_FIXED_NOREPLACE 0x100000\n#endif\n",
+     "#ifndef MAP_FIXED_NOREPLACE\n#if defined(__APPLE__)\n#define MAP_FIXED_NOREPLACE MAP_FIXED\n#else\n"
+     "#define MAP_FIXED_NOREPLACE 0x100000\n#endif\n#endif\n"
+     "#if defined(__APPLE__) && !defined(MAP_NORESERVE)\n#define MAP_NORESERVE 0\n#endif\n"),
+    ("deps/openpsf/include/openpsf/openpsf.h",
+     "\tchar* last_error;\n",
+     "\tconst char* last_error;   // FF7Recomp: holds string literals (C++11)\n"),
+]
+n = 0
+for rel, old, new in EDITS:
+    p = ext / rel
+    t = p.read_text()
+    if new in t:
+        continue
+    if t.count(old) != 1:
+        raise SystemExit(f"{rel}: layout changed; update FF7_IOS_DARWIN_HAND_EDITS in tools/apply_metal_overlay.sh")
+    p.write_text(t.replace(old, new, 1))
+    n += 1
+print(f"Darwin hand edits applied: {n}" if n else "Darwin hand edits already applied")
+PY12

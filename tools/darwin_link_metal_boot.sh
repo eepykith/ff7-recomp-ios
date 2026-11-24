@@ -149,6 +149,13 @@ CORE_LIBS=(
   "$B/libffnx_soloud.a" "$B/libffnx_vgmstream.a" "$B/libffnx_lz4.a"
   "$B/libffnx_ogg.a" "$B/libffnx_vorbis.a" "$B/libff7_rcheevos.a" "$B/libffnx-resources.a"
 )
+# FFmpeg for FFNx's movie player, when cmake found tools/build_ffmpeg_apple.sh's libraries for
+# this target (it records the folder; empty: movies are stubs).
+FFMPEG_DIR="$(cat "$B/ff7_ffmpeg_dir.txt" 2>/dev/null || true)"
+if [[ -n "$FFMPEG_DIR" ]]; then
+  for l in avformat avcodec swscale swresample avutil; do CORE_LIBS+=("$FFMPEG_DIR/lib/lib$l.a"); done
+  echo "FFmpeg: $FFMPEG_DIR"
+fi
 
 # FF7_LINK_MODE=bundle: merge the core into one static library for an app to link
 # (the iOS app: ios/project.yml), instead of linking ff7_metal_boot.
