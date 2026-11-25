@@ -10,7 +10,7 @@ for your saves and mods.
 **FF7Recomp Builder**, a small Mac app ([download](https://github.com/eepykith/ff7-recomp-ios/releases)).
 iOS can't compile code on the phone, so the Mac does it once and makes an app to install.
 
-> Pre-release ([v0.2.2](https://github.com/eepykith/ff7-recomp-ios/releases/tag/v0.2.2)): tested
+> Pre-release ([v0.2.3](https://github.com/eepykith/ff7-recomp-ios/releases/tag/v0.2.3)): tested
 > through the first reactor and its boss on an iPhone Duo, now with mods from 7th Heaven's
 > catalogs. Expect rough edges.
 
