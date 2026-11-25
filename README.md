@@ -306,12 +306,22 @@ Planned by version; the order may change as reports come in.
 **0.4 — A polished launcher**
 - Better aesthetics: home screen art, a smoother Get Mods and Mods screen, clearer first launch
 - More devices: tested on regular iPhones and iPads beyond the Duo
+- **Game Center achievements:** the game's 32 achievements, with the system's pop-ups and your
+  Game Center profile
 
-**0.5 — FF7Recomp on the Mac, synced with iCloud**
+**0.5 — FF7Recomp on the Mac, iCloud sync, MetalFX and haptics**
 - A Mac game app, built by the same builder from your Steam copy
 - Saves, save states and mods synced through iCloud between your Mac, iPhone and iPad
+- **MetalFX upscaling:** the game drawn at a lower resolution and upscaled by Metal, for less
+  heat and longer battery life (or a sharper picture), especially with HD texture mods
+- **Controller haptics:** rumble on Xbox and DualSense controllers, DualSense adaptive triggers,
+  and the iPhone's Taptic Engine when you play on the touch pad
 
 **Toward 1.0**
+- **HDR (EDR):** brighter highlights for magic and Mako glow on iPhone and iPad screens that
+  support it
+- **External display:** the game on a TV or monitor over USB-C, with the iPhone as the
+  controller and status panel
 - Display settings (filters), Steam Cloud saves, in-app install help
 
 ---
