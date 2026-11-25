@@ -1,3 +1,4 @@
+import AVFoundation
 import GameController
 import SwiftUI
 
@@ -26,6 +27,9 @@ struct GameHostView: View {
     @AppStorage(TouchPadMode.key) private var touchPadMode = TouchPadMode.auto
     @State private var companion = CompanionSnapshot.empty
     @State private var note: String?
+    @Environment(\.scenePhase) private var scenePhase
+    /// A call (or another app's alarm, Siri) has taken the audio.
+    @State private var audioInterrupted = false
 
     var body: some View {
         GeometryReader { safeGeo in
@@ -108,6 +112,7 @@ struct GameHostView: View {
             Text("FF7Recomp closes. Open it again to play. Progress since your last save is lost.")
         }
         .onAppear {
+            EventLog.write("play view open \(EventLog.audioState())")
             PadInput.shared.startControllers()
         }
         .task { await bootWhenLandscape() }
@@ -117,10 +122,42 @@ struct GameHostView: View {
         .onReceive(NotificationCenter.default.publisher(for: .GCControllerDidDisconnect)) { _ in
             controller = Self.hasGamepad()
         }
+        // Leaving the app, the app switcher, Control Center, a call: the game stops at its next
+        // frame with its sound, and goes on where it was when FF7Recomp is back in front.
+        .onChange(of: scenePhase) {
+            EventLog.write("scene \(scenePhase)")
+            updatePause()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { note in
+            guard let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  let type = AVAudioSession.InterruptionType(rawValue: raw) else { return }
+            let reason = (note.userInfo?[AVAudioSessionInterruptionReasonKey] as? UInt).map { " reason=\($0)" } ?? ""
+            let options = (note.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt).map { " options=\($0)" } ?? ""
+            EventLog.write("audio interruption \(type == .began ? "began" : "ended")\(reason)\(options)")
+            audioInterrupted = type == .began
+            updatePause()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { note in
+            let reason = (note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt) ?? 0
+            EventLog.write("audio route change reason=\(reason) \(EventLog.audioState())")
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.silenceSecondaryAudioHintNotification)) { _ in
+            EventLog.write("silence hint \(EventLog.audioState())")
+        }
         .onDisappear {
             PadInput.shared.stopControllers()
+            ff7_platform_set_paused(0)
             EngineBridge.shutdown()
             OrientationLock.set(.all)
+        }
+    }
+
+    private func updatePause() {
+        let pause = scenePhase != .active || audioInterrupted
+        let was = ff7_platform_paused() != 0
+        ff7_platform_set_paused(pause ? 1 : 0)
+        if pause != was {
+            EventLog.write("\(pause ? "paused" : "resumed") (scene \(scenePhase), call \(audioInterrupted)) \(EventLog.audioState())")
         }
     }
 

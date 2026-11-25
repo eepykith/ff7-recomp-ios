@@ -109,8 +109,44 @@ void ff7_platform_set_pad(unsigned short buttons, unsigned char left_trigger,
   pthread_mutex_unlock(&g_pad_mu);
 }
 
+/* Pause: the app left the screen or a call took the audio. The game thread waits at its next
+ * frame (so it never draws while the app is in the background, which iOS forbids) and both
+ * sound outputs stop: the game's mixer (CoreAudio) and FFNx's music and voices (miniaudio,
+ * which a call stops and never starts again by itself). */
+void ff7_apple_audio_pause(int paused) __attribute__((weak));   /* ff7_dsound_coreaudio.c */
+void ff7_soloud_pause(int paused) __attribute__((weak));        /* soloud_miniaudio.cpp */
+static pthread_mutex_t g_pause_mu = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t g_pause_cv = PTHREAD_COND_INITIALIZER;
+static int g_paused;
+
+void ff7_platform_set_paused(int paused) {
+  pthread_mutex_lock(&g_pause_mu);
+  int changed = (paused != 0) != (g_paused != 0);
+  g_paused = paused != 0;
+  if (changed) {
+    if (ff7_apple_audio_pause) ff7_apple_audio_pause(g_paused);
+    if (ff7_soloud_pause) ff7_soloud_pause(g_paused);
+  }
+  pthread_cond_broadcast(&g_pause_cv);
+  pthread_mutex_unlock(&g_pause_mu);
+}
+
+int ff7_platform_paused(void) {
+  pthread_mutex_lock(&g_pause_mu);
+  int paused = g_paused;
+  pthread_mutex_unlock(&g_pause_mu);
+  return paused;
+}
+
+static void wait_while_paused(void) {
+  pthread_mutex_lock(&g_pause_mu);
+  while (g_paused) pthread_cond_wait(&g_pause_cv, &g_pause_mu);
+  pthread_mutex_unlock(&g_pause_mu);
+}
+
 /* Once per game frame, on the game thread (FF7_IOS_PAD_FRAME in companion.cpp). */
 void ff7_platform_pad_frame(void) {
+  wait_while_paused();
   pthread_mutex_lock(&g_pad_mu);
   clock_gettime(CLOCK_MONOTONIC, &g_last_frame);
   unsigned short prev = g_pad.buttons, next = 0;

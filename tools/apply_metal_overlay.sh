@@ -349,6 +349,60 @@ else:
     print("patched companion.cpp: FF7_IOS_PAD_FRAME")
 PY14
 
+# FF7_IOS_SOLOUD_PAUSE: let the platform layer stop and start FFNx's audio device (music,
+# voices) while the game is paused; miniaudio stops it for a call and never starts it again.
+python3 - <<'PY15'
+from pathlib import Path
+import os
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "external" / "deps" / "soloud" / "src" / "backend" / "miniaudio" / "soloud_miniaudio.cpp"
+t = p.read_text()
+marker = "FF7_IOS_SOLOUD_PAUSE"
+old = "    ma_device gDevice;\n"
+new = old + """}
+// FF7_IOS_SOLOUD_PAUSE: ff7_platform_set_paused (src/platform/ff7_platform.c)
+extern "C" void ff7_soloud_pause(int paused)
+{
+    if (paused) ma_device_stop(&SoLoud::gDevice);
+    else ma_device_start(&SoLoud::gDevice);
+}
+namespace SoLoud
+{
+"""
+if marker in t:
+    print("soloud_miniaudio.cpp already has FF7_IOS_SOLOUD_PAUSE")
+else:
+    if t.count(old) != 1:
+        raise SystemExit("soloud_miniaudio.cpp layout changed; update FF7_IOS_SOLOUD_PAUSE in tools/apply_metal_overlay.sh")
+    p.write_text(t.replace(old, new, 1))
+    print("patched soloud_miniaudio.cpp: FF7_IOS_SOLOUD_PAUSE")
+PY15
+
+# FF7_IOS_SOLOUD_SESSION: FFNx's audio device sets the app's audio session; miniaudio's default
+# asks for PlayAndRecord and falls back to Playback, which ignores the silent switch. Use
+# SoloAmbient, as games do: the silent switch mutes the game, other apps' music stops.
+python3 - <<'PY16'
+from pathlib import Path
+import os
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "external" / "deps" / "soloud" / "src" / "backend" / "miniaudio" / "soloud_miniaudio.cpp"
+t = p.read_text()
+marker = "FF7_IOS_SOLOUD_SESSION"
+old = "        if (ma_device_init(NULL, &config, &gDevice) != MA_SUCCESS)\n"
+new = """        // FF7_IOS_SOLOUD_SESSION (tools/apply_metal_overlay.sh)
+        static ma_context sContext;
+        ma_context_config cc = ma_context_config_init();
+        cc.coreaudio.sessionCategory = ma_ios_session_category_solo_ambient;
+        ma_context* ctx = ma_context_init(NULL, 0, &cc, &sContext) == MA_SUCCESS ? &sContext : NULL;
+        if (ma_device_init(ctx, &config, &gDevice) != MA_SUCCESS)
+"""
+if marker in t:
+    print("soloud_miniaudio.cpp already has FF7_IOS_SOLOUD_SESSION")
+else:
+    if t.count(old) != 1:
+        raise SystemExit("soloud_miniaudio.cpp layout changed; update FF7_IOS_SOLOUD_SESSION in tools/apply_metal_overlay.sh")
+    p.write_text(t.replace(old, new, 1))
+    print("patched soloud_miniaudio.cpp: FF7_IOS_SOLOUD_SESSION")
+PY16
+
 # FF7_IOS_AUDIO_OBJCXX: on iOS miniaudio includes AVFoundation (its audio session), which
 # needs Objective-C++; compile SoLoud's miniaudio backend that way on Apple mobile targets.
 python3 - <<'PY6'

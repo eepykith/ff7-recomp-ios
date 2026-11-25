@@ -47,6 +47,9 @@ void ff7_platform_set_pad(unsigned short buttons, unsigned char left_trigger,
 void ff7_platform_pad_inject(unsigned short buttons);
 /* Once per game frame, from the engine: lets short taps reach the game (ff7_platform.c). */
 void ff7_platform_pad_frame(void);
+/* Pause the game at its next frame and stop its sound (1), or go on (0). Main thread. */
+void ff7_platform_set_paused(int paused);
+int ff7_platform_paused(void);
 int ff7_platform_pad_buttons(void);
 void ff7_platform_pad_rumble(unsigned index, unsigned short left,
                              unsigned short right);

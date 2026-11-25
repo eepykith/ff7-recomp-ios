@@ -112,4 +112,13 @@ fail:
     if (g_unit) { AudioComponentInstanceDispose(g_unit); g_unit = NULL; }
     return -1;
 }
+
+/* Stop the output while the game is paused (ff7_platform_set_paused) and start it again; a
+ * call also stops RemoteIO, and the start afterwards brings it back. */
+void ff7_apple_audio_pause(int paused) {
+    if (!g_unit) return;
+    OSStatus e = paused ? AudioOutputUnitStop(g_unit) : AudioOutputUnitStart(g_unit);
+    if (e != noErr) fprintf(stderr, "[dsound] CoreAudio %s failed: %d\n", paused ? "stop" : "start", (int)e);
+    else fprintf(stderr, "[dsound] CoreAudio %s\n", paused ? "paused" : "resumed");
+}
 #endif
