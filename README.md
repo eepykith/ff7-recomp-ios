@@ -122,9 +122,9 @@ Battle+. Turn it sideways or close it and the game fills the screen.
 
 Known gaps:
 
-- **Mods** are tested in the simulator (a folder mod, a .7z mod from the catalog). `.iro`
-  archives and large texture packs still need testing on an iPhone; mods on Mega or forum pages
-  open in Safari to download by hand, and RAR archives aren't supported.
+- **Mods** tested on an iPhone Duo: Echo-S, Enhanced Stock UI and SYW Unified Battle Textures
+  load and run together. Mods on Mega or forum pages open in Safari to download by hand, and
+  RAR archives aren't supported.
 - Tested on an iPhone Duo and in the simulator; other iPhones and iPads are untested.
 - FF7Recomp Builder runs on Apple silicon Macs only, and isn't notarized.
 
@@ -132,13 +132,11 @@ Known gaps:
 
 What comes next, roughly in order:
 
-1. **Mods on the iPhone.** Download and play `.iro` mods and large texture packs on a device
-   (memory, storage, load times).
-2. **A longer playthrough.** Play on past the first reactor through Midgar, fixing what breaks;
+1. **A longer playthrough.** Play on past the first reactor through Midgar, fixing what breaks;
    test more iPhones and iPads.
-3. **Builder for everyone.** Sign and notarize FF7Recomp Builder so macOS opens it without a
+2. **Builder for everyone.** Sign and notarize FF7Recomp Builder so macOS opens it without a
    warning, and support Intel Macs.
-4. **Toward 1.0.** Settings for the picture (widescreen, filters), Steam Cloud saves, and in-app
+3. **Toward 1.0.** Settings for the picture (widescreen, filters), Steam Cloud saves, and in-app
    help for signing and installing.
 
 ## How it works
