@@ -19,8 +19,9 @@ launcher for saves and mods.
 
 > [!NOTE]
 > **Pre-release** ([v0.2.3a](https://github.com/eepykith/ff7-recomp-ios/releases/tag/v0.2.3a)) —
-> playable through the **first reactor and its boss** on an **iPhone Duo**, including mods from
-> 7th Heaven catalogs. Expect rough edges past that point. Sideload only — not the App Store.
+> a longer playthrough on an **iPhone Duo** suggests the **full game is playable**, including mods
+> from 7th Heaven catalogs. Still a pre-release — expect rough edges. Sideload only — not the App
+> Store.
 
 ---
 
@@ -165,7 +166,7 @@ Use these folders to back up, move between devices, or add files by hand.
 
 ## What works
 
-Tested on an **iPhone Duo** through the **intro → first reactor → boss**:
+Tested on an **iPhone Duo**. A longer playthrough there suggests the **full game is playable**:
 
 - Field, battles, menus, **movies**, music & SFX
 - Saves and save states
@@ -216,7 +217,6 @@ Tried a mod? [Open an issue](https://github.com/eepykith/ff7-recomp-ios/issues) 
 
 | Area | Status |
 | --- | --- |
-| Play past the first reactor / full Midgar+ | Not claimed — longer playthrough is still in progress |
 | Non-Duo iPhone / iPad | Untested (simulator + Duo only) |
 | Builder notarization | Open — Gatekeeper “Open Anyway” on first launch |
 | Intel Mac Builder | Not supported |
@@ -227,7 +227,7 @@ Tried a mod? [Open an issue](https://github.com/eepykith/ff7-recomp-ios/issues) 
 
 ## Roadmap
 
-1. **Longer playthrough** — past the first reactor through Midgar; more devices
+1. **More devices** — smoke-test regular iPhones and iPads beyond the Duo
 2. **Builder for everyone** — notarize; Intel Mac support
 3. **Toward 1.0** — display settings (widescreen, filters), Steam Cloud saves, in-app install help
 
