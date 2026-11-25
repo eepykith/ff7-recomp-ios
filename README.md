@@ -10,7 +10,7 @@ for your saves and mods.
 **FF7Recomp Builder**, a small Mac app ([download](https://github.com/eepykith/ff7-recomp-ios/releases)).
 iOS can't compile code on the phone, so the Mac does it once and makes an app to install.
 
-> Pre-release ([v0.2.1](https://github.com/eepykith/ff7-recomp-ios/releases/tag/v0.2.1)): tested
+> Pre-release ([v0.2.2](https://github.com/eepykith/ff7-recomp-ios/releases/tag/v0.2.2)): tested
 > through the first reactor and its boss on an iPhone Duo, now with mods from 7th Heaven's
 > catalogs. Expect rough edges.
 
@@ -115,6 +115,8 @@ Battle+. Turn it sideways or close it and the game fills the screen.
   (`.iro`, `.zip`, `.7z`, Google Drive links included) one after another while you browse, with
   conflict warnings before and after. Mods load in the game in the order set in the Mods list;
   touch and hold a mod for its options or to delete it.
+- **Frame rate** (Settings): the game's own rates, 30 FPS battles, 60 FPS, or 120 FPS in the
+  field on 120 Hz screens such as the iPhone Duo's.
 - Leaving the app or taking a call pauses the game and its sound; it goes on where it was. The
   silent switch mutes the game.
 
