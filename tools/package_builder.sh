@@ -4,7 +4,7 @@
 # path of this Mac (the release is shared) or the kit holds lifted game code.
 #
 #   bash tools/make_builder_kit.sh
-#   bash tools/package_builder.sh 0.1.0      # -> build-builder/release/FF7Recomp-Builder-0.1.0.zip
+#   bash tools/package_builder.sh 0.2.0      # -> build-builder/release/FF7Recomp-Builder-0.2.0.zip
 set -euo pipefail
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 VERSION="${1:?usage: package_builder.sh VERSION}"
