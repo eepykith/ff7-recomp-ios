@@ -82,7 +82,7 @@ connected, the pad hides (Settings → Controls).
 | First launch | FF7Recomp Builder (Mac) |
 | :---: | :---: |
 | <img src="docs/screenshots/setup.jpg" alt="First launch: game files confirmed, Play" width="360"> | ![FF7Recomp Builder: your game found and checked, Xcode found, Build FF7Recomp.ipa](docs/screenshots/mac-builder.jpg) |
-| Confirms game files (1.02 US), then **Play**. Mods unlock after confirm. | Finds Steam, checks the copy, builds **FF7Recomp.ipa**. |
+| Confirms your Steam game files, then **Play**. Mods unlock after confirm. | Finds Steam, checks the copy, builds **FF7Recomp.ipa**. |
 
 ---
 
@@ -111,7 +111,7 @@ Grab **FF7Recomp Builder** from
 ### 2. Build your IPA
 
 1. The Builder finds your Steam copy (or let you pick the folder).
-2. It checks for the **1.02 US** build and that Xcode is present.
+2. It checks the game is as Steam installs it today (no patches) and that Xcode is present.
 3. Click **Build FF7Recomp.ipa…** — it lifts the game to C, compiles for iPhone, links the
    engine, and packs your game files.
 

@@ -75,7 +75,7 @@ final class Builder: ObservableObject {
         }
         let sha = Insecure.SHA1.hash(data: data).map { String(format: "%02x", $0) }.joined()
         guard sha == exeSHA1 else {
-            return .problem("This ff7_en (SHA-1 \(sha.prefix(12))…) is not the 1.02 US build FF7Recomp is made from. No patch or older version is needed; patched game files are not supported.")
+            return .problem("This ff7_en (SHA-1 \(sha.prefix(12))…) is patched or from another release. FF7Recomp is made from the one in today's Steam install (ff7/resources/ff7_1.02): no patch or older version is needed. Verify the game's files in Steam (Properties → Installed Files) and choose the folder again.")
         }
         return .ok(root)
     }

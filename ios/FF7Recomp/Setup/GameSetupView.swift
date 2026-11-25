@@ -50,7 +50,7 @@ struct GameSetupView: View {
                             Label("Game files confirmed", systemImage: "checkmark.seal.fill")
                                 .font(.headline)
                                 .foregroundStyle(.green)
-                            Text("FINAL FANTASY VII 1.02 US (Steam)\(model.filesBuiltIn ? ", built into this app from your copy" : ""). ff7_en.exe checked (SHA-1 \(GameFiles.exeSHA1.prefix(8))…), with its data in English, French, German and Spanish. Mods are unlocked.")
+                            Text("FINAL FANTASY VII from Steam, as Steam installs it today\(model.filesBuiltIn ? ", built into this app from your copy" : ""). Game program checked, with its data in English, French, German and Spanish. Mods are unlocked.")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                             Button {
@@ -103,10 +103,10 @@ struct GameSetupView: View {
         switch model.filesState {
         case .ready:
             StatusRow(symbol: "checkmark.circle.fill", tint: .green, title: "Game files here",
-                      detail: "FINAL FANTASY VII 1.02 (Steam), English, French, German and Spanish")
+                      detail: "FINAL FANTASY VII (Steam), English, French, German and Spanish")
         case .wrongExe(let sha):
-            StatusRow(symbol: "exclamationmark.triangle.fill", tint: .orange, title: "Not the right ff7_en",
-                      detail: "Its SHA-1 starts \(sha)…; FF7Recomp is made from the 1.02 US build. Import the files again.")
+            StatusRow(symbol: "exclamationmark.triangle.fill", tint: .orange, title: "Not the game program Steam installs",
+                      detail: "This ff7_en (SHA-1 \(sha)…) is patched or from another release; FF7Recomp is made from the one in today's Steam install (ff7_1.02). Verify the game in Steam, then import the files again.")
         case .missing:
             StatusRow(symbol: "circle.dashed", tint: .secondary, title: "No game files yet", detail: nil)
         }

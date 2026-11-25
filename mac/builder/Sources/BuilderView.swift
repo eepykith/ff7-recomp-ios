@@ -110,7 +110,7 @@ struct BuilderView: View {
     private var gameStatus: (Color, String) {
         switch builder.game {
         case .none: return builder.gameFolder == nil ? (.secondary, "Choose your FINAL FANTASY VII Steam Edition folder") : (.secondary, "Checking…")
-        case .ok: return (.green, "FINAL FANTASY VII 1.02 US (Steam): ff7_en checked")
+        case .ok: return (.green, "FINAL FANTASY VII from Steam: game program checked")
         case .problem(let text): return (.orange, text)
         }
     }

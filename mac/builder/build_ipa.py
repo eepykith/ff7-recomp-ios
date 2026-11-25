@@ -281,8 +281,9 @@ def build(kit: Path, game: Path, out: Path, work: Path) -> None:
     install = install_root(game.expanduser())
     got = sha1(install / "ff7/resources/ff7_1.02/ff7_en")
     if got != EXE_SHA1:
-        raise BuildError(f"This folder's ff7_en (SHA-1 {got[:12]}…) is not the 1.02 US build FF7Recomp is made "
-                         f"from. {WHICH}")
+        raise BuildError(f"This folder's ff7_en (SHA-1 {got[:12]}…) is patched or from another release; FF7Recomp "
+                         f"is made from the one in today's Steam install (ff7/resources/ff7_1.02). Verify the "
+                         f"game's files in Steam, then try again. {WHICH}")
     log(f"game: {install}")
     log(f"Xcode iOS SDK: {xc['sdk']}")
     work.mkdir(parents=True, exist_ok=True)

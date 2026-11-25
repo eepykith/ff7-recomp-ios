@@ -179,7 +179,7 @@ struct GameFiles {
 
         let sha = try Self.sha1(of: srcExe)
         guard sha == Self.exeSHA1 else {
-            throw ImportError("This folder's ff7_en (SHA-1 \(sha.prefix(12))…) is not the 1.02 US build FF7Recomp is made from. " + Self.whichFolder)
+            throw ImportError("This folder's ff7_en (SHA-1 \(sha.prefix(12))…) is patched or from another release; FF7Recomp is made from the one in today's Steam install (ff7/resources/ff7_1.02). Verify the game's files in Steam, then copy the folder again. " + Self.whichFolder)
         }
 
         // what to copy: the exe, and data/ without the languages the game does not use here
