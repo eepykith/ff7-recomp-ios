@@ -24,6 +24,11 @@ void ff7_un7z_progress(unsigned long long *done, unsigned long long *total);
  * without the game (the launcher alone). free() the result. */
 char *ff7_ios_mods_conflicts_json(const char *profile_path);
 
+/* A mod (folder or .iro) described as JSON: name, author, version, category, options
+ * [{id,name,type,default,description,values:[{value,name}]}], requires, forbids
+ * (ff7_ios_modinfo.cpp). NULL in a build without the game. free() the result. */
+char *ff7_ios_mod_info_json(const char *path);
+
 #ifdef __cplusplus
 }
 #endif

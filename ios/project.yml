@@ -26,6 +26,7 @@ targets:
         createIntermediateGroups: true
       - path: ../src/ios_mods          # unpacking mod downloads (zip; 7z below)
         createIntermediateGroups: true
+        excludes: ["ff7_ios_modinfo.cpp"]   # needs the core's mod layer (full app only)
       # .7z mod downloads: the Android port's un7z.c and the LZMA SDK's 7z reader (external/,
       # tools/fetch_android_core.sh)
       - path: ../external/ff7-recomp-android/src/android/un7z.c
@@ -82,7 +83,7 @@ targets:
       properties:
         CFBundleDisplayName: FF7Recomp
         CFBundleDevelopmentRegion: en
-        CFBundleShortVersionString: "0.2.0"
+        CFBundleShortVersionString: "0.2.1"
         LSRequiresIPhoneOS: true
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
@@ -173,6 +174,7 @@ targets:
           - "$(SRCROOT)/../src/ios"
           - "$(SRCROOT)/../src/ios_mods"
           - "$(SRCROOT)/../external/ff7-recomp-android/external/deps/lzma"
+          - "$(SRCROOT)/../external/ff7-recomp-android/src/mods"
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
         GCC_PREPROCESSOR_DEFINITIONS: "$(inherited) FF7_BUNDLE_GAME=1 FF7_PLATFORM_ios=1"

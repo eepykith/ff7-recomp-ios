@@ -10,7 +10,7 @@ for your saves and mods.
 **FF7Recomp Builder**, a small Mac app ([download](https://github.com/eepykith/ff7-recomp-ios/releases)).
 iOS can't compile code on the phone, so the Mac does it once and makes an app to install.
 
-> Pre-release ([v0.2.0](https://github.com/eepykith/ff7-recomp-ios/releases/tag/v0.2.0)): tested
+> Pre-release ([v0.2.1](https://github.com/eepykith/ff7-recomp-ios/releases/tag/v0.2.1)): tested
 > through the first reactor and its boss on an iPhone Duo, now with mods from 7th Heaven's
 > catalogs. Expect rough edges.
 
@@ -113,7 +113,8 @@ Battle+. Turn it sideways or close it and the game fills the screen.
 - Your saves, save states and mods in the Files app.
 - **Get Mods:** browse 7th Heaven's Qhimm and Sega catalogs in the app, download and update mods
   (`.iro`, `.zip`, `.7z`, Google Drive links included) one after another while you browse, with
-  conflict warnings before and after. Mods load in the game in the order set in the Mods list.
+  conflict warnings before and after. Mods load in the game in the order set in the Mods list;
+  touch and hold a mod for its options or to delete it.
 - Leaving the app or taking a call pauses the game and its sound; it goes on where it was. The
   silent switch mutes the game.
 
@@ -130,7 +131,7 @@ Known gaps:
 What comes next, roughly in order:
 
 1. **Mods on the iPhone.** Download and play `.iro` mods and large texture packs on a device
-   (memory, storage, load times); mod options (7th Heaven's configuration screen).
+   (memory, storage, load times).
 2. **A longer playthrough.** Play on past the first reactor through Midgar, fixing what breaks;
    test more iPhones and iPads.
 3. **Builder for everyone.** Sign and notarize FF7Recomp Builder so macOS opens it without a

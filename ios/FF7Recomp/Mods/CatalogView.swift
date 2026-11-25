@@ -96,6 +96,7 @@ struct CatalogView: View {
         }
         .refreshable { await refresh(force: true) }
         .task { await refresh(force: false) }
+        .onAppear { queue.libraryChanged(); search() }
         .onChange(of: query) { search() }
         .onChange(of: category) { search() }
         .onChange(of: filter) { search() }

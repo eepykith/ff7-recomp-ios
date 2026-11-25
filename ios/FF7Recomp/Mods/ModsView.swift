@@ -55,6 +55,20 @@ final class ModsModel: ObservableObject {
         }
         mods.remove(atOffsets: offsets)
         save()
+        DownloadQueue.shared.libraryChanged()      // the catalog no longer counts it as installed
+    }
+
+    func delete(_ mod: ModItem) {
+        guard let i = mods.firstIndex(where: { $0.id == mod.id }) else { return }
+        delete(at: IndexSet(integer: i))
+    }
+
+    /// Set one of a mod's options (saved in the profile; the game reads it when it starts).
+    func setOption(_ mod: ModItem, _ option: ModOptionDef, _ value: Int) {
+        guard let i = mods.firstIndex(where: { $0.id == mod.id }) else { return }
+        mods[i].options.removeAll { $0.id == option.id }
+        if value != option.defaultValue { mods[i].options.append(.init(id: option.id, value: value)) }
+        save()
     }
 
     func handleImport(_ result: Result<[URL], Error>) {
@@ -106,6 +120,8 @@ struct ModsView: View {
     }
 
     @ObservedObject private var queue = DownloadQueue.shared
+    @State private var optionsFor: ModItem?
+    @State private var deleting: ModItem?
 
     var body: some View {
         List {
@@ -153,7 +169,7 @@ struct ModsView: View {
             } else {
                 Section {
                     ForEach(model.mods) { mod in
-                        ModRow(mod: mod, notes: model.report.perMod[mod.fileName.lowercased()] ?? [],
+                        ModRow(mod: mod, onOptions: { optionsFor = mod }, onDelete: { deleting = mod }, notes: model.report.perMod[mod.fileName.lowercased()] ?? [],
                                update: queue.catalog.installedByFile(mod.fileName).flatMap { queue.catalog.byID($0.id) }
                                    .map(queue.catalog.updateAvailable) ?? false) { model.setEnabled(mod, $0) }
                     }
@@ -203,6 +219,16 @@ struct ModsView: View {
         }
         .refreshable { model.reload() }
         .onReceive(NotificationCenter.default.publisher(for: .ff7ModsChanged)) { _ in model.reload() }
+        .sheet(item: $optionsFor) { mod in
+            NavigationStack { ModOptionsView(model: model, modID: mod.id) }
+        }
+        .confirmationDialog("Delete \(deleting?.displayName ?? "")?", isPresented: Binding(
+            get: { deleting != nil }, set: { if !$0 { deleting = nil } }), titleVisibility: .visible) {
+            Button("Delete", role: .destructive) { if let m = deleting { model.delete(m) }; deleting = nil }
+            Button("Cancel", role: .cancel) { deleting = nil }
+        } message: {
+            Text("It's removed from FF7Recomp › Mods. You can download it again from Get Mods.")
+        }
     }
 
     private var reportTitle: String {
@@ -214,6 +240,8 @@ struct ModsView: View {
 
 private struct ModRow: View {
     let mod: ModItem
+    var onOptions: () -> Void = {}
+    var onDelete: () -> Void = {}
     var notes: [String] = []
     var update = false
     let onToggle: (Bool) -> Void
@@ -234,7 +262,17 @@ private struct ModRow: View {
                 ForEach(notes.prefix(2), id: \.self) { n in
                     Text(n).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                 }
+                if let n = mod.info?.options.count, n > 0 {
+                    Text("\(n) option\(n == 1 ? "" : "s") · touch and hold to change")
+                        .font(.caption2).foregroundStyle(.tint).lineLimit(1)
+                }
             }
+        }
+        .contextMenu {
+            Button(action: onOptions) {
+                Label((mod.info?.options.isEmpty ?? true) ? "About this mod" : "Options…", systemImage: "slider.horizontal.3")
+            }
+            Button(role: .destructive, action: onDelete) { Label("Delete", systemImage: "trash") }
         }
     }
 
@@ -245,5 +283,81 @@ private struct ModRow: View {
         if let version = mod.info?.version { parts.append("v\(version)") }
         parts.append(mod.kind == .iro ? mod.fileName : mod.kind.rawValue)
         return parts.joined(separator: " · ")
+    }
+}
+
+/// A mod's settings (7th Heaven's configuration screen): switches and choices from its mod.xml,
+/// saved in the profile; the game applies them when it starts.
+private struct ModOptionsView: View {
+    @ObservedObject var model: ModsModel
+    let modID: String
+    @Environment(\.dismiss) private var dismiss
+
+    private var mod: ModItem? { model.mods.first { $0.id == modID } }
+
+    var body: some View {
+        List {
+            if let mod {
+                Section {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(mod.displayName).font(.headline)
+                        let facts = [mod.info?.category, mod.info?.author, mod.info?.version.map { "v\($0)" }].compactMap { $0 }
+                        if !facts.isEmpty { Text(facts.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary) }
+                        if let d = mod.info?.description, !d.isEmpty {
+                            Text(d).font(.callout).padding(.top, 4)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                    Toggle("Switched on", isOn: Binding(get: { mod.enabled }, set: { model.setEnabled(mod, $0) }))
+                }
+                let options = mod.info?.options ?? []
+                if options.isEmpty {
+                    Section { Text("This mod has no options.").foregroundStyle(.secondary) }
+                } else {
+                    Section {
+                        ForEach(options) { option in
+                            OptionRow(option: option, value: mod.value(of: option)) { model.setOption(mod, option, $0) }
+                        }
+                    } header: {
+                        Text("Options")
+                    } footer: {
+                        Text("Changes apply the next time the game starts.")
+                    }
+                    if mod.options.contains(where: { o in options.contains { $0.id == o.id } }) {
+                        Section {
+                            Button("Reset to defaults") {
+                                for o in options { model.setOption(mod, o, o.defaultValue) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle("Options")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+    }
+}
+
+private struct OptionRow: View {
+    let option: ModOptionDef
+    let value: Int
+    let onChange: (Int) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if option.isBool {
+                Toggle(option.name, isOn: Binding(get: { value != 0 }, set: { onChange($0 ? 1 : 0) }))
+            } else {
+                Picker(option.name, selection: Binding(get: { value }, set: onChange)) {
+                    ForEach(option.values, id: \.value) { v in Text(v.name).tag(v.value) }
+                    if !option.values.contains(where: { $0.value == value }) { Text("\(value)").tag(value) }
+                }
+            }
+            if !option.description.isEmpty {
+                Text(option.description).font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 2)
     }
 }

@@ -88,6 +88,13 @@ final class DownloadQueue: ObservableObject {
         save()
     }
 
+    /// The mods folder changed outside a download (a mod deleted in the app or in Files): mods
+    /// that are gone stop counting as installed.
+    func libraryChanged() {
+        catalog.prune(modsDir: library.paths.mods)
+        objectWillChange.send()
+    }
+
     func clearFinished() {
         items.removeAll { $0.finished }
     }

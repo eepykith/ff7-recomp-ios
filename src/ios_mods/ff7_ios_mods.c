@@ -12,3 +12,9 @@ __attribute__((weak)) char *ff7_mods_conflicts_json(const char *profile_path) {
 char *ff7_ios_mods_conflicts_json(const char *profile_path) {
   return ff7_mods_conflicts_json(profile_path);
 }
+
+/* ff7_ios_modinfo.cpp (full app only) replaces this. */
+__attribute__((weak)) char *ff7_ios_mod_info_json(const char *path) {
+  (void)path;
+  return NULL;
+}

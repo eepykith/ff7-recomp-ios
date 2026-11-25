@@ -10,6 +10,32 @@ struct ModInfo: Equatable {
     var version: String?
     var category: String?
     var description: String?
+    /// The mod's settings (7th Heaven's configuration screen), from <ConfigOption>.
+    var options: [ModOptionDef] = []
+
+    /// Read with the game's own mod layer (folder or .iro, src/ios_mods/ff7_ios_modinfo.cpp);
+    /// nil in the launcher alone or when the mod has no readable mod.xml.
+    static func native(path: String) -> ModInfo? {
+        guard let c = path.withCString({ ff7_ios_mod_info_json($0) }) else { return nil }
+        defer { free(c) }
+        struct J: Decodable {
+            struct V: Decodable { var value: Int; var name: String? }
+            struct O: Decodable { var id: String; var name: String?; var type: String?; var `default`: Int?; var description: String?; var values: [V]? }
+            var error: String?; var hasModXml: Bool?
+            var id: String?; var name: String?; var author: String?; var version: String?; var category: String?; var description: String?
+            var options: [O]?
+        }
+        guard let j = try? JSONDecoder().decode(J.self, from: Data(String(cString: c).utf8)),
+              j.error == nil, j.hasModXml == true else { return nil }
+        func v(_ s: String?) -> String? { (s?.isEmpty ?? true) ? nil : s }
+        return ModInfo(id: v(j.id), name: v(j.name), author: v(j.author), version: v(j.version),
+                       category: v(j.category), description: v(j.description),
+                       options: (j.options ?? []).map { o in
+                           ModOptionDef(id: o.id.lowercased(), name: v(o.name) ?? o.id, type: o.type ?? "",
+                                        description: o.description ?? "", defaultValue: o.default ?? 0,
+                                        values: (o.values ?? []).map { ($0.value, v($0.name) ?? "\($0.value)") })
+                       })
+    }
 
     static func parse(_ data: Data) -> ModInfo? {
         var bytes = data
@@ -56,6 +82,21 @@ struct ModInfo: Equatable {
     }
 }
 
+/// One of a mod's settings: a switch (Bool) or a choice of values (List).
+struct ModOptionDef: Equatable, Identifiable {
+    var id: String
+    var name: String
+    var type: String
+    var description: String
+    var defaultValue: Int
+    var values: [(value: Int, name: String)]
+    var isBool: Bool { type.caseInsensitiveCompare("Bool") == .orderedSame || values.isEmpty }
+
+    static func == (a: ModOptionDef, b: ModOptionDef) -> Bool {
+        a.id == b.id && a.name == b.name && a.defaultValue == b.defaultValue && a.values.map(\.value) == b.values.map(\.value)
+    }
+}
+
 /// One mod in the library: a `.iro` archive or a folder in `AppPaths.mods`.
 struct ModItem: Identifiable, Equatable {
     enum Kind: String { case iro = "IRO archive", folder = "Folder" }
@@ -68,6 +109,11 @@ struct ModItem: Identifiable, Equatable {
     var info: ModInfo?
 
     var id: String { fileName.lowercased() }
+
+    /// The chosen value of an option, or its default.
+    func value(of option: ModOptionDef) -> Int {
+        options.first { $0.id == option.id }?.value ?? option.defaultValue
+    }
     var displayName: String {
         if let name = info?.name { return name }
         return kind == .iro ? String(fileName.dropLast(4)) : fileName
@@ -168,6 +214,7 @@ final class ModLibrary {
     }
 
     private func info(for name: String, kind: ModItem.Kind) -> ModInfo? {
+        if let native = ModInfo.native(path: paths.mods.appendingPathComponent(name).path) { return native }
         guard kind == .folder else { return nil }
         let dir = paths.mods.appendingPathComponent(name)
         // mod.xml's name is case-insensitive in the core (resolve_ci).
