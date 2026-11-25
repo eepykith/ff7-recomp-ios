@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/media/hero-banner.png" alt="FF7Recomp for iOS — green Materia over a Midgar skyline under a starfield and orange meteor" width="100%">
+</p>
+
 # FF7Recomp for iOS
 
 [![Release](https://img.shields.io/github/v/release/eepykith/ff7-recomp-ios?include_prereleases&label=release&color=2ea44f)](https://github.com/eepykith/ff7-recomp-ios/releases/latest)
