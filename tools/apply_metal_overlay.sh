@@ -479,6 +479,126 @@ else:
     print("patched savestate_ffnx.cpp: FF7_IOS_SS_DEFAULT_TEX")
 PY18
 
+# FF7_IOS_SS_FILES: the game keeps open files in its own memory (ff7_file -> lgp_file), and for a
+# plain file (not inside an LGP) lgp_file holds the host's FILE*. A save state carries that
+# pointer: loaded in a later run (or after the file was closed) it named a FILE that no longer
+# exists, and the next read crashed (battle sound effects: seek_file -> fseek -> SIGSEGV). FFNx's
+# file layer now reports opens and closes; the state keeps each open file and its position; a
+# load closes the current FILEs and reopens the state's at their positions (never with "w": that
+# would empty the file).
+python3 - <<'PY19'
+from pathlib import Path
+import os
+root = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android"
+f = root / "external" / "FFNx" / "src" / "ff7" / "file.cpp"
+t = f.read_text()
+marker = "FF7_IOS_SS_FILES"
+if marker in t:
+    print("file.cpp already has FF7_IOS_SS_FILES")
+else:
+    old_close = "void close_file(struct ff7_file *file)\n{\n\tif(!file) return;\n"
+    new_close = ("extern \"C\" void ffnx_ss_file_opened(struct ff7_file *file);   // FF7_IOS_SS_FILES: src/ffnx_port/savestate_ffnx.cpp\n"
+                 "extern \"C\" void ffnx_ss_file_closed(struct ff7_file *file);\n"
+                 "extern \"C\" FILE *ffnx_file_host_fd(struct ff7_file *file) { return file && file->fd && !file->context.use_lgp ? file->fd->fd : nullptr; }\n"
+                 "extern \"C\" void ffnx_file_set_host_fd(struct ff7_file *file, FILE *fd) { if (file && file->fd && !file->context.use_lgp) file->fd->fd = fd; }\n\n"
+                 + old_close + "\tffnx_ss_file_closed(file);   // FF7_IOS_SS_FILES\n")
+    old_open = "\t\tif(!ret->fd->fd) goto error;\n\t}\n\n\treturn ret;\n"
+    new_open = "\t\tif(!ret->fd->fd) goto error;\n\t\tffnx_ss_file_opened(ret);   // FF7_IOS_SS_FILES\n\t}\n\n\treturn ret;\n"
+    if t.count(old_close) != 1 or t.count(old_open) != 1:
+        raise SystemExit("file.cpp layout changed; update FF7_IOS_SS_FILES in tools/apply_metal_overlay.sh")
+    f.write_text(t.replace(old_close, new_close, 1).replace(old_open, new_open, 1))
+    print("patched file.cpp: FF7_IOS_SS_FILES")
+
+s = root / "src" / "ffnx_port" / "savestate_ffnx.cpp"
+u = s.read_text()
+if marker in u:
+    print("savestate_ffnx.cpp already has FF7_IOS_SS_FILES")
+else:
+    old_reg = """struct Register {
+    Register() { ff7_savestate_register(&g_hook); ff7_savestate_register(&g_scene_hook); ff7_savestate_register(&g_prompts_hook);
+                 ff7_savestate_register(&g_deferred_hook); }
+} g_register;"""
+    new_reg = """// ---- FF7_IOS_SS_FILES: the game's open plain files (ff7/file.cpp). Their FILE* is host memory
+// kept in guest memory: a state holds it from its own moment and run. The state keeps each open
+// file and its position; a load closes the current FILEs and reopens the state's.
+std::set<uint32_t> g_files;                // live ff7_file objects (guest addresses)
+struct SavedFile { uint32_t file; uint32_t pos; };
+std::vector<SavedFile> g_files_restored;
+bool g_files_have;                         // the state has the record (states from before 0.2.4 do not)
+std::vector<std::pair<uint32_t, std::string>> g_files_before;   // open when the load began: their names
+
+int files_save(void *, ff7_ss_writer put, void *buf) {
+    std::vector<SavedFile> v;
+    for (uint32_t a : g_files) {
+        FILE *fd = ffnx_file_host_fd(guest::ptr_of<struct ff7_file>(a));
+        long pos = fd ? std::ftell(fd) : -1;
+        v.push_back({ a, pos < 0 ? 0u : (uint32_t)pos });
+    }
+    return put(buf, v.data(), v.size() * sizeof(SavedFile));
+}
+void files_before_load(void *) {
+    g_files_before.clear();
+    for (uint32_t a : g_files) {
+        struct ff7_file *f = guest::ptr_of<struct ff7_file>(a);
+        if (f && f->name) g_files_before.emplace_back(a, std::string((const char *)f->name));
+        if (FILE *fd = ffnx_file_host_fd(f)) { std::fclose(fd); ffnx_file_set_host_fd(f, nullptr); }
+    }
+    g_files.clear();
+}
+void files_restore(void *, const void *data, size_t n) {
+    g_files_have = true;
+    g_files_restored.resize(n / sizeof(SavedFile));
+    if (!g_files_restored.empty()) std::memcpy(g_files_restored.data(), data, g_files_restored.size() * sizeof(SavedFile));
+}
+void files_after_load(void *) {
+    int reopened = 0, missing = 0;
+    if (!g_files_have) {
+        // an older state: no record. The files open now that the state's memory has at the same
+        // place under the same name (audio.dat, opened once at start-up) are reopened at 0; the
+        // game seeks before it reads.
+        g_files_restored.clear();
+        for (const auto &b : g_files_before) {
+            struct ff7_file *f = guest::ptr_of<struct ff7_file>(b.first);
+            if (f && f->fd && !f->context.use_lgp && f->name && b.second == (const char *)f->name)
+                g_files_restored.push_back({ b.first, 0 });
+        }
+    }
+    g_files_have = false;
+    g_files_before.clear();
+    for (const SavedFile &s : g_files_restored) {
+        struct ff7_file *f = guest::ptr_of<struct ff7_file>(s.file);
+        if (!f || !f->fd || f->context.use_lgp || !f->name) continue;
+        const char *name = (const char *)f->name;
+        const char *mode = f->context.mode == FF7_FMODE_READ ? "rb" : f->context.mode == FF7_FMODE_READ_TEXT ? "r" : "r+b";
+        FILE *fd = fopen(name, mode);
+        if (!fd && std::strcmp(mode, "r+b") == 0) fd = fopen(name, "rb");
+        ffnx_file_set_host_fd(f, fd);
+        if (fd) { std::fseek(fd, (long)s.pos, SEEK_SET); g_files.insert(s.file); reopened++; }
+        else { missing++; ffnx_error("savestate: could not reopen %s\\n", name); }
+    }
+    g_files_restored.clear();
+    ffnx_info("savestate: %d open file(s) reopened%s\\n", reopened, missing ? " (some missing)" : "");
+}
+const ff7_savestate_hook g_files_hook = { "ffnx-files", nullptr, files_save, files_before_load, files_restore, files_after_load };
+
+struct Register {
+    Register() { ff7_savestate_register(&g_hook); ff7_savestate_register(&g_scene_hook); ff7_savestate_register(&g_prompts_hook);
+                 ff7_savestate_register(&g_deferred_hook); ff7_savestate_register(&g_files_hook); }
+} g_register;"""
+    old_decl = """extern "C" void ffnx_ss_texture_set_created(uint32_t ts) { g_sets.insert(ts); }"""
+    new_decl = old_decl + """
+extern "C" FILE *ffnx_file_host_fd(struct ff7_file *file);                 // FF7_IOS_SS_FILES: ff7/file.cpp
+extern "C" void ffnx_file_set_host_fd(struct ff7_file *file, FILE *fd);
+namespace { extern std::set<uint32_t> g_files; }
+extern "C" void ffnx_ss_file_opened(struct ff7_file *file) { g_files.insert(guest::to_va(file)); }
+extern "C" void ffnx_ss_file_closed(struct ff7_file *file) { g_files.erase(guest::to_va(file)); }"""
+    if u.count(old_reg) != 1 or u.count(old_decl) != 1:
+        raise SystemExit("savestate_ffnx.cpp layout changed; update FF7_IOS_SS_FILES in tools/apply_metal_overlay.sh")
+    u = u.replace(old_reg, new_reg, 1).replace(old_decl, new_decl, 1)
+    s.write_text(u)
+    print("patched savestate_ffnx.cpp: FF7_IOS_SS_FILES")
+PY19
+
 # FF7_IOS_AUDIO_OBJCXX: on iOS miniaudio includes AVFoundation (its audio session), which
 # needs Objective-C++; compile SoLoud's miniaudio backend that way on Apple mobile targets.
 python3 - <<'PY6'

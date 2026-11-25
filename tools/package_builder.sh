@@ -4,10 +4,11 @@
 # path of this Mac (the release is shared) or the kit holds lifted game code.
 #
 #   bash tools/make_builder_kit.sh
-#   bash tools/package_builder.sh 0.2.3      # -> build-builder/release/FF7Recomp-Builder-0.2.3.zip
+#   bash tools/package_builder.sh 0.2.3a     # -> build-builder/release/FF7Recomp-Builder-0.2.3a.zip
 set -euo pipefail
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 VERSION="${1:?usage: package_builder.sh VERSION}"
+APP_VERSION="${VERSION%%[a-z]*}"   # 0.2.3a -> 0.2.3: Apple version numbers are digits and dots
 KIT="$ROOT/build-builder/kit"
 DD="$ROOT/build-builder/dd"
 OUT="$ROOT/build-builder/release"
@@ -20,7 +21,7 @@ fi
 
 (cd "$ROOT/mac/builder" && xcodegen generate >/dev/null)
 xcodebuild -project "$ROOT/mac/builder/FF7RecompBuilder.xcodeproj" -scheme FF7RecompBuilder \
-  -configuration Release -derivedDataPath "$DD" MARKETING_VERSION="$VERSION" -quiet clean build
+  -configuration Release -derivedDataPath "$DD" MARKETING_VERSION="$APP_VERSION" -quiet clean build
 
 # the builder's own executable: no debug map (it names this Mac's build folders), then sign again
 strip -S "$APP/Contents/MacOS/FF7Recomp Builder"
