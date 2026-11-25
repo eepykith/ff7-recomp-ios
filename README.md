@@ -128,6 +128,29 @@ Known gaps:
 - Tested on an iPhone Duo and in the simulator; other iPhones and iPads are untested.
 - FF7Recomp Builder runs on Apple silicon Macs only, and isn't notarized.
 
+## Mods tested
+
+Tested with FF7Recomp 0.2.x on an iPhone Duo, the first eight all enabled together (62,882 game
+files replaced) in a playthrough with save states. Tried a mod? Open an issue with how it went.
+
+| Mod | Category | Status | Notes |
+| --- | --- | --- | --- |
+| [Tsunamods] Echo-S 7 | Gameplay | ✅ No issues | 3.2 GB; its code patches all apply. |
+| [Tsunamods] Enhanced Stock UI | User Interface | ✅ No issues | |
+| [Tsunamods] Cosmo Memory | Media | ✅ No issues | |
+| [Tsunamods] SYW Unified Field Textures | Field Textures | ✅ No issues | Backgrounds went black after loading a save state before 0.2.3; fixed. |
+| [Tsunamods] SYW Unified Battle Textures | Battle Textures | ✅ No issues | |
+| [Tsunamods] SYW Unified Spell Textures | Spell Textures | ✅ No issues | |
+| NinoStyle HD Field Models | Field Models | ✅ No issues | |
+| NinoStyle Battle Models | Battle Models | ✅ No issues | |
+| Jessie Mod | Miscellaneous | ✅ No issues | Simulator only; its option (touch and hold → Options…) works. |
+
+Statuses: ✅ no issues · ⚠️ works with issues · ❌ doesn't work. With these mods FFNx.log reports
+a field model piece it can't find (`AUGC1.RSD`) when a field loads; nothing on screen looks
+wrong. Not supported yet: mods
+downloaded as RAR archives, and mods on Mega or forum pages can't download in the app (download
+them in Safari and add them with + › Import Mods).
+
 ## Roadmap
 
 What comes next, roughly in order:
