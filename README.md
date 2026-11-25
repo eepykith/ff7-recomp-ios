@@ -306,6 +306,7 @@ Planned by version. Order may change as reports come in.
 |**Buttons shown**|Settings: pick d-pad, OK, Back, Menu, Switch, L1, R1, Start, Select (or Show all)|
 |**Size and layout**|Settings editor to resize and move pad parts|
 |**iPhone Duo upright**|D-pad and face buttons higher (thumb rest on lower half), not at the bottom|
+|**Code clean-up**|Neutral names for the shared engine (no Android paths or settings in our code); comments describe our own code|
 
 ### 0.4 — A polished launcher
 |Item|Plan|
