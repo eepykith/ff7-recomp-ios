@@ -304,6 +304,9 @@ Planned by version; the order may change as reports come in.
   sides; tested on the iPhone 18 Pro (simulator) as well as the Duo
 - **A new touch pad:** see-through outlines over the picture, a round d-pad with arrows, big
   **OK** (B) and **Back** (A) buttons with smaller **Menu** (Y) and **Switch** (X) above them
+- **Buttons shown:** a list in Settings to choose which on-screen buttons appear (d-pad, OK,
+  Back, Menu, Switch, L1, R1, Start, Select), with Show all
+- **Size and layout:** an editor in Settings to resize the on-screen pad and move its parts
 - **iPhone Duo upright:** the d-pad and face buttons sit higher, where thumbs rest when you
   hold the lower half, instead of at the very bottom
 
