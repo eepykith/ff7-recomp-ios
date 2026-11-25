@@ -289,10 +289,12 @@ Tried a mod? [Open an issue](https://github.com/eepykith/ff7-recomp-ios/issues) 
 
 Planned by version; the order may change as reports come in.
 
-**0.2.4 — Reports from players**
+**0.2.4 — Reports from players, easier mod order**
 - **Share logs** in the app: one tap packs the game's logs, your device and your mod list for a
   GitHub issue; after a crash the app offers it
 - **Report a problem** opens a GitHub issue with the version and device filled in
+- **Easier mod order:** a clearer way to re-order your installed mods (drag to move, no Edit
+  mode), showing which mod wins where two replace the same files
 
 **0.3 — Easier setup and widescreen**
 - **Steam download in FF7Recomp Builder:** sign in with your own Steam account and the builder
