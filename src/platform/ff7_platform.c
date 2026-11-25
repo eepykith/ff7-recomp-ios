@@ -142,10 +142,31 @@ int ff7_platform_paused(void) {
   return paused;
 }
 
+static int g_parked;   /* the game thread is waiting at a frame boundary */
+
 static void wait_while_paused(void) {
   pthread_mutex_lock(&g_pause_mu);
-  while (g_paused) pthread_cond_wait(&g_pause_cv, &g_pause_mu);
+  while (g_paused) {
+    g_parked = 1;
+    pthread_cond_broadcast(&g_pause_cv);
+    pthread_cond_wait(&g_pause_cv, &g_pause_mu);
+  }
+  g_parked = 0;
   pthread_mutex_unlock(&g_pause_mu);
+}
+
+int ff7_platform_wait_parked(int timeout_ms) {
+  struct timespec until;
+  clock_gettime(CLOCK_REALTIME, &until);
+  until.tv_sec += timeout_ms / 1000;
+  until.tv_nsec += (long)(timeout_ms % 1000) * 1000000L;
+  if (until.tv_nsec >= 1000000000L) { until.tv_sec++; until.tv_nsec -= 1000000000L; }
+  pthread_mutex_lock(&g_pause_mu);
+  while (g_paused && !g_parked)
+    if (pthread_cond_timedwait(&g_pause_cv, &g_pause_mu, &until) != 0) break;
+  int parked = g_parked;
+  pthread_mutex_unlock(&g_pause_mu);
+  return parked;
 }
 
 /* Once per game frame, on the game thread (FF7_IOS_PAD_FRAME in companion.cpp). */

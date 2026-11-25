@@ -425,6 +425,60 @@ else:
     print("patched un7z.c: FF7_IOS_UN7Z")
 PY17
 
+# FF7_IOS_SS_DEFAULT_TEX: loading a save state with mods turned field backgrounds black. A texture
+# set whose other palettes have no replacement image of their own shares one fallback image
+# (gl_texture_set::default_texture_id, FFNx saveload.cpp). The set lives in guest memory, so a
+# load restored the id from the moment of the save, whose texture the load had just deleted, and
+# the rebuild reused it. Forget it before the rebuild; delete each GPU texture once (the fallback
+# is shared by several palettes).
+python3 - <<'PY18'
+from pathlib import Path
+import os
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "src" / "ffnx_port" / "savestate_ffnx.cpp"
+t = p.read_text()
+marker = "FF7_IOS_SS_DEFAULT_TEX"
+old_del = """void ss_before_load(void *) {
+    for (uint32_t a : g_sets) {
+        struct ff7_texture_set *ts = (struct ff7_texture_set *)G2H(a);
+        struct gl_texture_set *gl = ts->ogl.gl_set;
+        uint32_t *handles = ts->texturehandle;
+        if (!gl || !handles) continue;
+        for (uint32_t i = 0; i < gl->textures; i++)
+            if (handles[i]) newRenderer.deleteTexture(handles[i]);
+        for (auto &kv : gl->additional_textures) if (kv.second) newRenderer.deleteTexture(kv.second);
+        for (auto &kv : gl->animated_textures) if (kv.second) newRenderer.deleteTexture(kv.second);
+    }
+    g_sets.clear();
+}"""
+new_del = """void ss_before_load(void *) {
+    std::set<uint32_t> gone;   // FF7_IOS_SS_DEFAULT_TEX: each GPU texture once (palettes share the fallback)
+    for (uint32_t a : g_sets) {
+        struct ff7_texture_set *ts = (struct ff7_texture_set *)G2H(a);
+        struct gl_texture_set *gl = ts->ogl.gl_set;
+        uint32_t *handles = ts->texturehandle;
+        if (!gl || !handles) continue;
+        for (uint32_t i = 0; i < gl->textures; i++)
+            if (handles[i]) gone.insert(handles[i]);
+        if (gl->default_texture_id) gone.insert(gl->default_texture_id);
+        for (auto &kv : gl->additional_textures) if (kv.second) gone.insert(kv.second);
+        for (auto &kv : gl->animated_textures) if (kv.second) gone.insert(kv.second);
+    }
+    for (uint32_t h : gone) newRenderer.deleteTexture(h);
+    g_sets.clear();
+}"""
+old_reb = """        for (short slot = RendererTextureSlot::TEX_NML; slot < RendererTextureSlot::COUNT; slot++) gl->additional_textures[slot] = 0;
+"""
+new_reb = old_reb + """        gl->default_texture_id = 0;   // FF7_IOS_SS_DEFAULT_TEX: the saved moment's, deleted: load it again
+"""
+if marker in t:
+    print("savestate_ffnx.cpp already has FF7_IOS_SS_DEFAULT_TEX")
+else:
+    if t.count(old_del) != 1 or t.count(old_reb) != 1:
+        raise SystemExit("savestate_ffnx.cpp layout changed; update FF7_IOS_SS_DEFAULT_TEX in tools/apply_metal_overlay.sh")
+    p.write_text(t.replace(old_del, new_del, 1).replace(old_reb, new_reb, 1))
+    print("patched savestate_ffnx.cpp: FF7_IOS_SS_DEFAULT_TEX")
+PY18
+
 # FF7_IOS_AUDIO_OBJCXX: on iOS miniaudio includes AVFoundation (its audio session), which
 # needs Objective-C++; compile SoLoud's miniaudio backend that way on Apple mobile targets.
 python3 - <<'PY6'

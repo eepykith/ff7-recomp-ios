@@ -116,6 +116,20 @@ struct GameHostView: View {
             PadInput.shared.startControllers()
         }
         .task { await bootWhenLandscape() }
+        #if DEBUG
+        // FF7_TEST_SAVESTATE=s20,l30,l40,s50: save (s) or load (l) a state that many seconds after
+        // the play view opens (simulator tests of save states without the status panel's buttons)
+        .task {
+            let steps = (ProcessInfo.processInfo.environment["FF7_TEST_SAVESTATE"] ?? "").split(separator: ",")
+            var last = 0.0
+            for step in steps {
+                guard let kind = step.first, let at = Double(step.dropFirst()) else { continue }
+                try? await Task.sleep(for: .seconds(max(0, at - last)))
+                last = at
+                ff7_ios_companion_command(kind == "l" ? 3 : 2)
+            }
+        }
+        #endif
         .onReceive(NotificationCenter.default.publisher(for: .GCControllerDidConnect)) { _ in
             controller = Self.hasGamepad()
         }
@@ -186,10 +200,19 @@ struct GameHostView: View {
     /// Ends the game: the lifted game boots once per process (its guest memory is fixed), so
     /// it cannot stop and start again inside the app, and leaving its thread running kept its
     /// sound playing. Closing the app stops it all; the next launch starts fresh.
+    /// The game boots once per process, so Quit ends the process. Not with exit(): its cleanup
+    /// destroys the renderer's globals while the game thread is still drawing (that aborted on
+    /// quit, after a crash report in the engine log). The game is paused first (it stops at a
+    /// frame boundary, sound off), the logs are flushed, and the process ends without cleanup.
     static func quitGame() {
         PadInput.shared.stopControllers()
+        ff7_platform_set_paused(1)
+        _ = ff7_platform_wait_parked(500)
         EngineBridge.shutdown()
-        exit(0)
+        EventLog.write("quit")
+        fflush(nil)
+        usleep(100_000)     // the engine log's writer thread and the event log's queue drain
+        _exit(0)
     }
 
     /// Waits (up to 3 s) for the Metal layer to report a landscape size, then boots once.

@@ -17,6 +17,13 @@ enum OrientationLock {
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        // the engine's stderr/stdout -> FF7Recomp/engine.log (src/ios/ff7_ios_log.c)
+        ff7_ios_log_start(AppPaths.standard.root.path)
+        return true
+    }
+
+    func application(_ application: UIApplication,
                      supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
         OrientationLock.mask
     }

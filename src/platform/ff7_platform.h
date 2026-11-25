@@ -50,6 +50,9 @@ void ff7_platform_pad_frame(void);
 /* Pause the game at its next frame and stop its sound (1), or go on (0). Main thread. */
 void ff7_platform_set_paused(int paused);
 int ff7_platform_paused(void);
+/* After ff7_platform_set_paused(1): wait until the game thread has stopped at its frame
+ * boundary (1), or timeout_ms passed (0; no game running, or it is busy loading). */
+int ff7_platform_wait_parked(int timeout_ms);
 int ff7_platform_pad_buttons(void);
 void ff7_platform_pad_rumble(unsigned index, unsigned short left,
                              unsigned short right);
