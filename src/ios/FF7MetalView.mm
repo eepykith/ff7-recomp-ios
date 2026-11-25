@@ -30,7 +30,9 @@
   self.backgroundColor = [UIColor blackColor];
   self.multipleTouchEnabled = YES;
   _link = [CADisplayLink displayLinkWithTarget:self selector:@selector(tick:)];
-  _link.preferredFrameRateRange = CAFrameRateRangeMake(30, 60, 60);
+  /* up to the screen's own rate (120 Hz on ProMotion screens, Info.plist
+   * CADisableMinimumFrameDurationOnPhone); FFNx's limiter sets the game's rate */
+  _link.preferredFrameRateRange = CAFrameRateRangeMake(30, 120, 120);
   [_link addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSRunLoopCommonModes];
   return self;
 }

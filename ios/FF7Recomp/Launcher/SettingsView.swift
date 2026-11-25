@@ -7,14 +7,14 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section("Display") {
-                Picker("Frame rate", selection: $model.targetFPS) {
-                    Text("30 FPS").tag(30)
-                    Text("60 FPS").tag(60)
+            Section {
+                Picker("Frame rate", selection: $model.frameRate) {
+                    ForEach(FrameRate.allCases) { Text($0.label).tag($0) }
                 }
-                Text("Widescreen / CRT land in later milestones.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+            } header: {
+                Text("Display")
+            } footer: {
+                Text(model.frameRate.detail + " Applies the next time the game starts.")
             }
 
             Section {

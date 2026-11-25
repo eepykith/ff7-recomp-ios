@@ -266,6 +266,21 @@ struct GameFiles {
         }
     }
 
+    /// Sets `ff7_fps_limiter` in the game folder's FFNx.toml (FFNx reads it when the game starts).
+    func setFrameRate(_ rate: FrameRate) {
+        let url = dir.appendingPathComponent("FFNx.toml")
+        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return }
+        var lines = text.components(separatedBy: "\n")
+        var found = false
+        for i in lines.indices where lines[i].trimmingCharacters(in: .whitespaces).hasPrefix("ff7_fps_limiter") {
+            lines[i] = "ff7_fps_limiter = \(rate.rawValue)"
+            found = true
+        }
+        if !found { lines.append("ff7_fps_limiter = \(rate.rawValue)") }
+        let out = lines.joined(separator: "\n")
+        if out != text { try? out.write(to: url, atomically: true, encoding: .utf8) }
+    }
+
     // MARK: Dialog font widths
 
     /// The current Steam release's kernel/window.bin (English, French, German, Spanish) gives

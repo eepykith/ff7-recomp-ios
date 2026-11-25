@@ -96,6 +96,7 @@ targets:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown
         UIFileSharingEnabled: true
+        CADisableMinimumFrameDurationOnPhone: true   # 120 Hz screens may run above 60 (Frame rate: 120 FPS)
         LSSupportsOpeningDocumentsInPlace: true
         UTImportedTypeDeclarations:
           - UTTypeIdentifier: com.ff7recomp.iro

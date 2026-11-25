@@ -24,8 +24,9 @@ final class AppModel: ObservableObject {
     @Published var message: String?
     /// The play view is up (LauncherHomeView pushes GameHostView while this is true).
     @Published var playing = false
-    @Published var targetFPS: Int = UserDefaults.standard.object(forKey: "ff7.targetFPS") as? Int ?? 60 {
-        didSet { UserDefaults.standard.set(targetFPS, forKey: "ff7.targetFPS") }
+    /// The game's frame rate: FFNx's ff7_fps_limiter, written into FFNx.toml at Play.
+    @Published var frameRate: FrameRate = (UserDefaults.standard.object(forKey: FrameRate.key) as? Int).flatMap(FrameRate.init(rawValue:)) ?? .standard {
+        didSet { UserDefaults.standard.set(frameRate.rawValue, forKey: FrameRate.key) }
     }
 
     let paths: AppPaths
@@ -138,6 +139,7 @@ final class AppModel: ObservableObject {
         guard canPlay else { route = .setup; return }
         UserFolders.prepare(paths: paths)
         files.installRuntime()
+        files.setFrameRate(frameRate)
         UserDefaults.standard.set(true, forKey: Self.confirmedKey)
         route = .home
         playing = true
@@ -146,6 +148,40 @@ final class AppModel: ObservableObject {
     /// Mods change the game's files as it loads them, so they open only once the game files
     /// are here and confirmed (the 1.02 US exe and its data).
     var modsUnlocked: Bool { hasFiles }
+}
+
+/// How fast the game runs: FFNx's `ff7_fps_limiter` (FFNx.toml), as the Android launcher offers it.
+/// The game's own rates are 30 FPS in the field and on the world map, 15 in battle, 60 in menus.
+enum FrameRate: Int, CaseIterable, Identifiable {
+    case original = 0
+    case originalFixed = 1
+    case battle30 = 2
+    case all60 = 3
+    /// The Android core's FFNx: field at 120, world map and battles at 60.
+    case field120 = 4
+
+    static let key = "ff7.frameRate"
+    /// What FF7Recomp has run at so far.
+    static let standard = FrameRate.originalFixed
+    var id: Int { rawValue }
+    var label: String {
+        switch self {
+        case .original: return "Original"
+        case .originalFixed: return "Original, fixed"
+        case .battle30: return "30 FPS battles"
+        case .all60: return "60 FPS"
+        case .field120: return "120 FPS (experimental)"
+        }
+    }
+    var detail: String {
+        switch self {
+        case .original: return "As shipped: 30 FPS in the field, 15 in battle, 60 in menus, with the game's own timing bugs."
+        case .originalFixed: return "As shipped, with FFNx's fixes for the game's timing bugs."
+        case .battle30: return "Battles at 30 FPS instead of 15; the rest as shipped."
+        case .all60: return "Everything at 60 FPS: smoother, uses more battery."
+        case .field120: return "Field at 120 FPS on a 120 Hz screen; world map and battles at 60. Uses the most battery."
+        }
+    }
 }
 
 /// A flag one thread sets and another reads.

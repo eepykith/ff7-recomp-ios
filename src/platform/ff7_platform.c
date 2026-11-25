@@ -3,6 +3,8 @@
 #include "ff7_host.h"
 
 #include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -147,8 +149,28 @@ static void wait_while_paused(void) {
 }
 
 /* Once per game frame, on the game thread (FF7_IOS_PAD_FRAME in companion.cpp). */
+/* FF7_FPS_STATS=1: game frames per second in the log every 5 s (the frame rate setting). */
+static void count_frame(void) {
+  static int on = -1;
+  static struct timespec start;
+  static unsigned frames;
+  if (on < 0) on = getenv("FF7_FPS_STATS") != NULL;
+  if (!on) return;
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC, &now);
+  if (start.tv_sec == 0) start = now;
+  frames++;
+  double dt = (double)(now.tv_sec - start.tv_sec) + (double)(now.tv_nsec - start.tv_nsec) / 1e9;
+  if (dt >= 5.0) {
+    fprintf(stderr, "[ff7] %.1f game frames/s\n", frames / dt);
+    frames = 0;
+    start = now;
+  }
+}
+
 void ff7_platform_pad_frame(void) {
   wait_while_paused();
+  count_frame();
   pthread_mutex_lock(&g_pad_mu);
   clock_gettime(CLOCK_MONOTONIC, &g_last_frame);
   unsigned short prev = g_pad.buttons, next = 0;
