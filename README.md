@@ -34,6 +34,7 @@ launcher for saves and mods.
 - [Screenshots](#screenshots)
 - [Requirements](#requirements)
 - [Get started](#get-started)
+- [Install on iPhone (sideloading)](#install-on-iphone-sideloading)
 - [On your iPhone](#on-your-iphone)
 - [What works](#what-works)
 - [Mods](#mods)
@@ -118,11 +119,9 @@ The first build takes a few minutes. The IPA is about **3 GB**.
 
 ### 3. Sign and install
 
-Sign the IPA and install it on your iPhone.
-
-> [!WARNING]
-> Keep the **extended virtual addressing** entitlement if your signing tool offers it. The game
-> reserves a 4 GB address window; dropping that entitlement can break launch.
+Sideload the IPA onto your iPhone (not the App Store). See
+[Install on iPhone (sideloading)](#install-on-iphone-sideloading) for SideStore, AltStore,
+Sideloadly, and similar tools.
 
 ### 4. Play
 
@@ -134,6 +133,62 @@ Open **FF7Recomp** → confirm game files → **Play**.
 
 Building the project from source (contributors / developers): see
 [`docs/BUILDING.md`](docs/BUILDING.md).
+
+---
+
+## Install on iPhone (sideloading)
+
+FF7Recomp is **sideload only** — it is not on the App Store. You install the **IPA you built**
+from your own Steam copy with FF7Recomp Builder. Pick any resign/install tool you already trust;
+the notes below are the usual paths.
+
+> [!WARNING]
+> When the tool **re-signs** the IPA, keep
+> **`com.apple.developer.kernel.extended-virtual-addressing`** (extended virtual addressing).
+> The game reserves a 4 GB address window; dropping that entitlement often breaks launch. If the
+> UI has an entitlements list or “keep entitlements” option, leave it on / do not strip it.
+
+> [!CAUTION]
+> The IPA is for **your devices only**. Do not upload it to public IPA libraries or share it.
+
+### SideStore
+
+1. Install [SideStore](https://sidestore.io/) on your iPhone (follow their current pairing /
+   refresh setup).
+2. Copy your `FF7Recomp.ipa` to the phone (Files, AirDrop, cloud folder, etc.).
+3. In SideStore → **My Apps** (or equivalent) → install from that IPA.
+4. Confirm extended virtual addressing stayed on the signed app if SideStore shows entitlements.
+5. Refresh / keep SideStore’s signing alive as their docs describe (free Apple IDs expire on a
+   short cycle).
+
+### AltStore
+
+1. Run [AltServer](https://altstore.io/) on your computer and install **AltStore** on the iPhone.
+2. Put `FF7Recomp.ipa` in Files on the device (or open it from AltStore’s import flow).
+3. In AltStore, install the IPA.
+4. Keep extended virtual addressing when AltStore resigns; refresh via AltServer as needed.
+
+### Sideloadly
+
+1. On a Mac or Windows PC, open [Sideloadly](https://sideloadly.io/), connect the iPhone, and
+   sign in with your Apple ID when asked.
+2. Drop in `FF7Recomp.ipa`.
+3. Before installing: if there is an entitlements / “live container” / advanced options panel,
+   **keep** extended virtual addressing — do not use a mode that strips custom entitlements.
+4. Start the install and wait for the app to appear on the Home Screen. Trust the developer in
+   Settings → General → VPN & Device Management if iOS asks.
+
+### Other options
+
+| Tool | High-level |
+| --- | --- |
+| **Xcode** (free or paid Apple Developer) | Open/import the signed app or use a development profile you control; install to a paired device. Same entitlement rule. |
+| **Other resign utilities** | Same idea: sign the Builder IPA for your team/Apple ID and install over USB or Wi‑Fi. Prefer tools that preserve existing entitlements. |
+
+Free personal Apple IDs used with SideStore / AltStore / Sideloadly typically need periodic
+**refresh** or reinstall when the short signing window ends. A paid Apple Developer account lasts
+longer. Exact UI labels change — when in doubt, check that tool’s docs and the entitlement
+warning above.
 
 ---
 
