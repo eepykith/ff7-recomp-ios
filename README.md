@@ -290,49 +290,44 @@ Tried a mod? [Open an issue](https://github.com/eepykith/ff7-recomp-ios/issues) 
 Planned by version. Order may change as reports come in.
 
 ### 0.2.4 — Reports from players, easier mod order
-
-| Item | Plan |
-| --- | --- |
-| **Share logs** | One tap packs the game's logs, your device, and your mod list for a GitHub issue; offered after a crash |
-| **Report a problem** | Opens a GitHub issue with the version and device filled in |
-| **Easier mod order** | Drag to re-order installed mods (no Edit mode); shows which mod wins when two replace the same files |
+|Item|Plan|
+|---|---|
+|**Share logs**|Packs logs, device, and mod list for a GitHub issue; offered after a crash|
+|**Report a problem**|Opens a GitHub issue with version and device filled in|
+|**Easier mod order**|Drag to re-order (no Edit mode); shows which mod wins on file conflicts|
 
 ### 0.3 — Easier setup, widescreen, and a new touch pad
-
-| Item | Plan |
-| --- | --- |
-| **Steam download in Builder** | Sign in with your own Steam account; the builder downloads the game (no Steam app needed on the Mac) |
-| **Intel Mac support** | Builder support for Intel Macs |
-| **Widescreen (16:9)** | Picture fills the iPhone screen instead of 4:3 with side bars; tested on iPhone 18 Pro (simulator) and the Duo |
-| **New touch pad** | See-through outlines over the picture; round d-pad with arrows; big **OK** (B) and **Back** (A); smaller **Menu** (Y) and **Switch** (X) above |
-| **Buttons shown** | Settings list to choose which on-screen buttons appear (d-pad, OK, Back, Menu, Switch, L1, R1, Start, Select), with Show all |
-| **Size and layout** | Settings editor to resize the on-screen pad and move its parts |
-| **iPhone Duo upright** | D-pad and face buttons sit higher (where thumbs rest on the lower half), not at the very bottom |
+|Item|Plan|
+|---|---|
+|**Steam download in Builder**|Sign in with your Steam account; builder downloads the game (no Mac Steam app)|
+|**Intel Mac support**|Builder on Intel Macs|
+|**Widescreen (16:9)**|Fills the screen instead of 4:3 side bars; Duo + iPhone 18 Pro (simulator)|
+|**New touch pad**|See-through outlines; round d-pad; big **OK** (B) / **Back** (A); **Menu** (Y) / **Switch** (X) above|
+|**Buttons shown**|Settings: pick d-pad, OK, Back, Menu, Switch, L1, R1, Start, Select (or Show all)|
+|**Size and layout**|Settings editor to resize and move pad parts|
+|**iPhone Duo upright**|D-pad and face buttons higher (thumb rest on lower half), not at the bottom|
 
 ### 0.4 — A polished launcher
-
-| Item | Plan |
-| --- | --- |
-| **Aesthetics** | Home screen art, smoother Get Mods and Mods screens, clearer first launch |
-| **More devices** | Tested on regular iPhones and iPads beyond the Duo |
-| **Game Center achievements** | The game's 32 achievements, with system pop-ups and your Game Center profile |
+|Item|Plan|
+|---|---|
+|**Aesthetics**|Home screen art; smoother Get Mods / Mods; clearer first launch|
+|**More devices**|Regular iPhones and iPads beyond the Duo|
+|**Game Center achievements**|The game's 32 achievements; system pop-ups and Game Center profile|
 
 ### 0.5 — Mac app, iCloud sync, MetalFX, and haptics
-
-| Item | Plan |
-| --- | --- |
-| **Mac game app** | Built by the same builder from your Steam copy |
-| **iCloud sync** | Saves, save states, and mods synced between your Mac, iPhone, and iPad |
-| **MetalFX upscaling** | Draw at a lower resolution and upscale with Metal — less heat / longer battery (or a sharper picture), especially with HD texture mods |
-| **Controller haptics** | Rumble on Xbox and DualSense; DualSense adaptive triggers; iPhone Taptic Engine when playing on the touch pad |
+|Item|Plan|
+|---|---|
+|**Mac game app**|Same builder, from your Steam copy|
+|**iCloud sync**|Saves, save states, and mods across Mac, iPhone, and iPad|
+|**MetalFX upscaling**|Lower-res draw + Metal upscale; less heat / longer battery (or sharper), esp. HD textures|
+|**Controller haptics**|Xbox / DualSense rumble; DualSense adaptive triggers; Taptic Engine on the touch pad|
 
 ### Toward 1.0
-
-| Item | Plan |
-| --- | --- |
-| **HDR (EDR)** | Brighter highlights for magic and Mako glow on supported iPhone and iPad screens |
-| **External display** | Game on a TV or monitor over USB-C; iPhone as controller and status panel |
-| **Also** | Display settings (filters), Steam Cloud saves, in-app install help |
+|Item|Plan|
+|---|---|
+|**HDR (EDR)**|Brighter magic / Mako highlights on supported iPhone and iPad screens|
+|**External display**|Game on TV/monitor over USB-C; iPhone as controller and status panel|
+|**Also**|Display settings (filters), Steam Cloud saves, in-app install help|
 
 ---
 
