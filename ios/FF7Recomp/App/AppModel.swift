@@ -54,6 +54,11 @@ final class AppModel: ObservableObject {
         refresh()
         // the first time, the setup screen shows the game files confirmed and Play
         route = canPlay && UserDefaults.standard.bool(forKey: Self.confirmedKey) ? .home : .setup
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-FF7Play") {
+            DispatchQueue.main.async { [weak self] in self?.play() }
+        }
+        #endif
     }
 
     private static let confirmedKey = "ff7.gameFilesConfirmed"

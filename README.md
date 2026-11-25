@@ -113,7 +113,9 @@ Battle+. Turn it sideways or close it and the game fills the screen.
 
 Known gaps:
 
-- **Mods** are listed and ordered in the app but not yet applied in game.
+- **Mods** in FF7Recomp › Mods load in the game in the order set in the app: a texture mod
+  (a 7th Heaven folder mod) is tested in the simulator. `.iro` archives and large texture packs
+  still need testing on an iPhone.
 - Tested on an iPhone Duo and in the simulator; other iPhones and iPads are untested.
 - FF7Recomp Builder runs on Apple silicon Macs only, and isn't notarized.
 
@@ -121,8 +123,8 @@ Known gaps:
 
 What comes next, roughly in order:
 
-1. **Mods in game.** Mods you put in FF7Recomp › Mods load in the game (FFNx's 7th Heaven
-   support is already in the engine); check memory and storage with large texture packs.
+1. **Mods on the iPhone.** Test `.iro` archives and large texture packs on a device (memory,
+   storage, load times).
 2. **Mod downloader.** Browse 7th Heaven's catalogs in the app, download and update mods (zip,
    7z and `.iro`) in the background, with load order and conflict warnings, as the Android
    launcher does.

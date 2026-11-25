@@ -7,6 +7,7 @@ import Foundation
 /// Launch arguments (Xcode scheme or `simctl launch … -FF7Reset`):
 ///   -FF7Reset        delete the game files, mods and profile first
 ///   -FF7SampleMods   import three sample mods (two folders with mod.xml, one .iro)
+///   -FF7Play         start the game at once (AppModel)
 enum SampleData {
     static func applyLaunchArguments(paths: AppPaths, library: ModLibrary) {
         let args = ProcessInfo.processInfo.arguments
