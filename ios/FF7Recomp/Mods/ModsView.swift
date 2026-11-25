@@ -6,6 +6,8 @@ final class ModsModel: ObservableObject {
     @Published private(set) var mods: [ModItem] = []
     @Published var errorMessage: String?
     @Published private(set) var importing = false
+    /// The enabled mods as the game loads them: overlaps, Forbid/Require (full app only).
+    @Published private(set) var report = ModConflicts.Report()
 
     let library: ModLibrary
     /// The game's language, if known; falls back to the saved profile's.
@@ -25,6 +27,15 @@ final class ModsModel: ObservableObject {
         language = gameLanguage ?? loaded.language ?? "en"
         mods = loaded.mods
         save()   // records newly found mods and the game language
+    }
+
+    func check() {
+        let profile = library.paths.modProfile
+        let catalog = DownloadQueue.shared.catalog
+        Task.detached(priority: .utility) {
+            let r = ModConflicts.report(profile: profile, catalog: catalog)
+            await MainActor.run { self.report = r }
+        }
     }
 
     func setEnabled(_ mod: ModItem, _ enabled: Bool) {
@@ -75,6 +86,7 @@ final class ModsModel: ObservableObject {
     #endif
 
     private func save() {
+        defer { check() }
         do {
             try library.save(mods, language: language)
         } catch {
@@ -83,8 +95,8 @@ final class ModsModel: ObservableObject {
     }
 }
 
-/// Imported 7th Heaven mods: enable/disable and priority order, saved to `mods/profile.xml`.
-/// Applying them in-game is P4.
+/// 7th Heaven mods: Get Mods (the catalogs), enable/disable and priority order, saved to
+/// `mods/profile.xml`, which the game reads when it starts; the conflict report.
 struct ModsView: View {
     @StateObject private var model: ModsModel
     @State private var showImporter = false
@@ -93,13 +105,47 @@ struct ModsView: View {
         _model = StateObject(wrappedValue: ModsModel(library: library, gameLanguage: gameLanguage))
     }
 
+    @ObservedObject private var queue = DownloadQueue.shared
+
     var body: some View {
         List {
+            Section {
+                NavigationLink {
+                    CatalogView(queue: queue)
+                } label: {
+                    HStack {
+                        Label("Get Mods", systemImage: "arrow.down.circle")
+                        Spacer()
+                        if queue.isBusy {
+                            ProgressView()
+                        } else if !queue.catalog.updates.isEmpty {
+                            Text("\(queue.catalog.updates.count) update\(queue.catalog.updates.count == 1 ? "" : "s")")
+                                .font(.caption.bold()).foregroundStyle(.orange)
+                        }
+                    }
+                }
+            } footer: {
+                Text("Browse 7th Heaven's catalogs and download mods into FF7Recomp › Mods.")
+            }
+            if !model.report.lines.isEmpty {
+                Section {
+                    DisclosureGroup {
+                        ForEach(model.report.lines) { w in
+                            Label(w.text, systemImage: w.serious ? "exclamationmark.triangle.fill" : "info.circle")
+                                .font(.caption)
+                                .foregroundStyle(w.serious ? .orange : .secondary)
+                        }
+                    } label: {
+                        Label(reportTitle, systemImage: model.report.problems > 0 ? "exclamationmark.triangle.fill" : "square.on.square")
+                            .foregroundStyle(model.report.problems > 0 ? .orange : .primary)
+                    }
+                }
+            }
             if model.mods.isEmpty {
                 ContentUnavailableView {
                     Label("No mods", systemImage: "puzzlepiece.extension")
                 } description: {
-                    Text("Import 7th Heaven .iro archives or mod folders. They are copied into the app.")
+                    Text("Get mods from 7th Heaven's catalogs above, import .iro archives or mod folders, or put them in FF7Recomp › Mods in the Files app.")
                 } actions: {
                     Button("Import Mods…") { showImporter = true }
                         .buttonStyle(.borderedProminent)
@@ -107,14 +153,16 @@ struct ModsView: View {
             } else {
                 Section {
                     ForEach(model.mods) { mod in
-                        ModRow(mod: mod) { model.setEnabled(mod, $0) }
+                        ModRow(mod: mod, notes: model.report.perMod[mod.fileName.lowercased()] ?? [],
+                               update: queue.catalog.installedByFile(mod.fileName).flatMap { queue.catalog.byID($0.id) }
+                                   .map(queue.catalog.updateAvailable) ?? false) { model.setEnabled(mod, $0) }
                     }
                     .onMove(perform: model.move)
                     .onDelete(perform: model.delete)
                 } header: {
                     Text("\(model.enabledCount) of \(model.mods.count) enabled")
                 } footer: {
-                    Text("Higher in the list wins when two mods replace the same file. Tap Edit to reorder. Mods are applied in-game in a later update.")
+                    Text("Higher in the list wins when two mods replace the same file. Tap Edit to reorder. Changes apply the next time the game starts.")
                 }
             }
         }
@@ -154,11 +202,20 @@ struct ModsView: View {
             Text(model.errorMessage ?? "")
         }
         .refreshable { model.reload() }
+        .onReceive(NotificationCenter.default.publisher(for: .ff7ModsChanged)) { _ in model.reload() }
+    }
+
+    private var reportTitle: String {
+        let r = model.report
+        if r.problems > 0 { return "\(r.problems) problem\(r.problems == 1 ? "" : "s") with your mods" }
+        return "\(r.overlaps) overlap\(r.overlaps == 1 ? "" : "s") between mods"
     }
 }
 
 private struct ModRow: View {
     let mod: ModItem
+    var notes: [String] = []
+    var update = false
     let onToggle: (Bool) -> Void
 
     var body: some View {
@@ -171,6 +228,12 @@ private struct ModRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                if update {
+                    Text("Update available in Get Mods").font(.caption2.bold()).foregroundStyle(.orange)
+                }
+                ForEach(notes.prefix(2), id: \.self) { n in
+                    Text(n).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                }
             }
         }
     }

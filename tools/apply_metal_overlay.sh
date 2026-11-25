@@ -403,6 +403,28 @@ else:
     print("patched soloud_miniaudio.cpp: FF7_IOS_SOLOUD_SESSION")
 PY16
 
+# FF7_IOS_UN7Z: the launcher's .7z unpacker (src/android/un7z.c) on Apple: fdatasync and
+# posix_fadvise are Linux only; fsync keeps the written pages from piling up there.
+python3 - <<'PY17'
+from pathlib import Path
+import os
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "src" / "android" / "un7z.c"
+t = p.read_text()
+marker = "FF7_IOS_UN7Z"
+old = ("                fdatasync(fd);\n"
+       "                posix_fadvise(fd, 0, (off_t)out, POSIX_FADV_DONTNEED);\n")
+new = ("#ifdef __APPLE__   /* FF7_IOS_UN7Z */\n"
+       "                fsync(fd);\n"
+       "#else\n" + old + "#endif\n")
+if marker in t:
+    print("un7z.c already has FF7_IOS_UN7Z")
+else:
+    if t.count(old) != 1:
+        raise SystemExit("un7z.c layout changed; update FF7_IOS_UN7Z in tools/apply_metal_overlay.sh")
+    p.write_text(t.replace(old, new, 1))
+    print("patched un7z.c: FF7_IOS_UN7Z")
+PY17
+
 # FF7_IOS_AUDIO_OBJCXX: on iOS miniaudio includes AVFoundation (its audio session), which
 # needs Objective-C++; compile SoLoud's miniaudio backend that way on Apple mobile targets.
 python3 - <<'PY6'

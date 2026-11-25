@@ -4,3 +4,4 @@
 #include "../../../src/ios/ff7_ios_boot.h"
 #include "../../../src/ios/FF7MetalView.h"
 #include "../../../src/ios/ff7_ios_companion.h"
+#include "../../../src/ios_mods/ff7_unzip.h"

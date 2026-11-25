@@ -139,6 +139,7 @@ python3 mac/builder/build_ipa.py --kit build-builder/kit \
 ios/              SwiftUI app: launcher, setup, mods, play view, touch pad, status panel
 src/platform/     Shared C host API (ff7_host_*, ff7_platform_*)
 src/ios/          Metal view, game thread, status panel bridge
+src/ios_mods/     Unpacking mod downloads (zip; 7z with the Android core's un7z.c)
 src/mac/          Mac Metal window (the Mac runner)
 src/ffnx_overlay/ Sources added to FFNx on Apple
 src/hle_overlay/  Apple replacements in the game's HLE layer (CoreAudio sound)

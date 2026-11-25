@@ -110,14 +110,17 @@ Battle+. Turn it sideways or close it and the game fills the screen.
   field, battles, menus, movies, music and sound, saves and save states.
 - Touch controls, Bluetooth controllers, the iPhone Duo's folded, half-folded and open screens.
 - Your saves, save states and mods in the Files app.
+- **Get Mods:** browse 7th Heaven's Qhimm and Sega catalogs in the app, download and update mods
+  (`.iro`, `.zip`, `.7z`, Google Drive links included) one after another while you browse, with
+  conflict warnings before and after. Mods load in the game in the order set in the Mods list.
 - Leaving the app or taking a call pauses the game and its sound; it goes on where it was. The
   silent switch mutes the game.
 
 Known gaps:
 
-- **Mods** in FF7Recomp › Mods load in the game in the order set in the app: a texture mod
-  (a 7th Heaven folder mod) is tested in the simulator. `.iro` archives and large texture packs
-  still need testing on an iPhone.
+- **Mods** are tested in the simulator (a folder mod, a .7z mod from the catalog). `.iro`
+  archives and large texture packs still need testing on an iPhone; mods on Mega or forum pages
+  open in Safari to download by hand, and RAR archives aren't supported.
 - Tested on an iPhone Duo and in the simulator; other iPhones and iPads are untested.
 - FF7Recomp Builder runs on Apple silicon Macs only, and isn't notarized.
 
@@ -125,16 +128,13 @@ Known gaps:
 
 What comes next, roughly in order:
 
-1. **Mods on the iPhone.** Test `.iro` archives and large texture packs on a device (memory,
-   storage, load times).
-2. **Mod downloader.** Browse 7th Heaven's catalogs in the app, download and update mods (zip,
-   7z and `.iro`) in the background, with load order and conflict warnings, as the Android
-   launcher does.
-3. **A longer playthrough.** Play on past the first reactor through Midgar, fixing what breaks;
+1. **Mods on the iPhone.** Download and play `.iro` mods and large texture packs on a device
+   (memory, storage, load times); mod options (7th Heaven's configuration screen).
+2. **A longer playthrough.** Play on past the first reactor through Midgar, fixing what breaks;
    test more iPhones and iPads.
-4. **Builder for everyone.** Sign and notarize FF7Recomp Builder so macOS opens it without a
+3. **Builder for everyone.** Sign and notarize FF7Recomp Builder so macOS opens it without a
    warning, and support Intel Macs.
-5. **Toward 1.0.** Settings for the picture (widescreen, filters), Steam Cloud saves, and in-app
+4. **Toward 1.0.** Settings for the picture (widescreen, filters), Steam Cloud saves, and in-app
    help for signing and installing.
 
 ## How it works

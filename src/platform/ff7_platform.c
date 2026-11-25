@@ -113,8 +113,10 @@ void ff7_platform_set_pad(unsigned short buttons, unsigned char left_trigger,
  * frame (so it never draws while the app is in the background, which iOS forbids) and both
  * sound outputs stop: the game's mixer (CoreAudio) and FFNx's music and voices (miniaudio,
  * which a call stops and never starts again by itself). */
-void ff7_apple_audio_pause(int paused) __attribute__((weak));   /* ff7_dsound_coreaudio.c */
-void ff7_soloud_pause(int paused) __attribute__((weak));        /* soloud_miniaudio.cpp */
+/* Defaults for the launcher alone (no game linked); the core's own (ff7_dsound_coreaudio.c,
+ * soloud_miniaudio.cpp) take their place in the full app. */
+__attribute__((weak)) void ff7_apple_audio_pause(int paused) { (void)paused; }
+__attribute__((weak)) void ff7_soloud_pause(int paused) { (void)paused; }
 static pthread_mutex_t g_pause_mu = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t g_pause_cv = PTHREAD_COND_INITIALIZER;
 static int g_paused;
@@ -124,8 +126,8 @@ void ff7_platform_set_paused(int paused) {
   int changed = (paused != 0) != (g_paused != 0);
   g_paused = paused != 0;
   if (changed) {
-    if (ff7_apple_audio_pause) ff7_apple_audio_pause(g_paused);
-    if (ff7_soloud_pause) ff7_soloud_pause(g_paused);
+    ff7_apple_audio_pause(g_paused);
+    ff7_soloud_pause(g_paused);
   }
   pthread_cond_broadcast(&g_pause_cv);
   pthread_mutex_unlock(&g_pause_mu);
