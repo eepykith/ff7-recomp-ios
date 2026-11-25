@@ -287,9 +287,30 @@ Tried a mod? [Open an issue](https://github.com/eepykith/ff7-recomp-ios/issues) 
 
 ## Roadmap
 
-1. **More devices** — smoke-test regular iPhones and iPads beyond the Duo
-2. **Builder for everyone** — notarize; Intel Mac support
-3. **Toward 1.0** — display settings (widescreen, filters), Steam Cloud saves, in-app install help
+Planned by version; the order may change as reports come in.
+
+**0.2.4 — Reports from players**
+- **Share logs** in the app: one tap packs the game's logs, your device and your mod list for a
+  GitHub issue; after a crash the app offers it
+- **Report a problem** opens a GitHub issue with the version and device filled in
+
+**0.3 — Easier setup and widescreen**
+- **Steam download in FF7Recomp Builder:** sign in with your own Steam account and the builder
+  downloads the game itself, so you don't need Steam installed on the Mac
+- **Intel Mac support** for the builder
+- **Widescreen (16:9):** the picture fills the iPhone's screen instead of 4:3 with bars at the
+  sides; tested on the iPhone 18 Pro (simulator) as well as the Duo
+
+**0.4 — A polished launcher**
+- Better aesthetics: home screen art, a smoother Get Mods and Mods screen, clearer first launch
+- More devices: tested on regular iPhones and iPads beyond the Duo
+
+**0.5 — FF7Recomp on the Mac, synced with iCloud**
+- A Mac game app, built by the same builder from your Steam copy
+- Saves, save states and mods synced through iCloud between your Mac, iPhone and iPad
+
+**Toward 1.0**
+- Display settings (filters), Steam Cloud saves, in-app install help
 
 ---
 
