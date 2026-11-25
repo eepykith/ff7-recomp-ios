@@ -22,8 +22,8 @@ launcher for saves and mods.
 > lifts and packs the game once; iOS cannot compile on-device.
 
 > [!NOTE]
-> **Pre-release** ([v0.2.3a](https://github.com/eepykith/ff7-recomp-ios/releases/tag/v0.2.3a)) —
-> a longer playthrough on an **iPhone Duo** suggests the **full game is playable**, including mods
+> **Pre-release** ([v0.2.3a](https://github.com/eepykith/ff7-recomp-ios/releases/tag/v0.2.3a)) on
+> an **iPhone Duo**: tested through the first reactor; full game expected playable. Includes mods
 > from 7th Heaven catalogs. Still a pre-release — expect rough edges. Sideload only — not the App
 > Store.
 
@@ -225,7 +225,7 @@ Use these folders to back up, move between devices, or add files by hand.
 
 ## What works
 
-Tested on an **iPhone Duo**. A longer playthrough there suggests the **full game is playable**:
+On an **iPhone Duo**: tested through the first reactor; full game expected playable.
 
 - Field, battles, menus, **movies**, music & SFX
 - Saves and save states
