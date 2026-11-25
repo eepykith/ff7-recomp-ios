@@ -41,6 +41,7 @@ launcher for saves and mods.
 - [Known gaps](#known-gaps)
 - [Roadmap](#roadmap)
 - [How it works](#how-it-works)
+- [Credits](#credits)
 - [Legal](#legal)
 
 ---
@@ -301,6 +302,26 @@ Tried a mod? [Open an issue](https://github.com/eepykith/ff7-recomp-ios/issues) 
 - **Core** — from the Android port, fetched pinned and patched for Apple (`tools/`, `patches/`).
 
 Contributor / from-source builds: **[`docs/BUILDING.md`](docs/BUILDING.md)**.
+
+---
+
+## Credits
+
+Rendering, movies, timing fixes, and the modding surface in this port come from
+**[FFNx](https://github.com/julianxhokaxhiu/FFNx)** — the next-generation FINAL FANTASY VII / VIII
+modding platform (GPL-3.0). FFNx continues [FF7_OpenGL](https://github.com/Aali132/ff7_opengl) by
+[Aali](http://forums.qhimm.com/index.php?topic=14922.0).
+
+**FFNx core team** (as listed by the [FFNx project](https://github.com/julianxhokaxhiu/FFNx)):
+
+- [Julian Xhokaxhiu](https://github.com/julianxhokaxhiu)
+- [Tang-Tang Zhou](https://github.com/tangtang95)
+- [Jérôme Arzel](https://github.com/myst6re)
+- [CosmosXIII](https://github.com/CosmosXIII)
+
+The static-recompilation core used here comes from
+[FF7Recomp for Android](https://github.com/bhuiyah/ff7-recomp-android). Further FFNx contributors
+and earlier Qhimm-era work are credited in [FFNx’s own README](https://github.com/julianxhokaxhiu/FFNx#credits).
 
 ---
 
