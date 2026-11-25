@@ -296,12 +296,16 @@ Planned by version; the order may change as reports come in.
 - **Easier mod order:** a clearer way to re-order your installed mods (drag to move, no Edit
   mode), showing which mod wins where two replace the same files
 
-**0.3 — Easier setup and widescreen**
+**0.3 — Easier setup, widescreen and a new touch pad**
 - **Steam download in FF7Recomp Builder:** sign in with your own Steam account and the builder
   downloads the game itself, so you don't need Steam installed on the Mac
 - **Intel Mac support** for the builder
 - **Widescreen (16:9):** the picture fills the iPhone's screen instead of 4:3 with bars at the
   sides; tested on the iPhone 18 Pro (simulator) as well as the Duo
+- **A new touch pad:** see-through outlines over the picture, a round d-pad with arrows, big
+  **OK** (B) and **Back** (A) buttons with smaller **Menu** (Y) and **Switch** (X) above them
+- **iPhone Duo upright:** the d-pad and face buttons sit higher, where thumbs rest when you
+  hold the lower half, instead of at the very bottom
 
 **0.4 — A polished launcher**
 - Better aesthetics: home screen art, a smoother Get Mods and Mods screen, clearer first launch
