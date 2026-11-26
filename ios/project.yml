@@ -84,7 +84,7 @@ targets:
         CFBundleDisplayName: FF7Recomp
         CFBundleDevelopmentRegion: en
         CFBundleShortVersionString: "0.2.3"
-        CFBundleVersion: "3"        # 0.2.3b
+        CFBundleVersion: "4"        # 0.2.3c
         LSRequiresIPhoneOS: true
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:

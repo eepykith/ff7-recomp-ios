@@ -599,6 +599,116 @@ extern "C" void ffnx_ss_file_closed(struct ff7_file *file) { g_files.erase(guest
     print("patched savestate_ffnx.cpp: FF7_IOS_SS_FILES")
 PY19
 
+# FF7_IOS_GA_DOUBLE_FREE: a free of a guest block that is already free (its header cleared by
+# the first free, the block in the free list) aborted the game; seen once on an iPhone right
+# after loading a save state, the game freeing a texture's image data twice. Such a free is now
+# logged with its native backtrace and ignored, which is safe: the block is free either way.
+# Anything else that does not look like a live block still stops the game.
+python3 - <<'PY20'
+from pathlib import Path
+import os
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "external" / "pcrecomp" / "runtime" / "win32hle" / "guest_alloc.c"
+t = p.read_text()
+marker = "FF7_IOS_GA_DOUBLE_FREE"
+old = """void guest_free(void *p) {
+    if (!p) return;
+    pthread_mutex_lock(&g_ga_lock);
+    if (!g_arena_hi) { free(p); pthread_mutex_unlock(&g_ga_lock); return; }
+    ga_hdr *h = ga_header(p);"""
+new = """/* FF7_IOS_GA_DOUBLE_FREE: is this block's header inside a free range? (caller holds the lock) */
+static int ga_is_free(uint32_t a) {
+    for (int i = 0; i < g_free_n; i++)
+        if (a >= g_free[i].addr && a < g_free[i].addr + g_free[i].size) return 1;
+    return 0;
+}
+
+void guest_free(void *p) {
+    if (!p) return;
+    pthread_mutex_lock(&g_ga_lock);
+    if (!g_arena_hi) { free(p); pthread_mutex_unlock(&g_ga_lock); return; }
+    {   /* FF7_IOS_GA_DOUBLE_FREE: already free -> log and ignore */
+        uintptr_t a = (uintptr_t)p - (uintptr_t)g_mem_base;
+        if (a >= (uintptr_t)g_arena_lo + GA_HDR && a < g_arena_hi) {
+            ga_hdr *f = (ga_hdr *)((uintptr_t)p - GA_HDR);
+            if (f->magic == 0 && ga_is_free((uint32_t)(a - GA_HDR))) {
+                pthread_mutex_unlock(&g_ga_lock);
+                fprintf(stderr, "[guest_alloc] double free of 0x%08X ignored (already free)\\n", (uint32_t)a);
+                void *bt[24];
+                int n = backtrace(bt, 24);
+                backtrace_symbols_fd(bt, n, 2);
+                return;
+            }
+        }
+    }
+    ga_hdr *h = ga_header(p);"""
+if marker in t:
+    print("guest_alloc.c already has FF7_IOS_GA_DOUBLE_FREE")
+else:
+    if t.count(old) != 1 or "#include <stdio.h>" not in t:
+        raise SystemExit("guest_alloc.c layout changed; update FF7_IOS_GA_DOUBLE_FREE in tools/apply_metal_overlay.sh")
+    t = t.replace(old, new, 1).replace("#include <stdio.h>", "#include <stdio.h>\n#include <execinfo.h>   /* FF7_IOS_GA_DOUBLE_FREE */", 1)
+    p.write_text(t)
+    print("patched guest_alloc.c: FF7_IOS_GA_DOUBLE_FREE")
+PY20
+
+# FF7_IOS_SS_BUFFERS: FFNx keeps its texture conversion buffer (image_data_cache, common.cpp) in
+# game memory across frames, but its address in a host static. A load replaces game memory
+# with the state's, so the statics named memory the loaded state uses for something else, and the
+# next texture conversion (the first scene change) wrote over it: on an iPhone the header of a
+# texture's image data, and the game aborted when it freed that texture. The state now records
+# the buffer's address in its own memory and a load points the static there (before the texture
+# rebuild, which converts textures); a state without the record forgets it, never freeing memory
+# that is no longer its own.
+python3 - <<'PY21'
+from pathlib import Path
+import os
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "src" / "ffnx_port" / "savestate_ffnx.cpp"
+t = p.read_text()
+marker = "FF7_IOS_SS_BUFFERS"
+old_reg = "ff7_savestate_register(&g_files_hook); }"
+new_reg = old_reg
+code = """
+// ---- FF7_IOS_SS_BUFFERS: FFNx's texture conversion buffer is in game memory, its address in a host static
+extern uint32_t *image_data_cache;          // common.cpp
+extern uint32_t image_data_size_cache;
+namespace {
+struct SavedBuffers { uint32_t cache, cache_size; };
+int buffers_save(void *, ff7_ss_writer put, void *buf) {
+    SavedBuffers b{ guest::to_va(image_data_cache), image_data_size_cache };
+    return put(buf, &b, sizeof b);
+}
+uint32_t g_cache_was;
+void buffers_before_load(void *) {
+    // the memory they point to is about to become the state's: forget it (never free it)
+    g_cache_was = guest::to_va(image_data_cache);
+    image_data_cache = nullptr;
+    image_data_size_cache = 0;
+}
+void buffers_restore(void *, const void *data, size_t n) {
+    if (n != sizeof(SavedBuffers)) return;   // an older record: stay forgotten, allocated afresh
+    SavedBuffers b;
+    std::memcpy(&b, data, sizeof b);
+    image_data_cache = guest::ptr_of<uint32_t>(b.cache);
+    image_data_size_cache = image_data_cache ? b.cache_size : 0;
+    ffnx_info("savestate: texture buffer 0x%08X -> 0x%08X (the state's)\\n", g_cache_was, b.cache);
+}
+// its restore runs as the state's records are read, before any hook's after_load (the texture
+// rebuild converts textures with image_data_cache)
+const ff7_savestate_hook g_buffers_hook = { "ffnx-buffers", nullptr, buffers_save, buffers_before_load, buffers_restore, nullptr };
+struct RegisterBuffers { RegisterBuffers() { ff7_savestate_register(&g_buffers_hook); } } g_register_buffers;
+}  // namespace
+"""
+if marker in t:
+    print("savestate_ffnx.cpp already has FF7_IOS_SS_BUFFERS")
+else:
+    if t.count(old_reg) != 1 or "extern \"C\" int ff7_ss_driver_mode(void) {" not in t:
+        raise SystemExit("savestate_ffnx.cpp layout changed; update FF7_IOS_SS_BUFFERS in tools/apply_metal_overlay.sh")
+    t = t.replace(old_reg, new_reg, 1)
+    t = t.replace("extern \"C\" int ff7_ss_driver_mode(void) {", code + "\nextern \"C\" int ff7_ss_driver_mode(void) {", 1)
+    p.write_text(t)
+    print("patched savestate_ffnx.cpp: FF7_IOS_SS_BUFFERS")
+PY21
+
 # FF7_IOS_AUDIO_OBJCXX: on iOS miniaudio includes AVFoundation (its audio session), which
 # needs Objective-C++; compile SoLoud's miniaudio backend that way on Apple mobile targets.
 python3 - <<'PY6'
