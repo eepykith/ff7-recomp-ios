@@ -144,6 +144,10 @@ struct PlayLayout {
 /// controller.
 struct TouchPadView: View {
     let layout: PlayLayout
+    /// The guide is open (the book drawn filled).
+    var guideOpen = false
+    /// The book beside quit: the player's guides (GuideView).
+    var onGuide: () -> Void = {}
     let onQuit: () -> Void
 
     @State private var held: UInt16 = 0
@@ -175,6 +179,16 @@ struct TouchPadView: View {
             }
             .accessibilityLabel("Quit")
             .position(x: layout.quitX, y: layout.quitY + quitSide / 2)
+
+            Button(action: onGuide) {
+                Image(systemName: guideOpen ? "book.fill" : "book")
+                    .font(.callout.weight(.semibold))
+                    .frame(width: quitSide, height: quitSide)
+                    .background(Color.white.opacity(guideOpen ? 0.3 : 0.14), in: Circle())
+                    .foregroundStyle(.white.opacity(0.9))
+            }
+            .accessibilityLabel(guideOpen ? "Close the guide" : "Guide")
+            .position(x: layout.quitX - quitSide - 10 * layout.scale, y: layout.quitY + quitSide / 2)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onDisappear {

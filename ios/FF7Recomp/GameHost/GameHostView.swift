@@ -30,6 +30,10 @@ struct GameHostView: View {
     @Environment(\.scenePhase) private var scenePhase
     /// A call (or another app's alarm, Siri) has taken the audio.
     @State private var audioInterrupted = false
+    /// The guide in the status panel's place (upright on the iPhone Duo).
+    @State private var guideInPanel = false
+    /// The guide full screen over the paused game (no status panel on this screen).
+    @State private var guideFull = false
 
     var body: some View {
         GeometryReader { safeGeo in
@@ -57,7 +61,12 @@ struct GameHostView: View {
                             .transition(.opacity)
                     }
 
-                    if let panel = layout.panel {
+                    if let panel = layout.panel, guideInPanel {
+                        GuideView(compact: true) { guideInPanel = false }
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .frame(width: panel.width, height: panel.height)
+                            .offset(x: panel.minX, y: panel.minY)
+                    } else if let panel = layout.panel {
                         CompanionPanel(state: companion)
                             .frame(width: panel.width, height: panel.height)
                             .overlay(alignment: .bottom) {
@@ -85,7 +94,9 @@ struct GameHostView: View {
                         .offset(x: deck.minX, y: deck.minY)
                     }
 
-                    TouchPadView(layout: layout) { confirmQuit = true }
+                    TouchPadView(layout: layout, guideOpen: guideInPanel && layout.panel != nil, onGuide: {
+                        if layout.panel != nil { guideInPanel.toggle() } else { guideFull = true }
+                    }) { confirmQuit = true }
                 }
                 .task(id: layout.panel != nil) {
                     // the panel's state, ten times a second while it is on screen
@@ -111,6 +122,12 @@ struct GameHostView: View {
         .navigationBarBackButtonHidden(true)
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
+        .fullScreenCover(isPresented: $guideFull) {
+            GuideView { guideFull = false }
+                .statusBarHidden(true)
+                .persistentSystemOverlays(.hidden)
+        }
+        .onChange(of: guideFull) { updatePause() }
         .confirmationDialog("Quit the game?", isPresented: $confirmQuit, titleVisibility: .visible) {
             Button("Quit", role: .destructive) { Self.quitGame() }
         } message: {
@@ -219,11 +236,12 @@ struct GameHostView: View {
     }
 
     private func updatePause() {
-        let pause = scenePhase != .active || audioInterrupted
+        // the full-screen guide pauses the game; the guide in the panel does not (the game is in view)
+        let pause = scenePhase != .active || audioInterrupted || guideFull
         let was = ff7_platform_paused() != 0
         ff7_platform_set_paused(pause ? 1 : 0)
         if pause != was {
-            EventLog.write("\(pause ? "paused" : "resumed") (scene \(scenePhase), call \(audioInterrupted)) \(EventLog.audioState())")
+            EventLog.write("\(pause ? "paused" : "resumed") (scene \(scenePhase), call \(audioInterrupted), guide \(guideFull)) \(EventLog.audioState())")
         }
     }
 

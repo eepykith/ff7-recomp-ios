@@ -159,6 +159,11 @@ the notes below are the usual paths.
 > The game reserves a 4 GB address window; dropping that entitlement often breaks launch. If the
 > UI has an entitlements list or “keep entitlements” option, leave it on / do not strip it.
 
+> [!TIP]
+> **No FF7Recomp folder in Files › On My iPhone?** Some signing apps drop the app's Files
+> sharing when they re-sign. Re-sign with **file sharing / document browser** support turned on
+> (the option's name varies) and install over the top; your saves, mods and guides stay.
+
 > [!CAUTION]
 > The IPA is for **your devices only**. Do not upload it to public IPA libraries or share it.
 
@@ -214,6 +219,8 @@ In the **Files** app → **On My iPhone › FF7Recomp**:
 | `Saves` | Game saves (`save00.ff7` …) |
 | `Save States` | Save states (status panel Save/Load, or Select+L1 / Select+R1) |
 | `Mods` | 7th Heaven mods (`.iro` / folders) and load order (`profile.xml`) |
+| `Guides` | Your own game guides (TXT, HTML, PDF) for the 📖 guide reader |
+| `Logs` | Logs to share when reporting a problem |
 
 Use these folders to back up, move between devices, or add files by hand.
 
@@ -224,6 +231,7 @@ Use these folders to back up, move between devices, or add files by hand.
 | **Touch pad** | See-through buttons: a round d-pad (8-way) and big **OK** (B) / **Back** (A) with **Menu** (Y) / **Switch** (X) above. Slide across them without lifting; multi-touch. Pick which buttons show (Settings → Controls → Buttons shown) and move or resize them (Size and layout, kept for each way you hold the iPhone). |
 | **Bluetooth controller** | Supported. Pad hide modes: Settings → Controls (hide with controller / always / never). |
 | **Quit** | ✕ → Quit exits the app (one game session per launch). Reopen FF7Recomp to play again. |
+| **Guide** | 📖 beside ✕: **Find guides on GameFAQs** opens its Final Fantasy VII guide list; **Save guide** keeps one for offline reading. Or add your own TXT / HTML / PDF guides (Files › FF7Recomp › Guides). On the iPhone Duo upright it takes the status panel's place while you play; otherwise it opens full screen and the game pauses. Keeps your place; find and text size. |
 
 ### iPhone Duo
 
@@ -249,6 +257,7 @@ On an **iPhone Duo**: tested through the first reactor; full game expected playa
 - **Share logs / Report a problem** (Settings › Help) — one zip of the logs, device and mods for a
   GitHub issue; offered after a crash; logs also in Files › FF7Recomp › Logs
 - **Appearance** (Settings): the launcher follows the iPhone's light / dark mode, or stays light or dark
+- **Guide reader** (📖 in play): save GameFAQs guides in the app or add your own TXT, HTML or PDF; beside the game on the Duo, full screen on one screen; keeps your place
 - **Frame rate** (Settings): original / fixed / 30 FPS battles / 60 / experimental **120** on
   120 Hz screens
 - Background / calls pause the game; silent switch mutes

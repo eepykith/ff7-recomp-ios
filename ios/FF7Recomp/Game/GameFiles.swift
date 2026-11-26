@@ -35,6 +35,8 @@ struct AppPaths {
 ///   Saves/        the game's own saves (save00.ff7 ...)
 ///   Save States/  the status panel's save states
 ///   Mods/         7th Heaven mods (.iro archives and folders) and the mod order (profile.xml)
+///   Guides/       the player's own game guides (TXT, HTML, PDF) for the guide reader (GuideView)
+///   Logs/         the logs to share (LogBundle)
 /// The engine and the mods screen keep their paths: game/save, savestates and mods next to the
 /// game are links to these folders. Files already in the old places move over once.
 enum UserFolders {

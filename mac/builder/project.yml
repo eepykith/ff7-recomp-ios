@@ -7,8 +7,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.2.4"
-    CURRENT_PROJECT_VERSION: "1"   # 0.2.4
+    MARKETING_VERSION: "0.2.5"
+    CURRENT_PROJECT_VERSION: "1"   # 0.2.5
 targets:
   # FF7Recomp Builder: builds FF7Recomp.ipa from the player's own FINAL FANTASY VII on their Mac
   # (iOS cannot compile code on the phone). It carries the kit (tools/make_builder_kit.sh: the
