@@ -709,6 +709,57 @@ else:
     print("patched savestate_ffnx.cpp: FF7_IOS_SS_BUFFERS")
 PY21
 
+# FF7_IOS_SS_SCRATCH: ffnx_guest_scratch (gl.cpp's facial vertices, ...) keeps a per-call-site
+# buffer in game memory with its address in a static: after a save state was loaded it named
+# memory the loaded state uses for something else, and when the buffer next grew, freeing the
+# old one aborted the game (seen on an iPhone in the field). A load now bumps a counter; each
+# scratch buffer sees it and starts afresh, never freeing memory that is no longer its own.
+python3 - <<'PY22'
+from pathlib import Path
+import os
+root = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "src" / "ffnx_port"
+marker = "FF7_IOS_SS_SCRATCH"
+h = root / "include" / "ffnx_guest.h"
+t = h.read_text()
+old = """template <typename T, int Site> inline T *ffnx_guest_scratch(const T *data, size_t n) {
+    static T *buf = nullptr;
+    static size_t cap = 0;
+    if (n > cap) {"""
+new = """extern "C" uint32_t ffnx_ss_load_generation;   // FF7_IOS_SS_SCRATCH: bumped by every save-state load
+template <typename T, int Site> inline T *ffnx_guest_scratch(const T *data, size_t n) {
+    static T *buf = nullptr;
+    static size_t cap = 0;
+    static uint32_t gen = 0;
+    if (gen != ffnx_ss_load_generation) {   // a load replaced game memory: buf is not ours any more
+        gen = ffnx_ss_load_generation;
+        buf = nullptr;
+        cap = 0;
+    }
+    if (n > cap) {"""
+if marker in t:
+    print("ffnx_guest.h already has FF7_IOS_SS_SCRATCH")
+else:
+    if t.count(old) != 1:
+        raise SystemExit("ffnx_guest.h layout changed; update FF7_IOS_SS_SCRATCH in tools/apply_metal_overlay.sh")
+    h.write_text(t.replace(old, new, 1))
+    print("patched ffnx_guest.h: FF7_IOS_SS_SCRATCH")
+c = root / "savestate_ffnx.cpp"
+u = c.read_text()
+old2 = """void buffers_before_load(void *) {"""
+new2 = """}  // namespace
+extern "C" uint32_t ffnx_ss_load_generation = 0;   // FF7_IOS_SS_SCRATCH (include/ffnx_guest.h)
+namespace {
+void buffers_before_load(void *) {
+    ffnx_ss_load_generation++;   // FF7_IOS_SS_SCRATCH"""
+if marker in u:
+    print("savestate_ffnx.cpp already has FF7_IOS_SS_SCRATCH")
+else:
+    if u.count(old2) != 1:
+        raise SystemExit("savestate_ffnx.cpp layout changed (needs FF7_IOS_SS_BUFFERS first); update FF7_IOS_SS_SCRATCH")
+    c.write_text(u.replace(old2, new2, 1))
+    print("patched savestate_ffnx.cpp: FF7_IOS_SS_SCRATCH")
+PY22
+
 # FF7_IOS_AUDIO_OBJCXX: on iOS miniaudio includes AVFoundation (its audio session), which
 # needs Objective-C++; compile SoLoud's miniaudio backend that way on Apple mobile targets.
 python3 - <<'PY6'

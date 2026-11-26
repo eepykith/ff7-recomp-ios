@@ -116,7 +116,29 @@ struct GameHostView: View {
             PadInput.shared.startControllers()
         }
         .task { await bootWhenLandscape() }
+        // Paused by another app's audio (a picture-in-picture video, music) while FF7Recomp is in
+        // front: iOS sends nothing when that audio stops, so look once a second and take the
+        // sound back once nothing else plays (a call still holds it: reclaiming fails then)
+        .task(id: audioInterrupted) {
+            while audioInterrupted, !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                guard scenePhase == .active else { continue }
+                let s = AVAudioSession.sharedInstance()
+                if !s.isOtherAudioPlaying, !s.secondaryAudioShouldBeSilencedHint {
+                    reclaimAudio(quiet: true)
+                    updatePause()
+                }
+            }
+        }
         #if DEBUG
+        // FF7_TEST_INTERRUPT_AT=20: an audio interruption "began" 20 s in, with FF7Recomp in front
+        // and nothing ended (another app's audio starting and stopping, as a PiP video does)
+        .task {
+            guard let at = Double(ProcessInfo.processInfo.environment["FF7_TEST_INTERRUPT_AT"] ?? "") else { return }
+            try? await Task.sleep(for: .seconds(at))
+            NotificationCenter.default.post(name: AVAudioSession.interruptionNotification, object: AVAudioSession.sharedInstance(),
+                                            userInfo: [AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.began.rawValue])
+        }
         // FF7_TEST_SAVESTATE=s20,l30,l40,s50: save (s) or load (l) a state that many seconds after
         // the play view opens (simulator tests of save states without the status panel's buttons)
         .task {
@@ -180,14 +202,14 @@ struct GameHostView: View {
     /// the matching "ended", which left the game paused for good. As Apple advises, take the
     /// session back on returning to the foreground: during a real call that fails and the game
     /// stays paused until the call's own "ended"; otherwise the interruption is over.
-    private func reclaimAudio() {
+    private func reclaimAudio(quiet: Bool = false) {
         guard audioInterrupted else { return }
         do {
             try AVAudioSession.sharedInstance().setActive(true)
             audioInterrupted = false
-            EventLog.write("audio session back (no interruption ended came)")
+            EventLog.write("audio session back (no interruption ended came\(quiet ? "; the other audio stopped" : ""))")
         } catch {
-            EventLog.write("audio session still taken: \(error.localizedDescription)")
+            if !quiet { EventLog.write("audio session still taken: \(error.localizedDescription)") }
         }
     }
 

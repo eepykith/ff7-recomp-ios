@@ -105,7 +105,7 @@ Xcode (`ios/FF7Recomp.xcodeproj`).
 ```bash
 bash tools/build_ffmpeg_apple.sh ios-device
 bash tools/make_builder_kit.sh                  # the engine kit -> build-builder/kit
-bash tools/package_builder.sh 0.2.3c            # -> build-builder/release/FF7Recomp-Builder-0.2.3c.zip
+bash tools/package_builder.sh 0.2.3d            # -> build-builder/release/FF7Recomp-Builder-0.2.3d.zip
 ```
 
 The kit is everything the iOS app needs except the game: the engine built without the lift
