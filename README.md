@@ -53,7 +53,7 @@ and on device.
 
 <table>
 <tr>
-<td width="40%"><img src="docs/screenshots/duo-portrait.jpg" alt="iPhone Duo open and upright: the game in the top half, the status panel and touch pad below"></td>
+<td width="40%"><img src="docs/screenshots/duo-portrait.jpg" alt="iPhone Duo open and upright in the first reactor: the game in the top half; below, the status panel with Cloud and Barret, quick buttons, and the touch pad at the sides"></td>
 <td>
 
 ### iPhone Duo — upright
@@ -79,6 +79,16 @@ connected, the pad hides (Settings → Controls).
 | :---: |
 | ![iPhone 18 Pro in landscape: the 4:3 picture with the pad in the side bars](docs/screenshots/iphone18pro.jpg) |
 | Pad in the black bars beside the 4:3 picture. Slide without lifting; multi-touch; every tap reaches the game. |
+
+| Mods | Get Mods | A catalog mod |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/mods.jpg" alt="Mods: Get Mods on top, the installed mods with on/off switches and their options" width="260"> | <img src="docs/screenshots/getmods.jpg" alt="Get Mods: 7th Heaven's catalogs, 115 mods, All / Installed / Updates" width="260"> | <img src="docs/screenshots/moddetail.jpg" alt="Echo-S in Get Mods: preview, category, author, version, size, Install" width="260"> |
+| Your mods in load order; higher wins. Switch each on or off. | 7th Heaven's Qhimm and Sega catalogs: search, categories, updates. | Preview and details; **Install** downloads it in the background. |
+
+| Touch and hold a mod | Mod options |
+| :---: | :---: |
+| <img src="docs/screenshots/modmenu.jpg" alt="Touch and hold a mod: Options and Delete" width="260"> | <img src="docs/screenshots/modoptions.jpg" alt="Compact Battle UI options: switched on, Battle UI Style" width="260"> |
+| **Options…** or **Delete**. | The mod's own settings, applied the next time the game starts. |
 
 | First launch | FF7Recomp Builder (Mac) |
 | :---: | :---: |
