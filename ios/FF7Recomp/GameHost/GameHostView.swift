@@ -95,7 +95,12 @@ struct GameHostView: View {
                         try? await Task.sleep(nanoseconds: 100_000_000)
                     }
                 }
-                .onAppear { lockOrientation(for: geo.size) }
+                .onAppear {
+                    lockOrientation(for: geo.size)
+                    PadSettings.rememberInsets(safe, for: geo.size)
+                }
+                .onChange(of: geo.size) { PadSettings.rememberInsets(safe, for: geo.size) }
+                .onChange(of: safe) { PadSettings.rememberInsets(safe, for: geo.size) }
                 .onChange(of: allowsPortrait(geo.size)) { lockOrientation(for: geo.size) }
                 .watchHinge { hingeOpen = $0 }
             }

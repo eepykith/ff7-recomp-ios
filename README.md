@@ -221,7 +221,7 @@ Use these folders to back up, move between devices, or add files by hand.
 
 | Input | Notes |
 | --- | --- |
-| **Touch pad** | Slide across the d-pad (8-way) or face buttons without lifting; multi-touch. Labels match the game: **B** (right) = OK, **A** (bottom) = cancel / run, **Y** = menu. |
+| **Touch pad** | See-through buttons: a round d-pad (8-way) and big **OK** (B) / **Back** (A) with **Menu** (Y) / **Switch** (X) above. Slide across them without lifting; multi-touch. Pick which buttons show (Settings → Controls → Buttons shown) and move or resize them (Size and layout, kept for each way you hold the iPhone). |
 | **Bluetooth controller** | Supported. Pad hide modes: Settings → Controls (hide with controller / always / never). |
 | **Quit** | ✕ → Quit exits the app (one game session per launch). Reopen FF7Recomp to play again. |
 
@@ -229,7 +229,7 @@ Use these folders to back up, move between devices, or add files by hand.
 
 | Pose | Layout |
 | --- | --- |
-| Open / half-folded, upright | Game in top half; status panel + pad below |
+| Open / half-folded, upright | Game in top half; status panel + pad below, d-pad and face buttons high in the side columns |
 | Landscape or closed | Game fills the active screen |
 
 ---
@@ -240,11 +240,15 @@ On an **iPhone Duo**: tested through the first reactor; full game expected playa
 
 - Field, battles, menus, **movies**, music & SFX
 - Saves and save states
-- Touch pad and Bluetooth controllers
+- Touch pad and Bluetooth controllers; the pad's buttons shown, size and layout are yours to set
 - Duo folded / half-folded / open layouts
 - Files-app folders for saves, states, and mods
 - **Get Mods** — Qhimm & Sega catalogs; download `.iro` / `.zip` / `.7z` (incl. Google Drive);
-  conflict warnings; touch-and-hold for options / delete
+  conflict warnings; touch-and-hold for options, move up / down, delete
+- **Mod order** — drag mods into order (iOS 27; Edit on earlier iOS); numbered, the first wins
+- **Share logs / Report a problem** (Settings › Help) — one zip of the logs, device and mods for a
+  GitHub issue; offered after a crash; logs also in Files › FF7Recomp › Logs
+- **Appearance** (Settings): the launcher follows the iPhone's light / dark mode, or stays light or dark
 - **Frame rate** (Settings): original / fixed / 30 FPS battles / 60 / experimental **120** on
   120 Hz screens
 - Background / calls pause the game; silent switch mutes
@@ -299,23 +303,12 @@ Tried a mod? [Open an issue](https://github.com/eepykith/ff7-recomp-ios/issues) 
 
 Planned by version. Order may change as reports come in.
 
-### 0.2.4 — Reports from players, easier mod order
-|Item|Plan|
-|---|---|
-|**Share logs**|Packs logs, device, and mod list for a GitHub issue; offered after a crash|
-|**Report a problem**|Opens a GitHub issue with version and device filled in|
-|**Easier mod order**|Drag to re-order (no Edit mode); shows which mod wins on file conflicts|
-
-### 0.3 — Easier setup, widescreen, and a new touch pad
+### 0.3 — Easier setup and widescreen
 |Item|Plan|
 |---|---|
 |**Steam download in Builder**|Sign in with your Steam account; builder downloads the game (no Mac Steam app)|
 |**Intel Mac support**|Builder on Intel Macs|
 |**Widescreen (16:9)**|Fills the screen instead of 4:3 side bars; Duo + iPhone 18 Pro (simulator)|
-|**New touch pad**|See-through outlines; round d-pad; big **OK** (B) / **Back** (A); **Menu** (Y) / **Switch** (X) above|
-|**Buttons shown**|Settings: pick d-pad, OK, Back, Menu, Switch, L1, R1, Start, Select (or Show all)|
-|**Size and layout**|Settings editor to resize and move pad parts|
-|**iPhone Duo upright**|D-pad and face buttons higher (thumb rest on lower half), not at the bottom|
 |**Code clean-up**|Neutral names for the shared engine (no Android paths or settings in our code); comments describe our own code|
 
 ### 0.4 — A polished launcher

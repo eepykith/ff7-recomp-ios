@@ -1,0 +1,44 @@
+name: Problem report
+description: Something went wrong in FF7Recomp for iOS or FF7Recomp Builder
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! The logs help most: in FF7Recomp open **Settings › Share logs**, save the zip, then drag it into the Logs box below.
+        Please don't attach game files or IPAs (they contain the game).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw (a crash, a freeze, wrong graphics or sound, the controls) and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: where
+    attributes:
+      label: Where in the game
+      description: The place, battle or menu, and what you did just before (loaded a save state, left the app, a scene change...).
+    validations:
+      required: true
+  - type: input
+    id: app
+    attributes:
+      label: FF7Recomp version
+      description: Filled in when you use Report a problem in the app (Settings).
+      placeholder: 0.2.4 (build 1)
+  - type: input
+    id: device
+    attributes:
+      label: Device and iOS version
+      placeholder: iPhone19,4, iOS 27.1
+  - type: textarea
+    id: mods
+    attributes:
+      label: Mods
+      description: Which mods were on (Share logs includes the list in info.txt).
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Drag the FF7Recomp-logs zip from Share logs here.

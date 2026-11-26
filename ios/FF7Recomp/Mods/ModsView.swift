@@ -49,6 +49,31 @@ final class ModsModel: ObservableObject {
         save()
     }
 
+    /// Moves one mod by `by` places (negative: up, toward winning), or to the top.
+    func move(_ mod: ModItem, by: Int) {
+        guard let i = mods.firstIndex(where: { $0.id == mod.id }) else { return }
+        let to = max(0, min(mods.count - 1, i + by))
+        guard to != i else { return }
+        let m = mods.remove(at: i)
+        mods.insert(m, at: to)
+        save()
+    }
+
+    /// A drag that ended (iOS 27's reorderable list): the dragged mods go before `before`, or last.
+    func reorder(moving ids: [String], before: String?) {
+        let moving = Set(ids)
+        guard !moving.isEmpty else { return }
+        var moved: [ModItem] = []
+        mods.removeAll { m in
+            guard moving.contains(m.id) else { return false }
+            moved.append(m)
+            return true
+        }
+        let at = before.flatMap { id in mods.firstIndex { $0.id == id } } ?? mods.endIndex
+        mods.insert(contentsOf: moved, at: at)
+        save()
+    }
+
     func delete(at offsets: IndexSet) {
         for i in offsets {
             do { try library.remove(mods[i].fileName) } catch { errorMessage = error.localizedDescription }
@@ -168,25 +193,29 @@ struct ModsView: View {
                 }
             } else {
                 Section {
-                    ForEach(model.mods) { mod in
-                        ModRow(mod: mod, onOptions: { optionsFor = mod }, onDelete: { deleting = mod }, notes: model.report.perMod[mod.fileName.lowercased()] ?? [],
-                               update: queue.catalog.installedByFile(mod.fileName).flatMap { queue.catalog.byID($0.id) }
-                                   .map(queue.catalog.updateAvailable) ?? false) { model.setEnabled(mod, $0) }
+                    if #available(iOS 27, *) {
+                        // drag a mod to move it, no Edit mode (iOS 27)
+                        ForEach(model.mods) { mod in row(mod) }
+                            .reorderable()
+                            .onDelete(perform: model.delete)
+                    } else {
+                        ForEach(model.mods) { mod in row(mod) }
+                            .onMove(perform: model.move)
+                            .onDelete(perform: model.delete)
                     }
-                    .onMove(perform: model.move)
-                    .onDelete(perform: model.delete)
                 } header: {
-                    Text("\(model.enabledCount) of \(model.mods.count) enabled")
+                    Text("Load order · \(model.enabledCount) of \(model.mods.count) on")
                 } footer: {
-                    Text("Higher in the list wins when two mods replace the same file. Tap Edit to reorder. Changes apply the next time the game starts.")
+                    Text(reorderHelp + " Where two mods replace the same game file, the higher one wins (shown under each mod). Changes apply the next time the game starts.")
                 }
             }
         }
+        .modifier(ModReorder(model: model))
         .navigationTitle("Mods")
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if model.importing { ProgressView() }
-                if !model.mods.isEmpty { EditButton() }
+                if #unavailable(iOS 27), !model.mods.isEmpty { EditButton() }
                 Menu {
                     Button {
                         showImporter = true
@@ -231,6 +260,21 @@ struct ModsView: View {
         }
     }
 
+    private var reorderHelp: String {
+        if #available(iOS 27, *) { return "Touch and hold a mod, then drag it to change the order; or touch and hold for Move up and Move down." }
+        return "Tap Edit to drag mods into order, or touch and hold a mod for Move up and Move down."
+    }
+
+    private func row(_ mod: ModItem) -> some View {
+        let position = (model.mods.firstIndex { $0.id == mod.id } ?? 0) + 1
+        return ModRow(mod: mod, position: position, count: model.mods.count,
+                      onOptions: { optionsFor = mod }, onDelete: { deleting = mod },
+                      onMove: { model.move(mod, by: $0) },
+                      notes: model.report.perMod[mod.fileName.lowercased()] ?? [],
+                      update: queue.catalog.installedByFile(mod.fileName).flatMap { queue.catalog.byID($0.id) }
+                          .map(queue.catalog.updateAvailable) ?? false) { model.setEnabled(mod, $0) }
+    }
+
     private var reportTitle: String {
         let r = model.report
         if r.problems > 0 { return "\(r.problems) problem\(r.problems == 1 ? "" : "s") with your mods" }
@@ -240,14 +284,24 @@ struct ModsView: View {
 
 private struct ModRow: View {
     let mod: ModItem
+    var position = 0
+    var count = 0
     var onOptions: () -> Void = {}
     var onDelete: () -> Void = {}
+    var onMove: (Int) -> Void = { _ in }
     var notes: [String] = []
     var update = false
     let onToggle: (Bool) -> Void
 
     var body: some View {
         Toggle(isOn: Binding(get: { mod.enabled }, set: onToggle)) {
+            HStack(alignment: .top, spacing: 10) {
+            Text("\(position)")
+                .font(.caption.monospacedDigit().bold())
+                .foregroundStyle(mod.enabled ? Color.accentColor : Color.secondary)
+                .frame(minWidth: 18)
+                .padding(.top, 2)
+                .accessibilityLabel("Position \(position)")
             VStack(alignment: .leading, spacing: 2) {
                 Text(mod.displayName)
                     .font(.body)
@@ -267,10 +321,18 @@ private struct ModRow: View {
                         .font(.caption2).foregroundStyle(.tint).lineLimit(1)
                 }
             }
+            }
         }
         .contextMenu {
             Button(action: onOptions) {
                 Label((mod.info?.options.isEmpty ?? true) ? "About this mod" : "Options…", systemImage: "slider.horizontal.3")
+            }
+            if position > 1 {
+                Button { onMove(-count) } label: { Label("Move to top", systemImage: "arrow.up.to.line") }
+                Button { onMove(-1) } label: { Label("Move up", systemImage: "arrow.up") }
+            }
+            if position < count {
+                Button { onMove(1) } label: { Label("Move down", systemImage: "arrow.down") }
             }
             Button(role: .destructive, action: onDelete) { Label("Delete", systemImage: "trash") }
         }
@@ -359,5 +421,24 @@ private struct OptionRow: View {
             }
         }
         .padding(.vertical, 2)
+    }
+}
+
+/// iOS 27: the list takes drags to reorder mods (with .reorderable() on its ForEach).
+private struct ModReorder: ViewModifier {
+    let model: ModsModel
+    func body(content: Content) -> some View {
+        if #available(iOS 27, *) {
+            content.reorderContainer(for: ModItem.self) { difference in
+                let before: String?
+                switch difference.destination.position {
+                case .before(let id): before = id
+                case .end: before = nil
+                }
+                model.reorder(moving: difference.sources, before: before)
+            }
+        } else {
+            content
+        }
     }
 }

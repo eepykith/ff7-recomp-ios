@@ -18,13 +18,17 @@ import UIKit
 /// port's bottom screen, narrowed to a centre column: the status panel (CompanionPanel) with
 /// its touch buttons below it. The pad keeps to the side columns (L1/Select over the d-pad on
 /// the left; quit, Start/R1 over the face buttons on the right), so a thumb on the pad never
-/// lands on Save or Load.
+/// lands on Save or Load. The d-pad and face buttons sit high in the columns, where a thumb
+/// reaches with the hands holding the lower edge.
+///
+/// Where each part goes exactly, and the player's own layout: PadLayout.swift.
 struct PlayLayout {
     static let button: CGFloat = 48          // d-pad / face button side at scale 1
     static let gap: CGFloat = 4
     static let cluster = button * 3 + gap * 2 // 152: one d-pad or face-button cluster
     static let edge: CGFloat = 8              // margin to the screen edge and the picture
 
+    let screen: CGSize
     let picture: CGRect
     let scale: CGFloat
     let column: CGFloat        // width of one pad column (a cluster at this scale)
@@ -35,7 +39,8 @@ struct PlayLayout {
     let quitX: CGFloat         // centre x of the quit button
     let topY: CGFloat          // top of the L1/Select and Start/R1 rows
     let quitY: CGFloat         // top of the quit button
-    let bottomY: CGFloat       // bottom of the clusters
+    let bottomY: CGFloat       // bottom of the pad area
+    let clusterY: CGFloat      // centre y of the d-pad and the face buttons
     let showsPad: Bool         // the on-screen pad is drawn (hidden with a controller: TouchPadMode)
     let panel: CGRect?         // portrait: the status panel
     let deck: CGRect?          // portrait: the panel's command buttons
@@ -50,6 +55,7 @@ struct PlayLayout {
     }
 
     private init(landscape size: CGSize, safe: EdgeInsets, padHidden: Bool) {
+        screen = size
         let width = min(size.width, size.height * 4 / 3)
         let height = width * 3 / 4
         picture = CGRect(x: (size.width - width) / 2, y: (size.height - height) / 2,
@@ -79,6 +85,7 @@ struct PlayLayout {
         quitY = safe.top + 2 * Self.edge
         topY = sideInsets ? safe.top + 72 : quitY + 36 * scale + Self.edge   // below quit
         bottomY = size.height - Self.edge
+        clusterY = bottomY - column / 2
         showsPad = !padHidden
         panel = nil
         deck = nil
@@ -89,6 +96,7 @@ struct PlayLayout {
     /// The picture keeps to the top half (the iPhone Duo folds across the middle) and everything
     /// else starts below the middle, so nothing sits on the fold.
     private init(portrait size: CGSize, safe: EdgeInsets, padHidden: Bool) {
+        screen = size
         let half = size.height / 2
         let width = min(size.width, (half - safe.top) * 4 / 3)
         let height = width * 3 / 4
@@ -116,6 +124,11 @@ struct PlayLayout {
         quitX = right - 18 * scale
         quitY = top
         topY = top + 36 * scale + Self.edge
+        // the d-pad and face buttons high in the columns, not at the bottom: holding the Duo
+        // upright, the hands rest on its lower edge and the thumbs reach up
+        let rowBottom = topY + 40 * scale
+        clusterY = min(bottomY - column / 2,
+                       rowBottom + max(column / 2 + 2 * Self.edge, (bottomY - rowBottom) * 0.36))
 
         // the centre column: status panel above, its buttons (3 x 2) below
         let x0 = left + column + gutter, x1 = right - column - gutter
@@ -126,33 +139,33 @@ struct PlayLayout {
     }
 }
 
-/// On-screen pad, laid out by PlayLayout in the columns beside the picture.
-///
-/// Quit in the top-right corner. Left: L1 and Select at the top; d-pad at the bottom. Right: Start and R1 at the
-/// top, face buttons at the bottom. Feeds PadInput, which merges it with any game controller.
-///
-/// FF7 PC on a pad: A (bottom) cancel, B (right) OK, X (left) menu, Y (top) extra,
-/// Start pause, Select help, L1/R1 page / switch target.
+/// On-screen pad: the parts PlayLayout.padItems places (Settings > Buttons shown, Size and
+/// layout), and quit in the top-right corner. Feeds PadInput, which merges it with any game
+/// controller.
 struct TouchPadView: View {
     let layout: PlayLayout
     let onQuit: () -> Void
 
     @State private var held: UInt16 = 0
+    @AppStorage(PadSettings.shownKey) private var hiddenList = ""
+    @AppStorage(PadSettings.layoutKey) private var layoutJSON = ""
 
     var body: some View {
-        let s = layout.scale
-        let rowHeight = 40 * s
-        let quitSide = 36 * s
+        let items = layout.padItems(
+            shown: PadSettings.shown(hiddenList),
+            adjust: PadSettings.layouts(layoutJSON)[PadSettings.screenKey(layout.screen)] ?? [:])
+        let quitSide = 36 * layout.scale
         ZStack(alignment: .topLeading) {
-            if layout.showsPad {
-                pad(s: s, rowHeight: rowHeight)
-                    .allowsHitTesting(false)          // PadTouchSurface takes the touches
-                PadTouchSurface(layout: layout) { bits in
+            if !items.isEmpty {
+                ZStack(alignment: .topLeading) {
+                    ForEach(items) { PadItemView(item: $0, held: held) }
+                }
+                .allowsHitTesting(false)          // PadTouchSurface takes the touches
+                PadTouchSurface(items: items, scale: layout.scale) { bits in
                     held = bits
                     PadInput.shared.setTouchButtons(bits)
                 }
             }
-            // quit: top-right in landscape (clear of cameras and the Dynamic Island), centred in portrait
             Button(action: onQuit) {
                 Image(systemName: "xmark")
                     .font(.callout.weight(.semibold))
@@ -162,7 +175,6 @@ struct TouchPadView: View {
             }
             .accessibilityLabel("Quit")
             .position(x: layout.quitX, y: layout.quitY + quitSide / 2)
-
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onDisappear {
@@ -170,90 +182,33 @@ struct TouchPadView: View {
             PadInput.shared.setTouchButtons(0)
         }
     }
-
-    /// The buttons (not drawn while they are hidden: a controller, or Settings).
-    @ViewBuilder
-    private func pad(s: CGFloat, rowHeight: CGFloat) -> some View {
-            // left column
-            HStack(spacing: PlayLayout.gap * 2 * s) {
-                padButton("L1", bit: UInt16(FF7_PAD_LEFT_SHOULDER), wide: true)
-                padButton("Select", bit: UInt16(FF7_PAD_BACK), wide: true)
-            }
-            .position(x: layout.rowLeftX, y: layout.topY + rowHeight / 2)
-
-            cluster(round: false, labels: ("▲", "◀", "▶", "▼"),
-                    bits: (UInt16(FF7_PAD_DPAD_UP), UInt16(FF7_PAD_DPAD_LEFT),
-                           UInt16(FF7_PAD_DPAD_RIGHT), UInt16(FF7_PAD_DPAD_DOWN)))
-                .position(x: layout.leftX, y: layout.bottomY - layout.column / 2)
-
-            // right column: Start / R1 level with L1 / Select
-            HStack(spacing: PlayLayout.gap * 2 * s) {
-                padButton("Start", bit: UInt16(FF7_PAD_START), wide: true)
-                padButton("R1", bit: UInt16(FF7_PAD_RIGHT_SHOULDER), wide: true)
-            }
-            .position(x: layout.rowRightX, y: layout.topY + rowHeight / 2)
-
-            cluster(round: true, labels: ("Y", "X", "B", "A"),
-                    bits: (UInt16(FF7_PAD_Y), UInt16(FF7_PAD_X),
-                           UInt16(FF7_PAD_B), UInt16(FF7_PAD_A)))
-                .position(x: layout.rightX, y: layout.bottomY - layout.column / 2)
-    }
-
-    /// A diamond of four buttons: top, left, right, bottom.
-    private func cluster(round: Bool, labels: (String, String, String, String),
-                         bits: (UInt16, UInt16, UInt16, UInt16)) -> some View {
-        let s = layout.scale
-        let b = PlayLayout.button * s, g = PlayLayout.gap * s
-        return VStack(spacing: g) {
-            padButton(labels.0, bit: bits.0, round: round)
-            HStack(spacing: g) {
-                padButton(labels.1, bit: bits.1, round: round)
-                Color.clear.frame(width: b, height: b)
-                padButton(labels.2, bit: bits.2, round: round)
-            }
-            padButton(labels.3, bit: bits.3, round: round)
-        }
-    }
-
-    private func padButton(_ title: String, bit: UInt16, wide: Bool = false,
-                           round: Bool = false) -> some View {
-        let s = layout.scale
-        let w = (wide ? 72 : PlayLayout.button) * s
-        let h = (wide ? 40 : PlayLayout.button) * s
-        return Text(title)
-            .font(.callout.weight(.semibold))
-            .minimumScaleFactor(0.6)
-            .frame(width: w, height: h)
-            .background((held & bit) != 0 ? Color.white.opacity(0.45) : Color.white.opacity(0.14))
-            .foregroundStyle(.white.opacity(0.9))
-            .clipShape(RoundedRectangle(cornerRadius: round ? h / 2 : 8))
-            .accessibilityLabel(title)
-    }
 }
 
 /// The pad's touches, every finger at once, in UIKit (lower latency than SwiftUI gestures, and
 /// a finger can slide from button to button):
-/// - the d-pad is one area: the direction is where the thumb is from its centre, 8 ways
-///   (diagonals press two), and sliding changes direction without lifting;
-/// - the face buttons: the one nearest the finger, sliding from one to another;
+/// - the d-pad: the direction is where the thumb is from its centre, 8 ways (diagonals press
+///   two), and sliding changes direction without lifting;
+/// - the face buttons (OK, Back, Menu, Switch): the one nearest the finger, sliding from one
+///   to another;
 /// - L1, Select, Start, R1: the button under the finger.
-/// A finger keeps to the area it touched first, so a thumb drifting off the d-pad still steers.
+/// A finger keeps to the part it touched first, so a thumb drifting off the d-pad still steers.
 /// Touches anywhere else pass through (the status panel, its buttons, the quit button).
 struct PadTouchSurface: UIViewRepresentable {
-    let layout: PlayLayout
+    let items: [PadItem]
+    let scale: CGFloat
     let onChange: (UInt16) -> Void
 
     func makeUIView(context: Context) -> PadTouchView {
         let v = PadTouchView()
         v.isMultipleTouchEnabled = true
         v.backgroundColor = .clear
-        v.layout = layout
-        v.onChange = onChange
+        updateUIView(v, context: context)
         return v
     }
 
     func updateUIView(_ v: PadTouchView, context: Context) {
-        v.layout = layout
+        v.items = items
+        v.scale = scale
         v.onChange = onChange
     }
 
@@ -263,10 +218,11 @@ struct PadTouchSurface: UIViewRepresentable {
 }
 
 final class PadTouchView: UIView {
-    var layout: PlayLayout?
+    var items: [PadItem] = []
+    var scale: CGFloat = 1
     var onChange: ((UInt16) -> Void)?
 
-    private enum Area { case dpad, face, rows }
+    private enum Area { case dpad, face, row(UInt16) }
     private var touchArea: [ObjectIdentifier: Area] = [:]
     private var touchBits: [ObjectIdentifier: UInt16] = [:]
     private var sent: UInt16 = 0
@@ -274,64 +230,42 @@ final class PadTouchView: UIView {
     private static let up = UInt16(FF7_PAD_DPAD_UP), down = UInt16(FF7_PAD_DPAD_DOWN)
     private static let left = UInt16(FF7_PAD_DPAD_LEFT), right = UInt16(FF7_PAD_DPAD_RIGHT)
 
-    // MARK: geometry (PlayLayout's, the same the buttons are drawn with)
+    private var dpad: PadItem? { items.first { $0.element == .dpad } }
+    private var faces: [PadItem] { items.filter { $0.element.isFace } }
 
-    private func clusterCenter(_ x: CGFloat, _ l: PlayLayout) -> CGPoint {
-        CGPoint(x: x, y: l.bottomY - l.column / 2)
-    }
-
-    /// The square a cluster's touches start in: the cluster, and a little around it.
-    private func clusterZone(_ c: CGPoint, _ l: PlayLayout) -> CGRect {
-        let half = l.column / 2 + 14 * l.scale
-        return CGRect(x: c.x - half, y: c.y - half, width: 2 * half, height: 2 * half)
-    }
-
-    private func rowButtons(_ l: PlayLayout) -> [(CGRect, UInt16)] {
-        let s = l.scale, w = 72 * s, h = 40 * s, gap = PlayLayout.gap * 2 * s
-        let y = l.topY, slop = 6 * s
-        func pair(_ cx: CGFloat, _ a: UInt16, _ b: UInt16) -> [(CGRect, UInt16)] {
-            let lx = cx - gap / 2 - w, rx = cx + gap / 2
-            return [(CGRect(x: lx, y: y, width: w, height: h).insetBy(dx: -slop, dy: -slop), a),
-                    (CGRect(x: rx, y: y, width: w, height: h).insetBy(dx: -slop, dy: -slop), b)]
-        }
-        return pair(l.rowLeftX, UInt16(FF7_PAD_LEFT_SHOULDER), UInt16(FF7_PAD_BACK))
-            + pair(l.rowRightX, UInt16(FF7_PAD_START), UInt16(FF7_PAD_RIGHT_SHOULDER))
-    }
+    private func distance(_ a: CGPoint, _ b: CGPoint) -> CGFloat { hypot(a.x - b.x, a.y - b.y) }
 
     private func area(at p: CGPoint) -> Area? {
-        guard let l = layout, l.showsPad else { return nil }
-        if clusterZone(clusterCenter(l.leftX, l), l).contains(p) { return .dpad }
-        if clusterZone(clusterCenter(l.rightX, l), l).contains(p) { return .face }
-        if rowButtons(l).contains(where: { $0.0.contains(p) }) { return .rows }
+        if let d = dpad, distance(p, d.center) <= d.radius + 14 * scale { return .dpad }
+        if faces.contains(where: { distance(p, $0.center) <= $0.radius + 8 * scale }) { return .face }
+        let slop = 6 * scale
+        if let row = items.first(where: { !$0.element.isRound && $0.frame.insetBy(dx: -slop, dy: -slop).contains(p) }) {
+            return .row(row.element.bit)
+        }
         return nil
     }
 
     private func bits(_ area: Area, at p: CGPoint) -> UInt16 {
-        guard let l = layout else { return 0 }
         switch area {
         case .dpad:
-            let c = clusterCenter(l.leftX, l)
-            let dx = p.x - c.x, dy = p.y - c.y
-            guard hypot(dx, dy) > l.column * 0.1 else { return 0 }      // the centre: no direction
+            guard let d = dpad else { return 0 }
+            let dx = p.x - d.center.x, dy = p.y - d.center.y
+            guard hypot(dx, dy) > d.radius * 0.2 else { return 0 }      // the centre: no direction
             // 8 sectors of 45°: right, down-right, down, ... (screen y grows down)
             let sector = Int((atan2(dy, dx) / (.pi / 4)).rounded()) & 7
             let dirs: [UInt16] = [Self.right, Self.right | Self.down, Self.down, Self.down | Self.left,
                                   Self.left, Self.left | Self.up, Self.up, Self.up | Self.right]
             return dirs[sector]
         case .face:
-            let c = clusterCenter(l.rightX, l)
-            let off = (PlayLayout.button + PlayLayout.gap) * l.scale
-            let buttons: [(CGPoint, UInt16)] = [
-                (CGPoint(x: c.x, y: c.y - off), UInt16(FF7_PAD_Y)),
-                (CGPoint(x: c.x - off, y: c.y), UInt16(FF7_PAD_X)),
-                (CGPoint(x: c.x + off, y: c.y), UInt16(FF7_PAD_B)),
-                (CGPoint(x: c.x, y: c.y + off), UInt16(FF7_PAD_A)),
-            ]
-            let nearest = buttons.min { hypot($0.0.x - p.x, $0.0.y - p.y) < hypot($1.0.x - p.x, $1.0.y - p.y) }!
-            // far off the cluster (a finger that slid away): nothing
-            return hypot(nearest.0.x - p.x, nearest.0.y - p.y) < 1.6 * PlayLayout.button * l.scale ? nearest.1 : 0
-        case .rows:
-            return rowButtons(l).first { $0.0.contains(p) }?.1 ?? 0
+            // the button whose edge is nearest; nothing once the finger has slid well away
+            guard let nearest = faces.min(by: {
+                distance(p, $0.center) - $0.radius < distance(p, $1.center) - $1.radius
+            }) else { return 0 }
+            return distance(p, nearest.center) - nearest.radius < 28 * scale ? nearest.element.bit : 0
+        case .row(let bit):
+            let slop = 6 * scale
+            let inside = items.contains { $0.element.bit == bit && $0.frame.insetBy(dx: -slop, dy: -slop).contains(p) }
+            return inside ? bit : 0
         }
     }
 
