@@ -140,6 +140,15 @@ struct GameHostView: View {
         // frame with its sound, and goes on where it was when FF7Recomp is back in front.
         .onChange(of: scenePhase) {
             EventLog.write("scene \(scenePhase)")
+            if scenePhase == .active { reclaimAudio() }
+            #if DEBUG
+            // FF7_TEST_SUSPEND_INTERRUPT=1: as an iPhone does when it suspends the app (locking it),
+            // an audio interruption "began" with no "ended" (the simulator sends none)
+            if scenePhase == .background, ProcessInfo.processInfo.environment["FF7_TEST_SUSPEND_INTERRUPT"] == "1" {
+                NotificationCenter.default.post(name: AVAudioSession.interruptionNotification, object: AVAudioSession.sharedInstance(),
+                                                userInfo: [AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.began.rawValue])
+            }
+            #endif
             updatePause()
         }
         .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)) { note in
@@ -163,6 +172,22 @@ struct GameHostView: View {
             ff7_platform_set_paused(0)
             EngineBridge.shutdown()
             OrientationLock.set(.all)
+        }
+    }
+
+    /// Back in front after an audio interruption with no "ended": iOS sends "began" when it
+    /// shuts the audio session of an app it suspends (locking the phone, going home) and never
+    /// the matching "ended", which left the game paused for good. As Apple advises, take the
+    /// session back on returning to the foreground: during a real call that fails and the game
+    /// stays paused until the call's own "ended"; otherwise the interruption is over.
+    private func reclaimAudio() {
+        guard audioInterrupted else { return }
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+            audioInterrupted = false
+            EventLog.write("audio session back (no interruption ended came)")
+        } catch {
+            EventLog.write("audio session still taken: \(error.localizedDescription)")
         }
     }
 

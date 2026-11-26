@@ -22,7 +22,7 @@ launcher for saves and mods.
 > lifts and packs the game once; iOS cannot compile on-device.
 
 > [!NOTE]
-> **Pre-release** ([v0.2.3a](https://github.com/eepykith/ff7-recomp-ios/releases/tag/v0.2.3a)) on
+> **Pre-release** ([v0.2.3b](https://github.com/eepykith/ff7-recomp-ios/releases/tag/v0.2.3b)) on
 > an **iPhone Duo**: tested through the first reactor; full game expected playable. Includes mods
 > from 7th Heaven catalogs. Still a pre-release — expect rough edges. Sideload only — not the App
 > Store.
