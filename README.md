@@ -7,7 +7,7 @@
 [![Release](https://img.shields.io/github/v/release/eepykith/ff7-recomp-ios?include_prereleases&label=release&color=2ea44f)](https://github.com/eepykith/ff7-recomp-ios/releases/latest)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-iOS%20(sideload)-111111)](https://github.com/eepykith/ff7-recomp-ios/releases)
-[![Builder](https://img.shields.io/badge/Mac%20Builder-Apple%20silicon-black)](https://github.com/eepykith/ff7-recomp-ios/releases)
+[![Builder](https://img.shields.io/badge/Mac%20Builder-Apple%20silicon%20%7C%20Intel-black)](https://github.com/eepykith/ff7-recomp-ios/releases)
 
 **FINAL FANTASY VII on iPhone — native ARM64, Metal, your Steam copy.**
 
@@ -22,7 +22,7 @@ launcher for saves and mods.
 > lifts and packs the game once; iOS cannot compile on-device.
 
 > [!NOTE]
-> **Pre-release** ([v0.2.3d](https://github.com/eepykith/ff7-recomp-ios/releases/tag/v0.2.3d)) on
+> **Pre-release** ([v0.3a](https://github.com/eepykith/ff7-recomp-ios/releases/tag/v0.3a)) on
 > an **iPhone Duo**: tested through the first reactor; full game expected playable. Includes mods
 > from 7th Heaven catalogs. Still a pre-release — expect rough edges. Sideload only — not the App
 > Store.
