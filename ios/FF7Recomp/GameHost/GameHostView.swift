@@ -5,8 +5,8 @@ import SwiftUI
 /// Play surface. FF7MetalView presents a CAMetalLayer that FFNx draws into once the lifted game
 /// is linked (FF7RecompBundled); without it the layer clears to a status color.
 ///
-/// The Metal view is sized to the game's 4:3 picture (PlayLayout), with the on-screen pad in the
-/// columns beside it. When the screen changes size (iPhone Duo folding, split screen) the view
+/// The Metal view is sized to the game's picture, 4:3 or 16:9 (PlayLayout, AspectMode), with
+/// the on-screen pad in the columns beside it. When the screen changes size (iPhone Duo folding, split screen) the view
 /// follows and FFNx resets its swapchain to the new size (FF7_IOS_SURFACE_RESIZE).
 ///
 /// Landscape only on phone-shaped screens. The iPhone Duo may also turn upright while its hinge
@@ -40,7 +40,8 @@ struct GameHostView: View {
             let safe = safeGeo.safeAreaInsets
             GeometryReader { geo in
                 let layout = PlayLayout(size: geo.size, safe: safe,
-                                        padHidden: touchPadMode.hidesPad(controller: controller))
+                                        padHidden: touchPadMode.hidesPad(controller: controller),
+                                        aspect: AspectMode.playing.ratio)
                 ZStack(alignment: .topLeading) {
                     Color.black
 

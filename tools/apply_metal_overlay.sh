@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Patch the fetched Android core for Apple Metal (idempotent). external/ is gitignored.
+# Patch the fetched engine core (external/ff7-recomp-core) for Apple Metal (idempotent).
+# external/ is gitignored.
 set -euo pipefail
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 export ROOT
-if [ ! -f "$ROOT/external/ff7-recomp-android/cmake/bgfx.cmake" ]; then
-  echo "missing Android cmake/bgfx.cmake — run tools/setup_android_core.sh" >&2
+if [ ! -f "$ROOT/external/ff7-recomp-core/cmake/bgfx.cmake" ]; then
+  echo "missing the core's cmake/bgfx.cmake — run tools/setup_core.sh" >&2
   exit 1
 fi
 
@@ -13,9 +14,9 @@ from pathlib import Path
 import os
 
 root = Path(os.environ["ROOT"])
-and_root = root / "external" / "ff7-recomp-android"
-bgfx = and_root / "cmake" / "bgfx.cmake"
-display = and_root / "src" / "ffnx_bridge" / "ffnx_display.cpp"
+core_root = root / "external" / "ff7-recomp-core"
+bgfx = core_root / "cmake" / "bgfx.cmake"
+display = core_root / "src" / "ffnx_bridge" / "ffnx_display.cpp"
 marker = "FF7_IOS_METAL_OVERLAY"
 
 text = bgfx.read_text()
@@ -109,12 +110,12 @@ PY
 
 
 # bx: macOS has <malloc/malloc.h>, not <malloc.h>
-BX_ALLOC="$ROOT/external/ff7-recomp-android/external/bx/src/allocator.cpp"
+BX_ALLOC="$ROOT/external/ff7-recomp-core/external/bx/src/allocator.cpp"
 if [ -f "$BX_ALLOC" ] && ! grep -q 'malloc/malloc.h' "$BX_ALLOC"; then
   python3 - <<'PY2'
 from pathlib import Path
 import os
-p = Path(os.environ["ROOT"]) / "external/ff7-recomp-android/external/bx/src/allocator.cpp"
+p = Path(os.environ["ROOT"]) / "external/ff7-recomp-core/external/bx/src/allocator.cpp"
 t = p.read_text()
 old = "#include <malloc.h>\n"
 new = "#if defined(__APPLE__)\n#\tinclude <malloc/malloc.h>\n#else\n#\tinclude <malloc.h>\n#endif\n"
@@ -125,12 +126,12 @@ PY2
 fi
 
 # Prefer -xobjective-c++ + CoreVideo (Metal amalgamated is ObjC++)
-BGFX_CMAKE="$ROOT/external/ff7-recomp-android/cmake/bgfx.cmake"
+BGFX_CMAKE="$ROOT/external/ff7-recomp-core/cmake/bgfx.cmake"
 if [ -f "$BGFX_CMAKE" ] && ! grep -q 'xobjective-c++' "$BGFX_CMAKE"; then
   python3 - <<'PY2'
 from pathlib import Path
 import os
-p = Path(os.environ["ROOT"]) / "external/ff7-recomp-android/cmake/bgfx.cmake"
+p = Path(os.environ["ROOT"]) / "external/ff7-recomp-core/cmake/bgfx.cmake"
 t = p.read_text()
 needle = """elseif(APPLE)
   find_library(FF7_METAL_FRAMEWORK Metal REQUIRED)
@@ -161,7 +162,7 @@ PY2
 fi
 
 # highly_experimental ships Windows backslash includes; clang on macOS needs /.
-HE="$ROOT/external/ff7-recomp-android/external/deps/highly_experimental"
+HE="$ROOT/external/ff7-recomp-core/external/deps/highly_experimental"
 if [ -d "$HE" ]; then
   find "$HE" -type f \( -name '*.c' -o -name '*.h' \) -print0 \
     | xargs -0 perl -pi -e 's/#include "highly_experimental\\/#include "highly_experimental\//g'
@@ -174,8 +175,8 @@ python3 - <<'PY3'
 from pathlib import Path
 import os, re
 root = Path(os.environ["ROOT"])
-and_root = root / "external" / "ff7-recomp-android"
-cm = and_root / "cmake" / "ffnx.cmake"
+core_root = root / "external" / "ff7-recomp-core"
+cm = core_root / "cmake" / "ffnx.cmake"
 t = cm.read_text()
 marker = "# FF7_IOS_SRGB_BACKENDS"
 if marker not in t:
@@ -189,7 +190,7 @@ endif()
     print("patched ffnx.cmake: sRGB renderer backends")
 else:
     print("ffnx.cmake already has sRGB renderer backends")
-stubs = and_root / "src" / "ffnx_port" / "link_stubs.cpp"
+stubs = core_root / "src" / "ffnx_port" / "link_stubs.cpp"
 if stubs.exists():
     s = stubs.read_text()
     s2 = re.sub(r'extern "C" void ffnx_stub_fn_apple_[23]\(void\)[^\n]*\n', "", s)
@@ -205,7 +206,7 @@ python3 - <<'PY4'
 from pathlib import Path
 import os
 root = Path(os.environ["ROOT"])
-qb = root / "external" / "ff7-recomp-android" / "src" / "ffnx_port" / "quickboot.cpp"
+qb = root / "external" / "ff7-recomp-core" / "src" / "ffnx_port" / "quickboot.cpp"
 t = qb.read_text()
 marker = "FF7_IOS_QUICKBOOT_TITLE"
 if marker not in t:
@@ -236,7 +237,7 @@ python3 - <<'PY5'
 from pathlib import Path
 import os
 root = Path(os.environ["ROOT"])
-cm = root / "external" / "ff7-recomp-android" / "cmake" / "ff7core.cmake"
+cm = root / "external" / "ff7-recomp-core" / "cmake" / "ff7core.cmake"
 t = cm.read_text()
 marker = "# FF7_IOS_BASED_MEMORY"
 old = "set(FF7_GUEST_DEFS RECOMP_FLAT_MEMORY RECOMP_STRICT_ICALL)\n"
@@ -258,10 +259,10 @@ PY5
 
 # FF7_IOS_BASED_MEMORY (host side): guest -> host conversions go through G2H, so the shims,
 # HLE and FFNx work with the guest at g_mem_base (native arm64). A no-op in flat builds.
-python3 -I "$ROOT/tools/based_memory_port.py" "$ROOT/external/ff7-recomp-android" | tail -1
+python3 -I "$ROOT/tools/based_memory_port.py" "$ROOT/external/ff7-recomp-core" | tail -1
 # The FFNx sites clang found with -Wint-to-pointer-cast / -Wformat (based_memory_port.py
 # warnings|formats, run once on FFNx 0adf0b32), stored as a patch on top of the transform.
-FFNX_DIR="$ROOT/external/ff7-recomp-android/external/FFNx"
+FFNX_DIR="$ROOT/external/ff7-recomp-core/external/FFNx"
 BM_PATCH="$ROOT/patches/ffnx-based-memory.patch"
 if (cd "$FFNX_DIR" && patch -p1 -R -f -s -V none --dry-run < "$BM_PATCH" >/dev/null 2>&1); then
   echo "ffnx-based-memory.patch already applied"
@@ -273,7 +274,7 @@ fi
 # MAP_FIXED_NOREPLACE, stack bounds, silent DirectSound, Apple-mangled link stubs, the Metal
 # renderer choice, NEON by target arch, ...), as patches on top of everything above. Generated
 # as the difference between this script's result and the working Mac tree; core pinned in
-# tools/fetch_android_core.sh.
+# tools/fetch_core.sh.
 apply_once() {   # dir patch
   if (cd "$1" && patch -p1 -R -f -s -V none --dry-run < "$2" >/dev/null 2>&1); then
     echo "$(basename "$2") already applied"
@@ -291,7 +292,7 @@ ff7_surface_resize() {   # apply|undo
 python3 - "$1" <<'PY13'
 from pathlib import Path
 import os, sys
-p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "external" / "FFNx" / "src" / "renderer.cpp"
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-core" / "external" / "FFNx" / "src" / "renderer.cpp"
 t = p.read_text()
 marker = "FF7_IOS_SURFACE_RESIZE"
 old = "    bgfx::frame(frameFlags);\n"
@@ -321,11 +322,11 @@ else:
 PY13
 }
 
-AND_DIR="$ROOT/external/ff7-recomp-android"
+CORE_DIR="$ROOT/external/ff7-recomp-core"
 ff7_surface_resize undo
-apply_once "$AND_DIR"                    "$ROOT/patches/android-core-darwin.patch"
-apply_once "$AND_DIR/external/pcrecomp"  "$ROOT/patches/pcrecomp-darwin.patch"
-apply_once "$AND_DIR/external/FFNx"      "$ROOT/patches/ffnx-darwin.patch"
+apply_once "$CORE_DIR"                   "$ROOT/patches/core-darwin.patch"
+apply_once "$CORE_DIR/external/pcrecomp" "$ROOT/patches/pcrecomp-darwin.patch"
+apply_once "$CORE_DIR/external/FFNx"     "$ROOT/patches/ffnx-darwin.patch"
 ff7_surface_resize apply
 
 # FF7_IOS_PAD_FRAME: tell the platform layer each game frame, so a tap shorter than a frame
@@ -333,7 +334,7 @@ ff7_surface_resize apply
 python3 - <<'PY14'
 from pathlib import Path
 import os
-p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "src" / "ffnx_port" / "companion.cpp"
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-core" / "src" / "ffnx_port" / "companion.cpp"
 t = p.read_text()
 marker = "FF7_IOS_PAD_FRAME"
 old = 'extern "C" void ff7_companion_frame() {\n'
@@ -354,7 +355,7 @@ PY14
 python3 - <<'PY15'
 from pathlib import Path
 import os
-p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "external" / "deps" / "soloud" / "src" / "backend" / "miniaudio" / "soloud_miniaudio.cpp"
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-core" / "external" / "deps" / "soloud" / "src" / "backend" / "miniaudio" / "soloud_miniaudio.cpp"
 t = p.read_text()
 marker = "FF7_IOS_SOLOUD_PAUSE"
 old = "    ma_device gDevice;\n"
@@ -383,7 +384,7 @@ PY15
 python3 - <<'PY16'
 from pathlib import Path
 import os
-p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "external" / "deps" / "soloud" / "src" / "backend" / "miniaudio" / "soloud_miniaudio.cpp"
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-core" / "external" / "deps" / "soloud" / "src" / "backend" / "miniaudio" / "soloud_miniaudio.cpp"
 t = p.read_text()
 marker = "FF7_IOS_SOLOUD_SESSION"
 old = "        if (ma_device_init(NULL, &config, &gDevice) != MA_SUCCESS)\n"
@@ -408,7 +409,7 @@ PY16
 python3 - <<'PY17'
 from pathlib import Path
 import os
-p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "src" / "android" / "un7z.c"
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-core" / "src" / "android" / "un7z.c"
 t = p.read_text()
 marker = "FF7_IOS_UN7Z"
 old = ("                fdatasync(fd);\n"
@@ -434,7 +435,7 @@ PY17
 python3 - <<'PY18'
 from pathlib import Path
 import os
-p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "src" / "ffnx_port" / "savestate_ffnx.cpp"
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-core" / "src" / "ffnx_port" / "savestate_ffnx.cpp"
 t = p.read_text()
 marker = "FF7_IOS_SS_DEFAULT_TEX"
 old_del = """void ss_before_load(void *) {
@@ -489,7 +490,7 @@ PY18
 python3 - <<'PY19'
 from pathlib import Path
 import os
-root = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android"
+root = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-core"
 f = root / "external" / "FFNx" / "src" / "ff7" / "file.cpp"
 t = f.read_text()
 marker = "FF7_IOS_SS_FILES"
@@ -607,7 +608,7 @@ PY19
 python3 - <<'PY20'
 from pathlib import Path
 import os
-p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "external" / "pcrecomp" / "runtime" / "win32hle" / "guest_alloc.c"
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-core" / "external" / "pcrecomp" / "runtime" / "win32hle" / "guest_alloc.c"
 t = p.read_text()
 marker = "FF7_IOS_GA_DOUBLE_FREE"
 old = """void guest_free(void *p) {
@@ -662,7 +663,7 @@ PY20
 python3 - <<'PY21'
 from pathlib import Path
 import os
-p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "src" / "ffnx_port" / "savestate_ffnx.cpp"
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-core" / "src" / "ffnx_port" / "savestate_ffnx.cpp"
 t = p.read_text()
 marker = "FF7_IOS_SS_BUFFERS"
 old_reg = "ff7_savestate_register(&g_files_hook); }"
@@ -717,7 +718,7 @@ PY21
 python3 - <<'PY22'
 from pathlib import Path
 import os
-root = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "src" / "ffnx_port"
+root = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-core" / "src" / "ffnx_port"
 marker = "FF7_IOS_SS_SCRATCH"
 h = root / "include" / "ffnx_guest.h"
 t = h.read_text()
@@ -760,13 +761,33 @@ else:
     print("patched savestate_ffnx.cpp: FF7_IOS_SS_SCRATCH")
 PY22
 
+# FF7_IOS_WIDESCREEN_SWIRL: the battle swirl's grid (ff7_data.h, swirl_grid) is a game address
+# that widescreen's ff7_swirl_init_widescreen writes through natively. based_memory_port.py's
+# reinterpret_cast pattern cannot match its type (vector4<short> (*)[9]), so it stayed a raw
+# guest address: with 16:9 on, every battle crashed as the swirl began (SIGSEGV at the guest VA).
+python3 - <<'PY23'
+from pathlib import Path
+import os
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-core" / "external" / "FFNx" / "src" / "ff7_data.h"
+t = p.read_text()
+old = "reinterpret_cast<vector4<short> (*)[9]>(get_absolute_value(ff7_externals.swirl_enter_sub_401810, 0xE) + 0xC88);"
+new = "reinterpret_cast<vector4<short> (*)[9]>(G2H(get_absolute_value(ff7_externals.swirl_enter_sub_401810, 0xE) + 0xC88));   // FF7_IOS_WIDESCREEN_SWIRL"
+if "FF7_IOS_WIDESCREEN_SWIRL" in t:
+    print("ff7_data.h already has FF7_IOS_WIDESCREEN_SWIRL")
+else:
+    if t.count(old) != 1:
+        raise SystemExit("ff7_data.h layout changed; update FF7_IOS_WIDESCREEN_SWIRL in tools/apply_metal_overlay.sh")
+    p.write_text(t.replace(old, new, 1))
+    print("patched ff7_data.h: FF7_IOS_WIDESCREEN_SWIRL")
+PY23
+
 # FF7_IOS_AUDIO_OBJCXX: on iOS miniaudio includes AVFoundation (its audio session), which
 # needs Objective-C++; compile SoLoud's miniaudio backend that way on Apple mobile targets.
 python3 - <<'PY6'
 from pathlib import Path
 import os
 root = Path(os.environ["ROOT"])
-cm = root / "external" / "ff7-recomp-android" / "cmake" / "ffnx_audio.cmake"
+cm = root / "external" / "ff7-recomp-core" / "cmake" / "ffnx_audio.cmake"
 t = cm.read_text()
 marker = "# FF7_IOS_AUDIO_OBJCXX"
 old = "target_compile_options(ffnx_soloud PRIVATE -w)\n"
@@ -793,7 +814,7 @@ python3 - <<'PY7'
 from pathlib import Path
 import os
 root = Path(os.environ["ROOT"])
-cm = root / "external" / "ff7-recomp-android" / "cmake" / "ffnx.cmake"
+cm = root / "external" / "ff7-recomp-core" / "cmake" / "ffnx.cmake"
 t = cm.read_text()
 marker = "# FF7_IOS_FFMPEG_STUBS"
 if marker not in t:
@@ -818,7 +839,7 @@ PY7
 python3 - <<'PY8'
 from pathlib import Path
 import os
-root = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "external"
+root = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-core" / "external"
 EDITS = [
     ("FFNx/src/input.h", "std::vector<MouseListener*> mouseListeners;", "inline std::vector<MouseListener*> mouseListeners;"),
     ("FFNx/src/input.h", "std::vector<KeyListener*> keyListeners;", "inline std::vector<KeyListener*> keyListeners;"),
@@ -856,7 +877,7 @@ print(f"header definitions made inline: {n}" if n else "header definitions alrea
 PY8
 
 # FF7_IOS_DSOUND_COREAUDIO: the DirectSound HLE mixer (src/hle/ff7_dsound.c) plays the game's
-# sound effects through AAudio on Android. On Apple, android-core-darwin.patch splits its mix loop
+# sound effects through AAudio on Android. On Apple, core-darwin.patch splits its mix loop
 # into mix_frames() (the AAudio callback calls it unchanged) and has mixer_start() open a CoreAudio
 # output unit, src/hle_overlay/ff7_dsound_coreaudio.c, built into ff7_core here. If no output can
 # be opened the mixer stays silent and the game runs on.
@@ -864,7 +885,7 @@ python3 - <<'PY9'
 from pathlib import Path
 import os
 root = Path(os.environ["ROOT"])
-cm = root / "external" / "ff7-recomp-android" / "cmake" / "ff7core.cmake"
+cm = root / "external" / "ff7-recomp-core" / "cmake" / "ff7core.cmake"
 t = cm.read_text()
 marker = "# FF7_IOS_DSOUND_COREAUDIO"
 old = "if(ANDROID)\n  target_link_libraries(ff7_core PUBLIC aaudio)    # ff7_dsound.c mixer\nendif()\n"
@@ -891,7 +912,7 @@ python3 - <<'PY10'
 from pathlib import Path
 import os
 root = Path(os.environ["ROOT"])
-cm = root / "external" / "ff7-recomp-android" / "cmake" / "ffnx.cmake"
+cm = root / "external" / "ff7-recomp-core" / "cmake" / "ffnx.cmake"
 t = cm.read_text()
 marker = "# FF7_IOS_FFMPEG_APPLE"
 old = 'set(FF7_FFMPEG_DIR "${FF7_ROOT}/build/ffmpeg-android")\n'
@@ -942,7 +963,7 @@ PY10
 python3 - <<'PY11'
 from pathlib import Path
 import os
-p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "src" / "ffnx_port" / "quickboot.cpp"
+p = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-core" / "src" / "ffnx_port" / "quickboot.cpp"
 t = p.read_text()
 marker = "FF7_QUICKBOOT_KEEP_FMV"
 old = "        if (ff7_externals.movie_object && ff7_externals.movie_object->is_playing) {\n"
@@ -964,7 +985,7 @@ PY11
 python3 - <<'PY12'
 from pathlib import Path
 import os
-ext = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-android" / "external"
+ext = Path(os.environ["ROOT"]) / "external" / "ff7-recomp-core" / "external"
 EDITS = [
     ("pcrecomp/runtime/win32hle/guest_alloc.c",
      "#ifndef MAP_FIXED_NOREPLACE\n#define MAP_FIXED_NOREPLACE 0x100000\n#endif\n",

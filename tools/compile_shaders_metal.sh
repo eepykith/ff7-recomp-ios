@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # Compile FFNx shaders for bgfx Metal (*.mtl.*) into game/shaders and ./shaders.
-# Requires: make -C external/ff7-recomp-android/external/bgfx shaderc
+# Requires: make -C external/ff7-recomp-core/external/bgfx shaderc
 set -euo pipefail
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
-AND="$ROOT/external/ff7-recomp-android"
-SHADERC="${SHADERC:-$AND/external/bgfx/tools/bin/darwin/shaderc}"
-SRC="$AND/external/FFNx/misc"
-INC="$AND/build/shader_include"
-OUT="$AND/build/shaders"
-test -x "$SHADERC" || { echo "build shaderc first: make -C $AND/external/bgfx shaderc" >&2; exit 1; }
-mkdir -p "$INC/bgfx" "$OUT" "$ROOT/game/shaders" "$ROOT/shaders" "$AND/game/shaders"
-cp "$AND"/external/bgfx/src/bgfx_*.sh "$INC/bgfx/"
+CORE="$ROOT/external/ff7-recomp-core"
+SHADERC="${SHADERC:-$CORE/external/bgfx/tools/bin/darwin/shaderc}"
+SRC="$CORE/external/FFNx/misc"
+INC="$CORE/build/shader_include"
+OUT="$CORE/build/shaders"
+test -x "$SHADERC" || { echo "build shaderc first: make -C $CORE/external/bgfx shaderc" >&2; exit 1; }
+mkdir -p "$INC/bgfx" "$OUT" "$ROOT/game/shaders" "$ROOT/shaders" "$CORE/game/shaders"
+cp "$CORE"/external/bgfx/src/bgfx_*.sh "$INC/bgfx/"
 SHADERS=(FFNx FFNx.lighting FFNx.shadowmap FFNx.field.shadow FFNx.overlay FFNx.post FFNx.post.ntscj FFNx.blit FFNx.yuvmovie FFNx.yuvmovie.truecolor)
 SKINNED=(FFNx FFNx.lighting FFNx.shadowmap)
 n=0
@@ -33,5 +33,5 @@ for s in "${SKINNED[@]}"; do
 done
 cp "$OUT"/*.$api.* "$ROOT/game/shaders/"
 cp "$OUT"/*.$api.* "$ROOT/shaders/"
-cp "$OUT"/*.$api.* "$AND/game/shaders/"
+cp "$OUT"/*.$api.* "$CORE/game/shaders/"
 echo "$n metal shaders -> game/shaders and ./shaders"

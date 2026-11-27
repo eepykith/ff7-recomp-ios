@@ -22,13 +22,16 @@ struct SettingsView: View {
             }
 
             Section {
+                Picker("Picture", selection: $model.aspect) {
+                    ForEach(AspectMode.allCases) { Text($0.label).tag($0) }
+                }
                 Picker("Frame rate", selection: $model.frameRate) {
                     ForEach(FrameRate.allCases) { Text($0.label).tag($0) }
                 }
             } header: {
                 Text("Display")
             } footer: {
-                Text(model.frameRate.detail + " Applies the next time the game starts.")
+                Text(model.aspect.detail + " " + model.frameRate.detail + " Both apply the next time the game starts.")
             }
 
             Section {

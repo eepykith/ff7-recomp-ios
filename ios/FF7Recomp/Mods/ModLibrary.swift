@@ -131,7 +131,6 @@ enum ModLibraryError: Error, LocalizedError, Equatable {
 }
 
 /// The mods folder and its profile: scanning, importing, removing and saving the order.
-/// Mirrors Android's `ModLibrary.java`.
 final class ModLibrary {
     let paths: AppPaths
     private let fm = FileManager.default

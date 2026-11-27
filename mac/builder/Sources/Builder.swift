@@ -40,11 +40,22 @@ final class Builder: ObservableObject {
     }
 
     init() {
-        if FileManager.default.fileExists(atPath: Self.steamDefault.path) { choose(Self.steamDefault) }
+        // Steam's own install, else a download from Steam by this app (SteamDownloader)
+        if FileManager.default.fileExists(atPath: Self.steamDefault.path) {
+            choose(Self.steamDefault)
+        } else if case .ok = Self.check(SteamDownloader.folder) {
+            choose(SteamDownloader.folder)
+        }
         checkXcode()
     }
 
     // MARK: Checks
+
+    /// No game folder (its files were removed).
+    func forgetGame() {
+        gameFolder = nil
+        game = .none
+    }
 
     func choose(_ url: URL) {
         gameFolder = url

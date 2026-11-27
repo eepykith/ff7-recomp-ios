@@ -15,7 +15,7 @@ final class ModProfileTests: XCTestCase {
 
     // MARK: Writer
 
-    /// Byte-for-byte the shape Android's ModLibrary.save() writes and ff7_mods_load reads.
+    /// Byte-for-byte the shape ff7_mods_load reads.
     func testSerializeMatchesCoreFormat() {
         let profile = ModProfile(language: "en", mods: [
             .init(path: "IFRIT.iro", enabled: true, options: [.init(id: "someoption", value: 1), .init(id: "other", value: -2)]),
@@ -62,7 +62,7 @@ final class ModProfileTests: XCTestCase {
             .appendingPathComponent("game").path, paths.game.path)
     }
 
-    // MARK: Reader (same rules as the core / Android)
+    // MARK: Reader (same rules as the core)
 
     func testParseLenientForms() throws {
         let xml = """

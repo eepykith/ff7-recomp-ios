@@ -6,7 +6,8 @@ M, W, m and w a width of 8 pixels where the font image draws them 11 wide, so th
 renderer runs them into the next letter ("C'mon newcomer" shows as "newcom≡r"). This sets those
 widths back to 11, as in the classic table and this release's Japanese file.
 
-Port of fixFontWidths() in the Android installer (GameInstall.java). Patches the files in
+M, W, m and w drawn 11 pixels wide in the font but given a width of 8 (the same fix as the
+Android app's fixFontWidths()). Patches the files in
 place and is idempotent: a file that is already fixed is left untouched.
 
     python3 -I tools/fix_font_widths.py [game_dir]      # default: ./game

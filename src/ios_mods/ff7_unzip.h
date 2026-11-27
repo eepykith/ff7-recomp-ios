@@ -1,6 +1,6 @@
 #pragma once
-/* Unpacking mod downloads on iOS (ModDownloader.swift): .zip here, .7z with the Android
- * port's un7z.c (the LZMA SDK's 7z reader). Both report progress and can be cancelled from
+/* Unpacking mod downloads on iOS (ModDownloader.swift): .zip here, .7z with the engine
+ * core's un7z.c (the LZMA SDK's 7z reader). Both report progress and can be cancelled from
  * another thread. */
 #include <stddef.h>
 
@@ -14,7 +14,7 @@ int ff7_unzip(const char *archive, const char *outdir, char *err, size_t errlen)
 void ff7_unzip_cancel(void);
 void ff7_unzip_progress(unsigned long long *done, unsigned long long *total);
 
-/* src/android/un7z.c in the Android core */
+/* src/android/un7z.c in the engine core */
 int ff7_un7z(const char *archive, const char *outdir, char *err, size_t errlen);
 void ff7_un7z_cancel(void);
 void ff7_un7z_progress(unsigned long long *done, unsigned long long *total);

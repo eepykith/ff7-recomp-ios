@@ -20,8 +20,9 @@ if ar t "$KIT/lib/libff7_engine.a" | grep -q '^recomp_'; then
 fi
 
 (cd "$ROOT/mac/builder" && xcodegen generate >/dev/null)
+# "Any Mac": both Apple silicon and Intel (a run destination would build this Mac's only)
 xcodebuild -project "$ROOT/mac/builder/FF7RecompBuilder.xcodeproj" -scheme FF7RecompBuilder \
-  -configuration Release -derivedDataPath "$DD" MARKETING_VERSION="$APP_VERSION" -quiet clean build
+  -destination 'generic/platform=macOS' -configuration Release -derivedDataPath "$DD" MARKETING_VERSION="$APP_VERSION" -quiet clean build
 
 # the builder's own executable: no debug map (it names this Mac's build folders), then sign again
 strip -S "$APP/Contents/MacOS/FF7Recomp Builder"

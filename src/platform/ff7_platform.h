@@ -1,8 +1,8 @@
 #pragma once
 
-/* Platform ABI shared with ff7-recomp-android (src/host/ff7_boot.h).
- * FFNx/bgfx call ff7_platform_window() for the drawable (ANativeWindow on
- * Android, CAMetalLayer on iOS). The iOS view calls the setters. */
+/* Platform ABI shared with ff7-recomp-core (src/host/ff7_boot.h).
+ * FFNx/bgfx call ff7_platform_window() for the drawable (a CAMetalLayer here). The iOS
+ * view calls the setters. */
 
 #include <stdint.h>
 

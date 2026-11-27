@@ -45,7 +45,7 @@ int ff7_ios_start_game_thread(const char *game_dir) {
     g_game_dir[0] = '\0';
   }
 
-  /* Same as Android GameActivity: deep host stack for lifted recursion. */
+  /* A deep host stack for the lifted game's recursion. */
   pthread_attr_t attr;
   pthread_attr_init(&attr);
   pthread_attr_setstacksize(&attr, 64u << 20);

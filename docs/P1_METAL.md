@@ -32,31 +32,31 @@ says FFNx is not linked.
 ## Next link step (Mac)
 
 ```bash
-bash tools/fetch_android_core.sh
-bash tools/setup_android_core.sh
+bash tools/fetch_core.sh
+bash tools/setup_core.sh
 bash tools/apply_metal_overlay.sh
 
 # Steam 2026 install (contains ff7/resources/ff7_1.02/ff7_en):
 STEAM="$HOME/Library/Application Support/Steam/steamapps/common/FINAL FANTASY VII Steam Edition"
-python3 -I external/ff7-recomp-android/tools/import_game.py "$STEAM"
+python3 -I external/ff7-recomp-core/tools/import_game.py "$STEAM"
 
 # Lift (writes gitignored generated/ under the Android tree):
-AND=external/ff7-recomp-android
-mkdir -p "$AND/analysis"
-gunzip -c "$AND/config/catalog.json.gz" > "$AND/analysis/catalog.json"
-python3 -I "$AND/tools/run_lift.py" lift "$AND/game/ff7_en.exe" \
-  "$AND/analysis/catalog.json" "$AND/generated/recomp"
-python3 -I "$AND/tools/gen_extents.py" "$AND/generated/recomp"
-python3 -I "$AND/tools/gen_retn_table.py"
+CORE=external/ff7-recomp-core
+mkdir -p "$CORE/analysis"
+gunzip -c "$CORE/config/catalog.json.gz" > "$CORE/analysis/catalog.json"
+python3 -I "$CORE/tools/run_lift.py" lift "$CORE/game/ff7_en.exe" \
+  "$CORE/analysis/catalog.json" "$CORE/generated/recomp"
+python3 -I "$CORE/tools/gen_extents.py" "$CORE/generated/recomp"
+python3 -I "$CORE/tools/gen_retn_table.py"
 
 # Native arm64 (no Rosetta): the guest lives in a window at g_mem_base (FF7_BASED_MEMORY).
 cmake -S . -B build-metal-arm64 -DFF7_BUNDLE_GAME=ON -DFF7_PLATFORM=mac \
   -DCMAKE_OSX_ARCHITECTURES=arm64 -DFF7_BASED_MEMORY=ON
 cmake --build build-metal-arm64 -j --target ffnx ff7_core ff7_platform
 FF7_BUILD_DIR=$PWD/build-metal-arm64 bash tools/darwin_link_metal_boot.sh
-make -C "$AND/external/bgfx" shaderc
+make -C "$CORE/external/bgfx" shaderc
 bash tools/compile_shaders_metal.sh
-cp "$AND/external/FFNx/misc/FFNx.toml" ./FFNx.toml
+cp "$CORE/external/FFNx/misc/FFNx.toml" ./FFNx.toml
 FF7_QUICKBOOT=title ./build-metal-arm64/ff7_metal_boot game
 
 # Rosetta x86_64 flat build (the first bring-up; still works, g_mem_base stays 0):
@@ -81,12 +81,12 @@ advance on their own. `FF7_QUICKBOOT=newgame` skips the opening movie unless
 `external/` is never committed; this repo rebuilds it exactly:
 
 ```bash
-bash tools/fetch_android_core.sh     # core pinned at 7218386
-bash tools/setup_android_core.sh     # nested repos pinned + the Android port's patches/transforms
+bash tools/fetch_core.sh     # core pinned at 7218386
+bash tools/setup_core.sh     # nested repos pinned + the Android port's patches/transforms
 bash tools/apply_metal_overlay.sh    # Metal overlay, based memory, then patches/*.patch
 ```
 
-`apply_metal_overlay.sh` ends with `patches/android-core-darwin.patch`,
+`apply_metal_overlay.sh` ends with `patches/core-darwin.patch`,
 `patches/pcrecomp-darwin.patch` and `patches/ffnx-darwin.patch`: the Darwin edits made by hand
 during the first bring-up (thread ids, `MAP_FIXED_NOREPLACE`, stack bounds, the DirectSound
 mixer's CoreAudio output (`src/hle_overlay/ff7_dsound_coreaudio.c`), Apple-mangled link stubs, Metal as FFNx's renderer, NEON by target arch, the
@@ -98,7 +98,7 @@ the two cmake lines that name this repo's own path.
 
 | Piece | Status |
 |---|---|
-| Fetch Android core + deps / FFNx transforms | Works (`tools/setup_android_core.sh`) |
+| Fetch Android core + deps / FFNx transforms | Works (`tools/setup_core.sh`) |
 | Import Steam 2026 `ff7_en` + `data/` | Works (gitignored under `game/` / `external/.../game/`) |
 | Lift → `generated/recomp` | Works (~25k functions) |
 | bgfx Metal static libs | Works (`tools/apply_metal_overlay.sh`) |

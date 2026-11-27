@@ -1,7 +1,8 @@
 import SwiftUI
 import UIKit
 
-/// Where the game's 4:3 picture and the on-screen pad go on a screen of a given size. The
+/// Where the game's picture (4:3, or 16:9 widescreen: AspectMode) and the on-screen pad go on a
+/// screen of a given size. The
 /// picture is always as large as the screen allows. On a wide screen (an iPhone in landscape)
 /// the pad fits in the black bars beside it; where the bars are narrow (iPhone Duo, iPad) the pad
 /// lies over the picture's edges at full size, as touch games do.
@@ -14,8 +15,8 @@ import UIKit
 /// Recomputed whenever the screen changes size: rotation, iPhone Duo folding, split screen.
 ///
 /// Portrait (the iPhone Duo open or half-folded, an iPad): the picture spans the width at the
-/// top, kept in the top half so it stays above the Duo's fold. The bottom half is the Android
-/// port's bottom screen, narrowed to a centre column: the status panel (CompanionPanel) with
+/// top, kept in the top half so it stays above the Duo's fold. The bottom half is the
+/// companion screen, narrowed to a centre column: the status panel (CompanionPanel) with
 /// its touch buttons below it. The pad keeps to the side columns (L1/Select over the d-pad on
 /// the left; quit, Start/R1 over the face buttons on the right), so a thumb on the pad never
 /// lands on Save or Load. The d-pad and face buttons sit high in the columns, where a thumb
@@ -46,18 +47,19 @@ struct PlayLayout {
     let deck: CGRect?          // portrait: the panel's command buttons
     let deckColumns: Int       // buttons per row in the deck
 
-    init(size: CGSize, safe: EdgeInsets, padHidden: Bool = false) {
+    /// `aspect`: the picture's width over its height (4:3 or 16:9).
+    init(size: CGSize, safe: EdgeInsets, padHidden: Bool = false, aspect: CGFloat = 4.0 / 3.0) {
         if size.height > size.width {
-            self.init(portrait: size, safe: safe, padHidden: padHidden)
+            self.init(portrait: size, safe: safe, padHidden: padHidden, aspect: aspect)
         } else {
-            self.init(landscape: size, safe: safe, padHidden: padHidden)
+            self.init(landscape: size, safe: safe, padHidden: padHidden, aspect: aspect)
         }
     }
 
-    private init(landscape size: CGSize, safe: EdgeInsets, padHidden: Bool) {
+    private init(landscape size: CGSize, safe: EdgeInsets, padHidden: Bool, aspect: CGFloat) {
         screen = size
-        let width = min(size.width, size.height * 4 / 3)
-        let height = width * 3 / 4
+        let width = min(size.width, size.height * aspect)
+        let height = width / aspect
         picture = CGRect(x: (size.width - width) / 2, y: (size.height - height) / 2,
                          width: width, height: height)
         // In the bars when a cluster fits there at 85 % or more; otherwise over the picture,
@@ -95,11 +97,11 @@ struct PlayLayout {
     /// Upright: picture on top; pad columns at the sides and the status panel between them.
     /// The picture keeps to the top half (the iPhone Duo folds across the middle) and everything
     /// else starts below the middle, so nothing sits on the fold.
-    private init(portrait size: CGSize, safe: EdgeInsets, padHidden: Bool) {
+    private init(portrait size: CGSize, safe: EdgeInsets, padHidden: Bool, aspect: CGFloat) {
         screen = size
         let half = size.height / 2
-        let width = min(size.width, (half - safe.top) * 4 / 3)
-        let height = width * 3 / 4
+        let width = min(size.width, (half - safe.top) * aspect)
+        let height = width / aspect
         picture = CGRect(x: (size.width - width) / 2, y: max(safe.top, half - height),
                          width: width, height: height)
         let fold: CGFloat = 16                                  // clearance below the middle

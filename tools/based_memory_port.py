@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Make the Android core's host code address guest memory through g_mem_base.
+"""Make the engine core's host code address guest memory through g_mem_base.
 
-The Android core (and the Rosetta Mac host) run the lift with RECOMP_FLAT_MEMORY: a guest
+The core on Android (and the Rosetta Mac host) run the lift with RECOMP_FLAT_MEMORY: a guest
 address IS a host address below 4 GB, so the Win32 shims, FF7 HLE and FFNx turn guest
 addresses into pointers with plain casts. Native arm64 Apple processes keep a 4 GB PAGEZERO,
 so there the guest lives in a window at g_mem_base (FF7_BASED_MEMORY, ff7_boot.c).
@@ -23,7 +23,7 @@ Rewrites (idempotent; a marker line records each converted file):
     (T *)0xADDR                                 -> (T *)G2H(0xADDR)                   [FFNx]
 plus a few hand-placed edits (fixed mmaps, guest_abi.h) listed in EDITS below.
 
-usage: python3 -I tools/based_memory_port.py <ff7-recomp-android root> [--check]
+usage: python3 -I tools/based_memory_port.py <ff7-recomp-core root> [--check]
 """
 import os
 import re
@@ -432,7 +432,7 @@ def fix_from_warnings(root, sites_file):
 def fix_formats(root, log_file):
     """Wrap each gptr<char> passed to a %s (clang -Wformat, with debug_printf annotated) in
     (const char *)(...): through varargs a gptr arrives as its raw guest address."""
-    pat = re.compile(r"^(?:.*/ff7-recomp-android/)?(?P<rel>[^:]+):(?P<line>\d+):(?P<col>\d+): warning: format specifies type 'char \*' but the argument has type 'gptr<char>'")
+    pat = re.compile(r"^(?:.*/ff7-recomp-core/)?(?P<rel>[^:]+):(?P<line>\d+):(?P<col>\d+): warning: format specifies type 'char \*' but the argument has type 'gptr<char>'")
     by_file = {}
     for ln in open(log_file, errors='replace'):
         m = pat.match(ln.strip())

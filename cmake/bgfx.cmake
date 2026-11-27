@@ -1,6 +1,6 @@
-# bx / bimg / bgfx for Apple Metal (P1). Mirrors Android's cmake/bgfx.cmake pins
+# bx / bimg / bgfx for Apple Metal (P1). Same pins as the core's cmake/bgfx.cmake
 # but enables BGFX_CONFIG_RENDERER_METAL instead of Vulkan/GLES.
-include("${CMAKE_CURRENT_LIST_DIR}/android_root.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/core_root.cmake")
 
 set(BX_DIR   "${FF7_ROOT}/external/bx")
 set(BIMG_DIR "${FF7_ROOT}/external/bimg")
@@ -8,7 +8,7 @@ set(BGFX_DIR "${FF7_ROOT}/external/bgfx")
 
 foreach(dir BX_DIR BIMG_DIR BGFX_DIR)
   if(NOT EXISTS "${${dir}}")
-    message(FATAL_ERROR "${dir} missing (${${dir}}). Run: bash tools/setup_android_core.sh")
+    message(FATAL_ERROR "${dir} missing (${${dir}}). Run: bash tools/setup_core.sh")
   endif()
 endforeach()
 

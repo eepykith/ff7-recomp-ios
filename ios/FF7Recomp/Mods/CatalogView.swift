@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Get Mods: browse 7th Heaven's catalogs, install and update mods (in the background, one at
-/// a time), as the Android launcher does.
+/// a time).
 struct CatalogView: View {
     @ObservedObject var queue: DownloadQueue
     @State private var query = ""

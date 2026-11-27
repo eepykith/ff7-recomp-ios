@@ -7,8 +7,10 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.2.5"
-    CURRENT_PROJECT_VERSION: "1"   # 0.2.5
+    # Apple silicon and Intel Macs (Xcode's standard architectures are Apple silicon only now)
+    ARCHS: "arm64 x86_64"
+    MARKETING_VERSION: "0.3"
+    CURRENT_PROJECT_VERSION: "1"   # 0.3
 targets:
   # FF7Recomp Builder: builds FF7Recomp.ipa from the player's own FINAL FANTASY VII on their Mac
   # (iOS cannot compile code on the phone). It carries the kit (tools/make_builder_kit.sh: the
@@ -18,6 +20,8 @@ targets:
     platform: macOS
     sources:
       - path: Sources
+      - path: Vendor
+        excludes: ["zstd/LICENSE"]
       - path: build_ipa.py
         buildPhase: resources
       - path: ../../build-builder/kit
@@ -35,5 +39,26 @@ targets:
         # It runs Xcode's compiler and the Mac's python3 on folders the player picks.
         ENABLE_APP_SANDBOX: NO
         ENABLE_HARDENED_RUNTIME: NO
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        # Steam download (Sources/Steam): the LZMA and zstd decoders in Vendor
+        SWIFT_OBJC_BRIDGING_HEADER: Vendor/ff7_decoders.h
+        HEADER_SEARCH_PATHS: ["$(SRCROOT)/Vendor/zstd"]
+        GCC_PREPROCESSOR_DEFINITIONS: ["ZSTD_DISABLE_ASM=1", "ZSTD_MULTITHREAD=0"]
+
+  # Development only (not shipped): the Builder's Steam download from the command line.
+  ff7steam:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Tools/ff7steam
+      - path: Sources/Steam
+      - path: Vendor
+        excludes: ["zstd/LICENSE"]
+    settings:
+      base:
+        SWIFT_OBJC_BRIDGING_HEADER: Vendor/ff7_decoders.h
+        HEADER_SEARCH_PATHS: ["$(SRCROOT)/Vendor/zstd"]
+        GCC_PREPROCESSOR_DEFINITIONS: ["ZSTD_DISABLE_ASM=1", "ZSTD_MULTITHREAD=0"]
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGN_STYLE: Manual

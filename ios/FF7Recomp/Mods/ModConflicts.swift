@@ -1,6 +1,6 @@
 import Foundation
 
-/// Do mods get in each other's way? Mirrors the Android launcher's `ConflictChecker.java`.
+/// Do mods get in each other's way?
 ///
 /// Before a download only the catalog is known (no file lists), so `beforeInstall` guesses from
 /// what the mods are: the same kind of replacement (two field model packs, two soundtracks, two

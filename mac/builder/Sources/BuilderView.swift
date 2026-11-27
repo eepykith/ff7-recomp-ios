@@ -5,7 +5,10 @@ import SwiftUI
 /// and your game's files: for your own devices only.
 struct BuilderView: View {
     @StateObject private var builder = Builder()
+    @StateObject private var steam = SteamDownloader()
     @State private var pickFolder = false
+    @State private var showSteam = false
+    @State private var confirmRemove = false
     @State private var showLog = false
 
     var body: some View {
@@ -19,11 +22,13 @@ struct BuilderView: View {
             GroupBox {
                 VStack(alignment: .leading, spacing: 10) {
                     row(title: "Your game", status: gameStatus) {
+                        Button("Download from Steam…") { showSteam = true }
+                            .disabled(builder.phase == .building)
                         Button("Choose…") { pickFolder = true }
                             .disabled(builder.phase == .building)
                     }
                     if let folder = builder.gameFolder {
-                        Text(folder.path).font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(2)
+                        Text((folder.path as NSString).abbreviatingWithTildeInPath).font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(2)
                     }
                     Divider()
                     row(title: "Xcode", status: xcodeStatus) {
@@ -51,10 +56,19 @@ struct BuilderView: View {
                     case .done(let url):
                         Label("FF7Recomp.ipa is ready", systemImage: "checkmark.circle.fill")
                             .foregroundStyle(.green).font(.headline)
-                        Text(url.path).font(.caption.monospaced()).foregroundStyle(.secondary)
+                        Text((url.path as NSString).abbreviatingWithTildeInPath).font(.caption.monospaced()).foregroundStyle(.secondary)
                         Text("Sign it and install it on your iPhone (a development profile, AltStore, SideStore…). Open FF7Recomp: it confirms your game files and Play starts the game. Mods unlock once the files are confirmed.")
                             .font(.callout).foregroundStyle(.secondary)
                         Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+                        if SteamDownloader.isDownload(builder.gameFolder), steam.downloadedBytes > 0 {
+                            Divider()
+                            HStack {
+                                Text("The game files downloaded from Steam stay for your next build (\(SteamDownloader.gb(steam.downloadedBytes))).")
+                                    .font(.callout).foregroundStyle(.secondary)
+                                Spacer()
+                                Button("Remove them…") { confirmRemove = true }
+                            }
+                        }
                     case .failed(let message):
                         Label("The build did not finish", systemImage: "exclamationmark.triangle.fill")
                             .foregroundStyle(.orange).font(.headline)
@@ -102,14 +116,23 @@ struct BuilderView: View {
                 .font(.footnote).foregroundStyle(.secondary)
         }
         .padding(24)
+        .sheet(isPresented: $showSteam) {
+            SteamDownloadView(steam: steam, onDone: { folder in builder.choose(folder) }, onRemoved: forgetDownload)
+        }
+        .removeDownloadDialog(isPresented: $confirmRemove, steam: steam, onRemoved: forgetDownload)
         .fileImporter(isPresented: $pickFolder, allowedContentTypes: [.folder]) { result in
             if case .success(let url) = result { builder.choose(url) }
         }
     }
 
+    /// The downloaded files are gone: the Builder no longer has them as its game.
+    private func forgetDownload() {
+        if SteamDownloader.isDownload(builder.gameFolder) { builder.forgetGame() }
+    }
+
     private var gameStatus: (Color, String) {
         switch builder.game {
-        case .none: return builder.gameFolder == nil ? (.secondary, "Choose your FINAL FANTASY VII Steam Edition folder") : (.secondary, "Checking…")
+        case .none: return builder.gameFolder == nil ? (.secondary, "Download it from Steam, or choose your FINAL FANTASY VII Steam Edition folder") : (.secondary, "Checking…")
         case .ok: return (.green, "FINAL FANTASY VII from Steam: game program checked")
         case .problem(let text): return (.orange, text)
         }

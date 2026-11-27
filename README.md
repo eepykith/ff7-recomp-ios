@@ -53,7 +53,7 @@ and on device.
 
 <table>
 <tr>
-<td width="40%"><img src="docs/screenshots/duo-portrait.jpg" alt="iPhone Duo open and upright in the first reactor: the game in the top half; below, the status panel with Cloud and Barret, quick buttons, and the touch pad at the sides"></td>
+<td width="40%"><img src="docs/screenshots/duo-portrait.jpg" alt="iPhone Duo open and upright in No. 5 Reactor: the 16:9 game in the top half; below, the status panel with Cloud, Barret and Tifa, quick buttons, and the touch pad at the sides"></td>
 <td>
 
 ### iPhone Duo — upright
@@ -63,37 +63,57 @@ it, a companion status panel shows location, play time, gil, and each member's H
 (ATB and enemy HP in battle), plus quick buttons — Menu, save/load state, speed 1×/2×/3×, random
 battles, Battle+.
 
-The touch pad stays in the side columns so thumbs never land on the panel. With a controller
-connected, the pad hides (Settings → Controls).
+The touch pad stays in the side columns, d-pad and face buttons high where thumbs reach. With a
+controller connected, the pad hides (Settings → Controls).
 
 </td>
 </tr>
 </table>
 
-| iPhone Duo open, landscape | iPhone Duo closed (outer screen) |
+| iPhone Duo open, landscape (16:9) | iPhone Duo closed (outer screen) |
 | :---: | :---: |
-| ![iPhone Duo open in landscape: the 4:3 picture fills the screen, the pad over its edges](docs/screenshots/duo-open-landscape.jpg) | ![iPhone Duo closed: the game on the outer screen with the pad clear of the camera](docs/screenshots/duo-closed.jpg) |
-| Picture fills the screen; pad over the edges. | Outer screen goes landscape; pad clear of the camera. |
+| ![iPhone Duo open in landscape: the 16:9 picture across the full width, the see-through pad over its edges](docs/screenshots/duo-open-landscape.jpg) | ![iPhone Duo closed: the 16:9 game on the outer screen with the pad clear of the camera](docs/screenshots/duo-closed.jpg) |
+| **Widescreen**: the picture fills the width; see-through pad over the edges. | Outer screen goes landscape; pad clear of the camera. |
 
 | Regular iPhone (landscape) |
 | :---: |
-| ![iPhone 18 Pro in landscape: the 4:3 picture with the pad in the side bars](docs/screenshots/iphone18pro.jpg) |
-| Pad in the black bars beside the 4:3 picture. Slide without lifting; multi-touch; every tap reaches the game. |
+| ![iPhone 18 Pro in landscape: the 16:9 picture nearly edge to edge, the pad over it](docs/screenshots/iphone18pro.jpg) |
+| 16:9 fills an iPhone almost edge to edge. Round d-pad, big **OK** / **Back**; slide without lifting; multi-touch. |
+
+<table>
+<tr>
+<td width="40%"><img src="docs/screenshots/duo-guide.jpg" alt="iPhone Duo upright: the game on top, a text walkthrough open in the status panel's place, the pad at the sides"></td>
+<td>
+
+### Guide beside the game
+
+📖 opens your guide in the status panel's place: read and scroll while you play. **Find guides
+on GameFAQs** saves one for offline reading, or add your own TXT, HTML or PDF. Each guide keeps
+your place. On one screen it opens full screen and the game pauses.
+
+</td>
+</tr>
+</table>
+
+| Your pad, your way | Buttons shown | Settings |
+| :---: | :---: | :---: |
+| ![Size and layout: the pad over a stand-in for the game, OK selected with a slider to resize it](docs/screenshots/pad-layout.jpg) | <img src="docs/screenshots/buttons-shown.jpg" alt="Buttons shown: D-pad, OK, Back, Menu, Switch, L1, R1, Select, Start, each with a switch" width="260"> | <img src="docs/screenshots/settings.jpg" alt="Settings: Appearance System/Light/Dark, Picture 16:9 widescreen, Frame rate, On-screen pad, Buttons shown, Size and layout" width="260"> |
+| **Size and layout**: drag to move, tap one to resize; kept for each way you hold the iPhone. | Hide any button; it still works on a controller. | Widescreen or 4:3, frame rate, light/dark launcher. |
 
 | Mods | Get Mods | A catalog mod |
 | :---: | :---: | :---: |
-| <img src="docs/screenshots/mods.jpg" alt="Mods: Get Mods on top, the installed mods with on/off switches and their options" width="260"> | <img src="docs/screenshots/getmods.jpg" alt="Get Mods: 7th Heaven's catalogs, 115 mods, All / Installed / Updates" width="260"> | <img src="docs/screenshots/moddetail.jpg" alt="Echo-S in Get Mods: preview, category, author, version, size, Install" width="260"> |
-| Your mods in load order; higher wins. Switch each on or off. | 7th Heaven's Qhimm and Sega catalogs: search, categories, updates. | Preview and details; **Install** downloads it in the background. |
+| <img src="docs/screenshots/mods.jpg" alt="Mods: Get Mods on top, the installed mods numbered in load order with on/off switches" width="260"> | <img src="docs/screenshots/getmods.jpg" alt="Get Mods: 7th Heaven's catalogs, 115 mods, All / Installed / Updates" width="260"> | <img src="docs/screenshots/moddetail.jpg" alt="Echo-S in Get Mods: preview, category, author, version, size, Install" width="260"> |
+| Numbered load order; the first wins. Drag to reorder; switch each on or off. | 7th Heaven's Qhimm and Sega catalogs: search, categories, updates. | Preview and details; **Install** downloads it in the background. |
 
 | Touch and hold a mod | Mod options |
 | :---: | :---: |
 | <img src="docs/screenshots/modmenu.jpg" alt="Touch and hold a mod: Options and Delete" width="260"> | <img src="docs/screenshots/modoptions.jpg" alt="Compact Battle UI options: switched on, Battle UI Style" width="260"> |
 | **Options…** or **Delete**. | The mod's own settings, applied the next time the game starts. |
 
-| First launch | FF7Recomp Builder (Mac) |
-| :---: | :---: |
-| <img src="docs/screenshots/setup.jpg" alt="First launch: game files confirmed, Play" width="360"> | ![FF7Recomp Builder: your game found and checked, Xcode found, Build FF7Recomp.ipa](docs/screenshots/mac-builder.jpg) |
-| Confirms your Steam game files, then **Play**. Mods unlock after confirm. | Finds Steam, checks the copy, builds **FF7Recomp.ipa**. |
+| First launch | FF7Recomp Builder (Mac) | Download from Steam |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/setup.jpg" alt="First launch: game files confirmed, Play" width="260"> | ![FF7Recomp Builder: your game found and checked, Xcode found, Build FF7Recomp.ipa](docs/screenshots/mac-builder.jpg) | ![Download from Steam: sign in once with a QR code; downloaded game files kept for the next build, with Remove](docs/screenshots/mac-steam.jpg) |
+| Confirms your Steam game files, then **Play**. Mods unlock after confirm. | Finds Steam or your download, checks the copy, builds **FF7Recomp.ipa**. Apple silicon and Intel. | Sign in once with a QR code in the Steam app; the game files come straight from Steam. |
 
 ---
 
@@ -101,7 +121,7 @@ connected, the pad hides (Settings → Controls).
 
 | You need | Details |
 | --- | --- |
-| **Mac (Apple silicon)** | Builder runs on Apple silicon only (not Intel). |
+| **Mac** | Apple silicon or Intel, macOS 14 or later. |
 | **Xcode** | From the Mac App Store; open it once after install. |
 | **FINAL FANTASY VII on Steam** | Current Steam Edition (`ff7` layout). No older patch; patched installs are not supported. |
 | **Sideloading** | Development profile, [AltStore](https://altstore.io/), [SideStore](https://sidestore.io/), or similar. |
@@ -121,8 +141,14 @@ Grab **FF7Recomp Builder** from
 
 ### 2. Build your IPA
 
-1. The Builder finds your Steam copy (or let you pick the folder).
-2. It checks the game is as Steam installs it today (no patches) and that Xcode is present.
+1. Get the game files, either way:
+   - **Download from Steam…**: sign in once by scanning a QR code with the Steam app on your
+     phone (Steam Guard › Scan a QR code; you never type your Steam password into the Builder).
+     The Builder downloads the files your Steam account owns (about 3.6 GB) straight from Steam
+     and checks each one. No Mac Steam app needed. If the download stops, press it again: it goes
+     on where it was.
+   - Or use your Steam install: the Builder finds it, or **Choose…** its folder.
+2. It checks the game is as Steam sells it today (no patches) and that Xcode is present.
 3. Click **Build FF7Recomp.ipa…** — it lifts the game to C, compiles for iPhone, links the
    engine, and packs your game files.
 
@@ -256,6 +282,7 @@ On an **iPhone Duo**: tested through the first reactor; full game expected playa
 - **Mod order** — drag mods into order (iOS 27; Edit on earlier iOS); numbered, the first wins
 - **Share logs / Report a problem** (Settings › Help) — one zip of the logs, device and mods for a
   GitHub issue; offered after a crash; logs also in Files › FF7Recomp › Logs
+- **Widescreen** (Settings › Display › Picture): 16:9 by default: battles, the world map and wide field screens fill the width; menus stay 4:3 in the middle, and fields without wide backgrounds keep narrow side bars. 4:3 original is one tap away
 - **Appearance** (Settings): the launcher follows the iPhone's light / dark mode, or stays light or dark
 - **Guide reader** (📖 in play): save GameFAQs guides in the app or add your own TXT, HTML or PDF; beside the game on the Duo, full screen on one screen; keeps your place
 - **Frame rate** (Settings): original / fixed / 30 FPS battles / 60 / experimental **120** on
@@ -302,7 +329,7 @@ Tried a mod? [Open an issue](https://github.com/eepykith/ff7-recomp-ios/issues) 
 | --- | --- |
 | Non-Duo iPhone / iPad | Untested (simulator + Duo only) |
 | Builder notarization | Open — Gatekeeper “Open Anyway” on first launch |
-| Intel Mac Builder | Not supported |
+| Intel Mac Builder | Tested under Rosetta on Apple silicon; not yet on an Intel Mac itself |
 | Mega / forum / RAR mod downloads | Manual Safari + Import; RAR refused |
 | Quit | Exits the app (by design for now) |
 
@@ -311,14 +338,6 @@ Tried a mod? [Open an issue](https://github.com/eepykith/ff7-recomp-ios/issues) 
 ## Roadmap
 
 Planned by version. Order may change as reports come in.
-
-### 0.3 — Easier setup and widescreen
-|Item|Plan|
-|---|---|
-|**Steam download in Builder**|Sign in with your Steam account; builder downloads the game (no Mac Steam app)|
-|**Intel Mac support**|Builder on Intel Macs|
-|**Widescreen (16:9)**|Fills the screen instead of 4:3 side bars; Duo + iPhone 18 Pro (simulator)|
-|**Code clean-up**|Neutral names for the shared engine (no Android paths or settings in our code); comments describe our own code|
 
 ### 0.4 — A polished launcher
 |Item|Plan|
@@ -369,6 +388,12 @@ modding platform (GPL-3.0). FFNx continues [FF7_OpenGL](https://github.com/Aali1
 - [Tang-Tang Zhou](https://github.com/tangtang95)
 - [Jérôme Arzel](https://github.com/myst6re)
 - [CosmosXIII](https://github.com/CosmosXIII)
+
+The Builder's Steam download follows [SteamKit2](https://github.com/SteamRE/SteamKit)'s protocol and
+the Android port's use of [JavaSteam](https://github.com/Longi94/JavaSteam); its message definitions
+come from [SteamDatabase/Protobufs](https://github.com/SteamDatabase/Protobufs). It unpacks Steam's
+files with the [LZMA SDK](https://www.7-zip.org/sdk.html)'s decoder (public domain) and
+[Zstandard](https://github.com/facebook/zstd)'s (BSD).
 
 The static-recompilation core used here comes from
 [FF7Recomp for Android](https://github.com/bhuiyah/ff7-recomp-android). Further FFNx contributors

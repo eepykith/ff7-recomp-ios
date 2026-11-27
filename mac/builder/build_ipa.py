@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Build FF7Recomp.ipa from your own FINAL FANTASY VII: the Mac side of what the Android
-launcher does on the phone (GameBuild.java), which iOS cannot do.
+"""Build FF7Recomp.ipa from your own FINAL FANTASY VII on a Mac: the game is translated and
+compiled here because iOS cannot compile code on the phone.
 
 The kit (tools/make_builder_kit.sh) carries no game code: the engine already compiled for
 iPhone without the game, the app's own compiled code and its link, the app's resources, and the

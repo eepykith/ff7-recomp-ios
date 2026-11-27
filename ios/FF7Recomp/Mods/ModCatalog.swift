@@ -1,8 +1,7 @@
 import Foundation
 
 /// 7th Heaven's mod catalogs: subscriptions, the merged list of catalog mods, and which of them
-/// are installed at which version (for "update available"). Mirrors the Android launcher's
-/// `ModCatalog.java`.
+/// are installed at which version (for "update available").
 ///
 /// Catalog XML (7th Heaven's AppCore/Catalog.cs, Mod.cs, ModVersion.cs): Catalog > Mods > Mod
 /// with ID (GUID), Name, Author, Category, Description, Link (info page), Tags/string,

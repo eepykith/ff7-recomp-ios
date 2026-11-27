@@ -225,7 +225,7 @@ int ff7_platform_pad_state(unsigned index, ff7_pad_state *out) {
   return 1;
 }
 
-/* Same contract as the Android host: the injected mask (quickboot's presses) replaces the
+/* The core's contract: the injected mask (quickboot's presses) replaces the
  * previous one and is merged only into what the game reads, so ff7_platform_pad_buttons()
  * keeps reporting the player's own buttons. */
 void ff7_platform_pad_inject(unsigned short buttons) {

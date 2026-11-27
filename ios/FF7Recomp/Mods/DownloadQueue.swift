@@ -7,7 +7,7 @@ extension Notification.Name {
 }
 
 /// The download queue: catalog mods are installed one at a time, in the order they were added,
-/// while the app stays usable. Mirrors the Android launcher's `DownloadQueue.java`.
+/// while the app stays usable.
 ///
 /// Waiting and running items are kept in `<root>/downloads/queue.json`, so a queue cut short
 /// (the app closed or stopped by iOS) carries on the next time the app opens; the running

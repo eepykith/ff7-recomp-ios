@@ -27,41 +27,41 @@ targets:
       - path: ../src/ios_mods          # unpacking mod downloads (zip; 7z below)
         createIntermediateGroups: true
         excludes: ["ff7_ios_modinfo.cpp"]   # needs the core's mod layer (full app only)
-      # .7z mod downloads: the Android port's un7z.c and the LZMA SDK's 7z reader (external/,
-      # tools/fetch_android_core.sh)
-      - path: ../external/ff7-recomp-android/src/android/un7z.c
+      # .7z mod downloads: the core's un7z.c and the LZMA SDK's 7z reader (external/,
+      # tools/fetch_core.sh)
+      - path: ../external/ff7-recomp-core/src/android/un7z.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/7zArcIn.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/7zArcIn.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/7zBuf.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/7zBuf.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/7zCrc.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/7zCrc.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/7zCrcOpt.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/7zCrcOpt.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/7zDec.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/7zDec.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/7zStream.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/7zStream.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/7zAlloc.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/7zAlloc.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/7zFile.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/7zFile.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/Bcj2.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/Bcj2.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/Bra.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/Bra.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/Bra86.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/Bra86.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/BraIA64.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/BraIA64.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/CpuArch.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/CpuArch.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/Delta.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/Delta.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/Lzma2Dec.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/Lzma2Dec.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/LzmaDec.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/LzmaDec.c
         group: ModUnpack
     settings:
       base:
@@ -75,7 +75,7 @@ targets:
           - "$(SRCROOT)/../src/platform"
           - "$(SRCROOT)/../src/ios"
           - "$(SRCROOT)/../src/ios_mods"
-          - "$(SRCROOT)/../external/ff7-recomp-android/external/deps/lzma"
+          - "$(SRCROOT)/../external/ff7-recomp-core/external/deps/lzma"
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
     info:
@@ -83,8 +83,8 @@ targets:
       properties:
         CFBundleDisplayName: FF7Recomp
         CFBundleDevelopmentRegion: en
-        CFBundleShortVersionString: "0.2.5"
-        CFBundleVersion: "1"        # 0.2.5
+        CFBundleShortVersionString: "0.3"
+        CFBundleVersion: "1"        # 0.3
         LSRequiresIPhoneOS: true
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
@@ -126,39 +126,39 @@ targets:
         createIntermediateGroups: true
       - path: ../src/ios_mods          # unpacking mod downloads (zip; 7z below)
         createIntermediateGroups: true
-      # .7z mod downloads: the Android port's un7z.c and the LZMA SDK's 7z reader (external/,
-      # tools/fetch_android_core.sh); LzmaDec.c is in the core already
-      - path: ../external/ff7-recomp-android/src/android/un7z.c
+      # .7z mod downloads: the core's un7z.c and the LZMA SDK's 7z reader (external/,
+      # tools/fetch_core.sh); LzmaDec.c is in the core already
+      - path: ../external/ff7-recomp-core/src/android/un7z.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/7zArcIn.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/7zArcIn.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/7zBuf.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/7zBuf.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/7zCrc.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/7zCrc.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/7zCrcOpt.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/7zCrcOpt.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/7zDec.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/7zDec.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/7zStream.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/7zStream.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/7zAlloc.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/7zAlloc.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/7zFile.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/7zFile.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/Bcj2.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/Bcj2.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/Bra.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/Bra.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/Bra86.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/Bra86.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/BraIA64.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/BraIA64.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/CpuArch.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/CpuArch.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/Delta.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/Delta.c
         group: ModUnpack
-      - path: ../external/ff7-recomp-android/external/deps/lzma/Lzma2Dec.c
+      - path: ../external/ff7-recomp-core/external/deps/lzma/Lzma2Dec.c
         group: ModUnpack
       - path: ../build-ios-ffnx/ffnx      # FFNx's run-time files (stage_ffnx_runtime.sh)
         type: folder
@@ -175,8 +175,8 @@ targets:
           - "$(SRCROOT)/../src/platform"
           - "$(SRCROOT)/../src/ios"
           - "$(SRCROOT)/../src/ios_mods"
-          - "$(SRCROOT)/../external/ff7-recomp-android/external/deps/lzma"
-          - "$(SRCROOT)/../external/ff7-recomp-android/src/mods"
+          - "$(SRCROOT)/../external/ff7-recomp-core/external/deps/lzma"
+          - "$(SRCROOT)/../external/ff7-recomp-core/src/mods"
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
         GCC_PREPROCESSOR_DEFINITIONS: "$(inherited) FF7_BUNDLE_GAME=1 FF7_PLATFORM_ios=1"

@@ -12,7 +12,7 @@ enum ModDownloadError: LocalizedError, Equatable {
 }
 
 /// Downloads a catalog mod into the mods folder, as 7th Heaven's catalog installs do
-/// (AppCore/Install.cs, FileDownloadTask.cs). Mirrors the Android launcher's `ModDownloader.java`.
+/// (AppCore/Install.cs, FileDownloadTask.cs).
 ///
 /// Links (7th Heaven's LocationType): iros://Url/https$host/path (plain HTTP(S), `$` = "://"),
 /// iros://GDrive/<file id> (Google Drive, through its "can't scan for viruses" page),

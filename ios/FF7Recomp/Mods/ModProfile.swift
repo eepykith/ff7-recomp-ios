@@ -1,8 +1,7 @@
 import Foundation
 
 /// The launcher's mod profile: `<root>/mods/profile.xml`, read by the core at boot
-/// (`ff7_mods_load`, `src/mods/mods.h` in the Android core) and written in the same shape as
-/// Android's `ModLibrary.save()`:
+/// (`ff7_mods_load`, `src/mods/mods.h` in the engine core) and written in the shape it reads:
 ///
 /// ```xml
 /// <?xml version="1.0" encoding="utf-8"?>
@@ -53,7 +52,7 @@ enum ModProfileXML {
         return out
     }
 
-    /// Reads a profile. Like the core and Android: `Enabled` other than "false"/"0" (or
+    /// Reads a profile. Like the core: `Enabled` other than "false"/"0" (or
     /// absent) is enabled, option IDs are case-insensitive (kept lower case), backslashes
     /// in paths become '/'.
     static func parse(_ data: Data) throws -> ModProfile {

@@ -5,9 +5,9 @@
 #   bash tools/build_ios_core.sh simulator   # -> build-ios-sim/libff7_bundle.a
 #   bash tools/build_ios_core.sh device      # -> build-ios-device/libff7_bundle.a
 #
-# Needs the Android core set up and overlaid (tools/fetch_android_core.sh,
-# tools/setup_android_core.sh, tools/apply_metal_overlay.sh) and a lift of your own ff7_en.exe
-# under external/ff7-recomp-android/generated/recomp (docs/P1_METAL.md). The result contains that
+# Needs the engine core set up and overlaid (tools/fetch_core.sh,
+# tools/setup_core.sh, tools/apply_metal_overlay.sh) and a lift of your own ff7_en.exe
+# under external/ff7-recomp-core/generated/recomp (docs/P1_METAL.md). The result contains that
 # lift: it is for your own device only, never for distribution.
 #
 # Guest memory is based (FF7_BASED_MEMORY): iOS keeps a 4 GB PAGEZERO, so the flat layout of the

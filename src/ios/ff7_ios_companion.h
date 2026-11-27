@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-/* The game's live state for the status panel (the Android port's bottom screen,
+/* The game's live state for the status panel (the core's companion screen,
  * src/ffnx_port/companion.cpp): a JSON snapshot refreshed ten times a second on the game
  * thread. Copies it into out; returns its length, or 0 when no game is linked. */
 int ff7_ios_companion_json(char *out, int cap);

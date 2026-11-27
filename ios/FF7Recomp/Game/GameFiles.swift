@@ -2,7 +2,7 @@ import CryptoKit
 import Foundation
 import zlib
 
-/// Where things live in the app container. Mirrors the Android `files/` layout the core
+/// Where things live in the app container. The `files/` layout the core
 /// expects: the game in `<root>/game`, mods next to it in `<root>/mods` with
 /// `<root>/mods/profile.xml` (read by `ff7_mods_load` as `<game>/../mods/profile.xml`), the IRO
 /// extraction cache in `<root>/modcache` and save states in `<root>/savestates`.
@@ -96,14 +96,14 @@ enum UserFolders {
     }
 }
 
-/// The game's files in the app (AppPaths.game), as the Android launcher keeps them: the 2026
+/// The game's files in the app (AppPaths.game), as the core expects them: the 2026
 /// Steam release's `ff7/resources/ff7_1.02/ff7_en` as `ff7_en.exe`, and its
 /// `ff7/workingdir/data` (English, French, German and Spanish). They come from Steam
 /// (SteamDownload) or from a copy of the install folder (importFolder). FFNx's own files
 /// (settings and Metal shaders) come with the app and are copied in before each game.
 struct GameFiles {
     /// SHA-1 of the Steam release's ff7/resources/ff7_1.02/ff7_en (1.02 US): the exe the game
-    /// is built from (GameBuild.EXE_SHA1 in the Android launcher).
+    /// is built from (the Builder checks the same SHA-1).
     static let exeSHA1 = "ac306ae92615af75ff36bba6347c67ca1284151d"
     static let languages = ["en", "fr", "de", "es"]
 
@@ -270,15 +270,32 @@ struct GameFiles {
 
     /// Sets `ff7_fps_limiter` in the game folder's FFNx.toml (FFNx reads it when the game starts).
     func setFrameRate(_ rate: FrameRate) {
+        setFFNx(["ff7_fps_limiter": "\(rate.rawValue)"])
+    }
+
+    /// Sets FFNx's `aspect_ratio` (0: 4:3 with side bars, 2: 16:9) and `enable_uncrop` (16:9
+    /// uses the screen top to bottom).
+    func setAspect(_ aspect: AspectMode) {
+        setFFNx(["aspect_ratio": "\(aspect.rawValue)",
+                 "enable_uncrop": aspect == .original ? "false" : "true"])
+    }
+
+    /// Sets `key = value` lines in the game folder's FFNx.toml, adding those it lacks.
+    private func setFFNx(_ values: [String: String]) {
         let url = dir.appendingPathComponent("FFNx.toml")
         guard let text = try? String(contentsOf: url, encoding: .utf8) else { return }
         var lines = text.components(separatedBy: "\n")
-        var found = false
-        for i in lines.indices where lines[i].trimmingCharacters(in: .whitespaces).hasPrefix("ff7_fps_limiter") {
-            lines[i] = "ff7_fps_limiter = \(rate.rawValue)"
-            found = true
+        var missing = values
+        for i in lines.indices {
+            let line = lines[i].trimmingCharacters(in: .whitespaces)
+            guard let eq = line.firstIndex(of: "="), !line.hasPrefix("#") else { continue }
+            let key = line[..<eq].trimmingCharacters(in: .whitespaces)
+            if let v = values[key] {
+                lines[i] = "\(key) = \(v)"
+                missing[key] = nil
+            }
         }
-        if !found { lines.append("ff7_fps_limiter = \(rate.rawValue)") }
+        for (k, v) in missing.sorted(by: { $0.key < $1.key }) { lines.append("\(k) = \(v)") }
         let out = lines.joined(separator: "\n")
         if out != text { try? out.write(to: url, atomically: true, encoding: .utf8) }
     }
@@ -288,7 +305,7 @@ struct GameFiles {
     /// The current Steam release's kernel/window.bin (English, French, German, Spanish) gives
     /// M, W, m and w a width of 8 pixels where the font draws them 11 wide, so dialog runs them
     /// into the next letter ("C'mon newcom≡r"). Sets them back to 11 (tools/fix_font_widths.py,
-    /// fixFontWidths() in the Android installer). Idempotent.
+    /// the Builder does the same). Idempotent.
     func fixFontWidths() {
         for lang in Self.languages {
             let url = data.appendingPathComponent("lang-\(lang)/kernel/window.bin")

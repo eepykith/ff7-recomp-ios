@@ -20,7 +20,7 @@
 #   bash tools/make_builder_kit.sh            # -> build-builder/kit
 set -euo pipefail
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
-AND="$ROOT/external/ff7-recomp-android"
+CORE="$ROOT/external/ff7-recomp-core"
 B="$ROOT/build-kit-ios"
 DD="$ROOT/build-kit-dd"
 KIT="$ROOT/build-builder/kit"
@@ -120,16 +120,34 @@ cp -R "$APP_BUILT" "$KIT/app/FF7RecompBundled.app"
 rm -rf "$KIT/app/FF7RecompBundled.app/FF7RecompBundled" "$KIT/app/FF7RecompBundled.app/_CodeSignature"
 
 echo "== the lifter and the lifted C's headers and flags"
-cp "$AND"/tools/{run_lift.py,gen_extents.py,gen_retn_table.py} "$KIT/lift/tools/"
-cp -R "$AND/external/pcrecomp/tools" "$KIT/lift/external/pcrecomp/tools"
-cp -R "$AND/config" "$KIT/lift/config"
+cp "$CORE"/tools/{run_lift.py,gen_extents.py,gen_retn_table.py} "$KIT/lift/tools/"
+cp -R "$CORE/external/pcrecomp/tools" "$KIT/lift/external/pcrecomp/tools"
+cp -R "$CORE/config" "$KIT/lift/config"
 find "$KIT/lift" -name __pycache__ -prune -exec rm -rf {} +
 SITE="$(python3 -c 'import capstone, os; print(os.path.dirname(os.path.dirname(capstone.__file__)))')"
 cp -R "$SITE/capstone" "$SITE/ordlookup" "$SITE/pefile.py" "$KIT/py/"
+# Intel Macs too: capstone's library as one file for both (the Intel half from capstone's own
+# wheel for that Mac, downloaded once; pip only downloads it, nothing in it runs here)
+CAPLIB="$KIT/py/capstone/lib/libcapstone.dylib"
+if ! lipo -archs "$CAPLIB" | grep -q x86_64; then
+  CAPVER="$(python3 -c 'import capstone; print(capstone.__version__)')"
+  CAPC="$ROOT/build-builder/cache/capstone-x86_64"
+  WHL="$CAPC/capstone-$CAPVER-py3-none-macosx_10_9_x86_64.whl"
+  if [[ ! -f "$WHL" ]]; then
+    mkdir -p "$CAPC"
+    python3 -m pip download -q --no-deps --only-binary=:all: --platform macosx_10_9_x86_64 \
+      --python-version 3.9 "capstone==$CAPVER" -d "$CAPC"
+  fi
+  rm -rf "$CAPC/whl"
+  unzip -q -o "$WHL" 'capstone/lib/libcapstone.dylib' -d "$CAPC/whl"
+  lipo -create "$CAPLIB" "$CAPC/whl/capstone/lib/libcapstone.dylib" -output "$CAPLIB.universal"
+  mv "$CAPLIB.universal" "$CAPLIB"
+fi
+lipo -archs "$CAPLIB" | grep -q x86_64 || { echo "capstone has no Intel half" >&2; exit 1; }
 find "$KIT/py" -name __pycache__ -prune -exec rm -rf {} +
 mkdir -p "$KIT/include/recomp32"
-cp "$AND"/external/pcrecomp/runtime/recomp32/*.h "$KIT/include/recomp32/"
-cp "$AND/src/host/portable_guest.h" "$KIT/include/"
+cp "$CORE"/external/pcrecomp/runtime/recomp32/*.h "$KIT/include/recomp32/"
+cp "$CORE/src/host/portable_guest.h" "$KIT/include/"
 cat > "$KIT/compile.args" <<'ARGS'
 -DFF7_BASED_MEMORY
 -DRECOMP_STRICT_ICALL

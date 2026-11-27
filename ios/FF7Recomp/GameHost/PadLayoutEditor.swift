@@ -18,7 +18,7 @@ struct PadLayoutEditor: View {
         GeometryReader { safeGeo in
             GeometryReader { geo in
                 let safe = PadSettings.insets(for: geo.size) ?? safeGeo.safeAreaInsets
-                let layout = PlayLayout(size: geo.size, safe: safe)
+                let layout = PlayLayout(size: geo.size, safe: safe, aspect: AspectMode.current.ratio)
                 let key = PadSettings.screenKey(geo.size)
                 let adjust = working[key] ?? [:]
                 let items = layout.padItems(shown: PadSettings.shown(hiddenList), adjust: adjust)

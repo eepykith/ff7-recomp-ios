@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build FFmpeg n9.0.2 (the version FFNx pins) as static libraries for Apple targets, for FFNx's
-# movie player. Same feature set as the Android core's tools/build_ffmpeg_android.sh: the 2026
+# movie player. Same feature set as the core's tools/build_ffmpeg_android.sh: the 2026
 # release's movies are Matroska with VP8 video and Vorbis audio (data/movies/*.avi), which FFmpeg
 # decodes in software. VideoToolbox does not decode VP8, and FFNx's player does not set up a
 # hardware decoder, so it is left out (as are the other autodetected system libraries, except zlib).
@@ -10,14 +10,14 @@
 #   bash tools/build_ffmpeg_apple.sh ios-simulator    # build-ios-sim (arm64 simulator)
 #   bash tools/build_ffmpeg_apple.sh ios-device       # build-ios-device
 #
-# Output: external/ff7-recomp-android/build/ffmpeg-apple-<target>/{include,lib}, where the
+# Output: external/ff7-recomp-core/build/ffmpeg-apple-<target>/{include,lib}, where the
 # overlaid cmake/ffnx.cmake finds it (FF7_IOS_FFMPEG_APPLE in tools/apply_metal_overlay.sh).
 # Re-run cmake for that build tree afterwards: FFNx then builds its real movie player instead
 # of src/ffnx_overlay/ffmpeg_movie_stubs.cpp.
 set -euo pipefail
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
-AND="$ROOT/external/ff7-recomp-android"
-SRC="$AND/external/deps/ffmpeg"
+CORE="$ROOT/external/ff7-recomp-core"
+SRC="$CORE/external/deps/ffmpeg"
 TARGET="${1:-}"
 case "$TARGET" in
   macos-arm64)   SDK=macosx;          ARCH=aarch64; TRIPLE=arm64-apple-macos11.0 ;;
@@ -26,8 +26,8 @@ case "$TARGET" in
   ios-device)    SDK=iphoneos;        ARCH=aarch64; TRIPLE=arm64-apple-ios17.0 ;;
   *) echo "usage: $0 macos-arm64|macos-x86_64|ios-simulator|ios-device" >&2; exit 2 ;;
 esac
-OUT="$AND/build/ffmpeg-apple-$TARGET"
-[ -d "$AND/cmake" ] || { echo "missing $AND: run tools/fetch_android_core.sh first" >&2; exit 1; }
+OUT="$CORE/build/ffmpeg-apple-$TARGET"
+[ -d "$CORE/cmake" ] || { echo "missing $CORE: run tools/fetch_core.sh first" >&2; exit 1; }
 
 if [ ! -f "$SRC/configure" ]; then
   git -c advice.detachedHead=false clone -q --depth 1 -b n9.0.2 https://github.com/FFmpeg/FFmpeg.git "$SRC"

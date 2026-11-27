@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// The game's live state for the status panel: the Android port's bottom screen
-/// (CompanionView.java), from the snapshot the game thread builds ten times a second
+/// The game's live state for the status panel (the companion screen), from the snapshot the game thread builds ten times a second
 /// (src/ffnx_port/companion.cpp, ff7_ios_companion_json).
 struct CompanionSnapshot: Decodable, Equatable {
     struct Member: Decodable, Equatable {
@@ -108,7 +107,7 @@ extension View {
 }
 
 /// The status panel: where the party is, play time and gil, and each member's HP / MP / Limit
-/// (ATB in battle, with the enemies' HP on top). Dims during cutscenes, as the Android
+/// (ATB in battle, with the enemies' HP on top). Dims during cutscenes, as the core's
 /// port's bottom screen does.
 struct CompanionPanel: View {
     let state: CompanionSnapshot

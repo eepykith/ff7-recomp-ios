@@ -14,29 +14,29 @@ python3 -m pip install --user capstone pefile    # the lifter's modules
 
 ## 1. Set up the core
 
-The engine is the Android port's C/C++ core (the lifter's runtime, the Win32 shims, FFNx, bgfx).
+The engine is FF7Recomp for Android's C/C++ core (the lifter's runtime, the Win32 shims, FFNx, bgfx).
 It lives in `external/` (never committed); these scripts fetch a pinned copy and put the Apple
 layer on top:
 
 ```bash
-bash tools/fetch_android_core.sh     # Android core, pinned
-bash tools/setup_android_core.sh     # its dependencies and FFNx transforms
+bash tools/fetch_core.sh     # the engine core, pinned
+bash tools/setup_core.sh     # its dependencies and FFNx transforms
 bash tools/apply_metal_overlay.sh    # Metal, based memory, Apple patches (idempotent)
 ```
 
 ## 2. Import and lift your game
 
 ```bash
-AND=external/ff7-recomp-android
+CORE=external/ff7-recomp-core
 STEAM="$HOME/Library/Application Support/Steam/steamapps/common/FINAL FANTASY VII Steam Edition"
-python3 -I "$AND/tools/import_game.py" "$STEAM"
+python3 -I "$CORE/tools/import_game.py" "$STEAM"
 
-mkdir -p "$AND/analysis"
-gunzip -c "$AND/config/catalog.json.gz" > "$AND/analysis/catalog.json"
-python3 -I "$AND/tools/run_lift.py" lift "$AND/game/ff7_en.exe" \
-  "$AND/analysis/catalog.json" "$AND/generated/recomp"
-python3 -I "$AND/tools/gen_extents.py" "$AND/generated/recomp"
-python3 -I "$AND/tools/gen_retn_table.py"
+mkdir -p "$CORE/analysis"
+gunzip -c "$CORE/config/catalog.json.gz" > "$CORE/analysis/catalog.json"
+python3 -I "$CORE/tools/run_lift.py" lift "$CORE/game/ff7_en.exe" \
+  "$CORE/analysis/catalog.json" "$CORE/generated/recomp"
+python3 -I "$CORE/tools/gen_extents.py" "$CORE/generated/recomp"
+python3 -I "$CORE/tools/gen_retn_table.py"
 ```
 
 Then make the `game/` folder the Mac and simulator builds run from (gitignored), with the Metal
@@ -44,10 +44,10 @@ shaders and FFNx's settings:
 
 ```bash
 mkdir -p game
-ln -sfn "$PWD/$AND/game/data" game/data
-ln -sfn "$PWD/$AND/game/ff7_en.exe" game/ff7_en.exe
-cp "$AND/external/FFNx/misc/FFNx.toml" game/FFNx.toml
-make -C "$AND/external/bgfx" shaderc
+ln -sfn "$PWD/$CORE/game/data" game/data
+ln -sfn "$PWD/$CORE/game/ff7_en.exe" game/ff7_en.exe
+cp "$CORE/external/FFNx/misc/FFNx.toml" game/FFNx.toml
+make -C "$CORE/external/bgfx" shaderc
 bash tools/compile_shaders_metal.sh          # writes game/shaders
 python3 -I tools/fix_font_widths.py game     # dialog font widths in the current Steam files
 ```
@@ -139,13 +139,13 @@ python3 mac/builder/build_ipa.py --kit build-builder/kit \
 ios/              SwiftUI app: launcher, setup, mods, play view, touch pad, status panel
 src/platform/     Shared C host API (ff7_host_*, ff7_platform_*)
 src/ios/          Metal view, game thread, status panel bridge
-src/ios_mods/     Unpacking mod downloads (zip; 7z with the Android core's un7z.c)
+src/ios_mods/     Unpacking mod downloads (zip; 7z with the core's un7z.c)
 src/mac/          Mac Metal window (the Mac runner)
 src/ffnx_overlay/ Sources added to FFNx on Apple
 src/hle_overlay/  Apple replacements in the game's HLE layer (CoreAudio sound)
 mac/builder/      FF7Recomp Builder (Mac app) and build_ipa.py
 tools/            Setup, overlay, build, kit, packaging and icon scripts
-patches/          Apple patches applied on top of the Android core
-cmake/            CMake glue for the Android core on Apple
+patches/          Apple patches applied on top of the engine core
+cmake/            CMake glue for the engine core on Apple
 docs/             Build notes, engine notes, release notes, screenshots
 ```

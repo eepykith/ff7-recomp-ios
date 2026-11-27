@@ -224,7 +224,7 @@ struct PadItemView: View {
             VStack(spacing: -2) {
                 Text(face.title)
                     .font(.system(size: item.element.isRound ? h * 0.36 : h * 0.42, weight: .semibold))
-                if let caption = face.caption, h >= 44 {
+                if let caption = face.caption, h >= 38 {
                     Text(caption).font(.system(size: max(9, h * 0.2), weight: .medium))
                 }
             }

@@ -1,9 +1,9 @@
-# Link the Android FFNx/ff7_core stack into this host, with Metal bgfx.
+# Link the engine core's FFNx/ff7_core stack into this host, with Metal bgfx.
 # Prerequisites:
-#   bash tools/fetch_android_core.sh
-#   bash tools/setup_android_core.sh
-#   python3 tools/import_game.py / lift (generated/recomp under the Android tree)
-include("${CMAKE_CURRENT_LIST_DIR}/android_root.cmake")
+#   bash tools/fetch_core.sh
+#   bash tools/setup_core.sh
+#   python3 tools/import_game.py / lift (generated/recomp under the core's tree)
+include("${CMAKE_CURRENT_LIST_DIR}/core_root.cmake")
 
 # Ensure Metal overlay scripts have been applied (idempotent).
 execute_process(
@@ -18,7 +18,7 @@ set(FF7_WITH_BGFX ON CACHE BOOL "" FORCE)
 set(FF7_WITH_FFNX ON CACHE BOOL "" FORCE)
 include("${FF7_ROOT}/cmake/ff7core.cmake")
 
-# Rosetta x86_64 on Apple Silicon: android ffnx_deps always enables libpng NEON.
+# Rosetta x86_64 on Apple Silicon: the core's ffnx_deps always enables libpng NEON.
 if(APPLE AND CMAKE_OSX_ARCHITECTURES MATCHES "x86_64" AND TARGET ffnx_png)
   get_target_property(_ff7_png_defs ffnx_png COMPILE_DEFINITIONS)
   if(_ff7_png_defs)
