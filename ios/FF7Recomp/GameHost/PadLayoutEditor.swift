@@ -13,6 +13,8 @@ struct PadLayoutEditor: View {
     @State private var loaded = false
     @State private var selected: PadElement?
     @State private var dragStart: PadAdjust?
+    /// The iPhone Duo's hinge, as play watches it: the editor turns the way play does here.
+    @State private var hingeOpen: Bool?
 
     var body: some View {
         GeometryReader { safeGeo in
@@ -29,7 +31,8 @@ struct PadLayoutEditor: View {
                     if let panel = layout.panel { stand(in: panel, label: "Status panel") }
                     if let deck = layout.deck { stand(in: deck, label: nil) }
 
-                    controls(layout: layout, key: key, items: items)
+                    controls(layout: layout, key: key, items: items,
+                             canTurn: PlayOrientation.allowsPortrait(geo.size, hingeOpen: hingeOpen))
                         .opacity(dragStart == nil ? 1 : 0.2)
                         .allowsHitTesting(dragStart == nil)
 
@@ -48,9 +51,15 @@ struct PadLayoutEditor: View {
                             .position(item.center)
                     }
                 }
+                .onAppear { PlayOrientation.lock(for: geo.size, hingeOpen: hingeOpen) }
+                .onChange(of: PlayOrientation.allowsPortrait(geo.size, hingeOpen: hingeOpen)) {
+                    PlayOrientation.lock(for: geo.size, hingeOpen: hingeOpen)
+                }
+                .watchHinge { hingeOpen = $0 }
             }
             .ignoresSafeArea()
         }
+        .onDisappear { OrientationLock.set(.all) }
         .background(Color.black)
         .environment(\.colorScheme, .dark)
         .statusBarHidden(true)
@@ -123,7 +132,7 @@ struct PadLayoutEditor: View {
         }
     }
 
-    private func controls(layout: PlayLayout, key: String, items: [PadItem]) -> some View {
+    private func controls(layout: PlayLayout, key: String, items: [PadItem], canTurn: Bool) -> some View {
         let pic = layout.picture
         let width = min(360, pic.width - 24)
         return VStack(alignment: .leading, spacing: 10) {
@@ -139,7 +148,8 @@ struct PadLayoutEditor: View {
                 Slider(value: scaleBinding(key: key, items: items), in: 0.6...1.6)
                 Image(systemName: "plus.magnifyingglass").foregroundStyle(.secondary)
             }
-            Text("Drag a button to move it. Tap one to resize just that one. Turn the iPhone to set up the other way of holding it.")
+            Text(canTurn ? "Drag a button to move it. Tap one to resize just that one. Turn the iPhone to set up the other way of holding it."
+                         : "Drag a button to move it. Tap one to resize just that one.")
                 .font(.footnote).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             HStack {
