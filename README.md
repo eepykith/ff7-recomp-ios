@@ -344,7 +344,7 @@ Planned by version. Order may change as reports come in.
 |---|---|
 |**Aesthetics**|Home screen art; smoother Get Mods / Mods; clearer first launch|
 |**More devices**|Regular iPhones and iPads beyond the Duo|
-|**Game Center achievements**|The game's 32 achievements; system pop-ups and Game Center profile|
+|**Steam achievements**|The game's 36 Steam achievements unlock on your Steam account as you play; saved while offline and sent later; opt-in|
 |**Screen reflection (iPhone Duo)**|Playing upright, half-folded or flat open: a live, soft reflection of the game glows behind the pad and status panel; can be turned off|
 
 ### 0.5 — Mac app, iCloud sync, MetalFX, and haptics
