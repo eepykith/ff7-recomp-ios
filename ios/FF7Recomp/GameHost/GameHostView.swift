@@ -23,6 +23,7 @@ struct GameHostView: View {
     @State private var confirmQuit = false
     /// true while the iPhone Duo's hinge is open or half open, false while shut; nil without a hinge.
     @State private var hingeOpen: Bool?
+    @AppStorage("screenReflection") private var screenReflection = true
     @State private var controller = Self.hasGamepad()
     @AppStorage(TouchPadMode.key) private var touchPadMode = TouchPadMode.auto
     @State private var companion = CompanionSnapshot.empty
@@ -45,9 +46,25 @@ struct GameHostView: View {
                 ZStack(alignment: .topLeading) {
                     Color.black
 
-                    MetalSurfaceView()
+                    let reflect = screenReflection && hingeOpen == true && layout.panel != nil
+                    MetalSurfaceView(reflection: reflect)
                         .frame(width: layout.picture.width, height: layout.picture.height)
                         .offset(x: layout.picture.minX, y: layout.picture.minY)
+
+                    if reflect {
+                        // the mirrored copy sits just below the picture; soften and fade it
+                        let top = layout.picture.maxY
+                        let light = touchPadMode.hidesPad(controller: controller)
+                        ZStack {
+                            Rectangle().fill(.ultraThinMaterial)
+                            LinearGradient(colors: [.black.opacity(light ? 0.25 : 0.45), .black],
+                                           startPoint: .top, endPoint: .bottom)
+                        }
+                        .environment(\.colorScheme, .dark)
+                        .frame(width: geo.size.width, height: max(0, geo.size.height - top))
+                        .offset(x: 0, y: top)
+                        .allowsHitTesting(false)
+                    }
 
                     if showStatus {
                         Text(status)
@@ -299,9 +316,13 @@ struct GameHostView: View {
 }
 
 private struct MetalSurfaceView: UIViewRepresentable {
+    var reflection = false
+
     func makeUIView(context: Context) -> FF7MetalView {
         FF7MetalView(frame: .zero)
     }
 
-    func updateUIView(_ uiView: FF7MetalView, context: Context) {}
+    func updateUIView(_ uiView: FF7MetalView, context: Context) {
+        uiView.reflection = reflection
+    }
 }

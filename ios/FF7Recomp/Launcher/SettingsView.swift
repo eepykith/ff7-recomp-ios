@@ -7,6 +7,7 @@ struct SettingsView: View {
     @AppStorage(LauncherAppearance.key) private var appearance = LauncherAppearance.system
     @State private var showButtons = false
     @State private var editLayout = false
+    @AppStorage("screenReflection") private var screenReflection = true
 
     var body: some View {
         Form {
@@ -28,10 +29,11 @@ struct SettingsView: View {
                 Picker("Frame rate", selection: $model.frameRate) {
                     ForEach(FrameRate.allCases) { Text($0.label).tag($0) }
                 }
+                Toggle("Screen reflection (iPhone Duo)", isOn: $screenReflection)
             } header: {
                 Text("Display")
             } footer: {
-                Text(model.aspect.detail + " " + model.frameRate.detail + " Both apply the next time the game starts.")
+                Text(model.aspect.detail + " " + model.frameRate.detail + " Both apply the next time the game starts. Screen reflection shows a soft mirror of the game below it when you play an iPhone Duo upright, open or half-folded.")
             }
 
             Section {

@@ -9,10 +9,38 @@
   id<MTLDevice> _device;
   id<MTLCommandQueue> _queue;
   CADisplayLink *_link;
+  CAMetalLayer *_metal;
 }
 
+/* The view's own layer is a replicator holding the game's CAMetalLayer, so the
+ * iPhone Duo can show a second, mirrored copy below the picture (the screen
+ * reflection). The copy is drawn by the render server: no extra GPU pass. */
 + (Class)layerClass {
-  return [CAMetalLayer class];
+  return [CAReplicatorLayer class];
+}
+
+- (void)setReflection:(BOOL)reflection {
+  if (_reflection == reflection) {
+    return;
+  }
+  _reflection = reflection;
+  [self updateReplica];
+}
+
+- (void)updateReplica {
+  CAReplicatorLayer *rep = (CAReplicatorLayer *)self.layer;
+  CGFloat h = self.bounds.size.height;
+  [CATransaction begin];
+  [CATransaction setDisableActions:YES];
+  rep.instanceCount = _reflection ? 2 : 1;
+  /* An opaque CAMetalLayer can go straight to the display, past the compositor;
+   * replicated, the original then stays black on a device. Non-opaque keeps it
+   * composited while the copy is shown. */
+  _metal.opaque = !_reflection;
+  /* flip about the bottom edge: y -> h - y around the layer's centre */
+  rep.instanceTransform =
+      CATransform3DScale(CATransform3DMakeTranslation(0, h, 0), 1, -1, 1);
+  [CATransaction commit];
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -21,7 +49,9 @@
     return nil;
   }
   _device = MTLCreateSystemDefaultDevice();
-  CAMetalLayer *layer = (CAMetalLayer *)self.layer;
+  _metal = [CAMetalLayer layer];
+  [self.layer addSublayer:_metal];
+  CAMetalLayer *layer = _metal;
   layer.device = _device;
   layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
   layer.framebufferOnly = YES;
@@ -49,7 +79,12 @@
 
 - (void)layoutSubviews {
   [super layoutSubviews];
-  CAMetalLayer *layer = (CAMetalLayer *)self.layer;
+  CAMetalLayer *layer = _metal;
+  [CATransaction begin];
+  [CATransaction setDisableActions:YES];
+  layer.frame = self.layer.bounds;
+  [CATransaction commit];
+  [self updateReplica];
   CGFloat scale = self.traitCollection.displayScale;
   if (scale <= 0) {
     scale = self.window.screen.scale;
@@ -71,7 +106,7 @@
     ff7_platform_note_present();
     return;
   }
-  CAMetalLayer *layer = (CAMetalLayer *)self.layer;
+  CAMetalLayer *layer = _metal;
   id<CAMetalDrawable> drawable = [layer nextDrawable];
   if (!drawable || !_queue) {
     return;

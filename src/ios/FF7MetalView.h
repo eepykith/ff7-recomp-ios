@@ -3,4 +3,6 @@
 /* CAMetalLayer host. bgfx will take this layer via ff7_platform_window().
  * Until FFNx is linked, the view clears the drawable itself. */
 @interface FF7MetalView : UIView
+/* iPhone Duo upright: draw a mirrored copy of the picture below it */
+@property(nonatomic) BOOL reflection;
 @end
