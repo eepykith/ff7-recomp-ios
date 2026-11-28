@@ -337,13 +337,17 @@ Tried a mod? [Open an issue](https://github.com/eepykith/ff7-recomp-ios/issues) 
 
 Planned by version. Order may change as reports come in.
 
+### 0.3.3 — Screen reflection
+|Item|Plan|
+|---|---|
+|**Screen reflection (iPhone Duo)**|Playing upright, half-folded or flat open: a live, soft reflection of the game glows behind the pad and status panel; on by default, off in Settings › Display|
+
 ### 0.4 — A polished launcher
 |Item|Plan|
 |---|---|
 |**Aesthetics**|Home screen art; smoother Get Mods / Mods; clearer first launch|
 |**More devices**|Regular iPhones and iPads beyond the Duo|
 |**Steam achievements**|The game's 36 Steam achievements unlock on your Steam account as you play; saved while offline and sent later; opt-in|
-|**Screen reflection (iPhone Duo)**|Playing upright, half-folded or flat open: a live, soft reflection of the game glows behind the pad and status panel; can be turned off|
 
 ### 0.5 — Mac app, iCloud sync, MetalFX, and haptics
 |Item|Plan|
