@@ -22,7 +22,7 @@ launcher for saves and mods.
 > lifts and packs the game once; iOS cannot compile on-device.
 
 > [!NOTE]
-> **Pre-release** ([v0.3a](https://github.com/eepykith/ff7-recomp-ios/releases/tag/v0.3a)) on
+> **Pre-release** ([v0.3.3](https://github.com/eepykith/ff7-recomp-ios/releases/tag/v0.3.3)) on
 > an **iPhone Duo**: tested through the first reactor; full game expected playable. Includes mods
 > from 7th Heaven catalogs. Still a pre-release — expect rough edges. Sideload only — not the App
 > Store.
@@ -337,8 +337,8 @@ Tried a mod? [Open an issue](https://github.com/eepykith/ff7-recomp-ios/issues) 
 
 Planned by version. Order may change as reports come in.
 
-### 0.3.3 — Screen reflection
-|Item|Plan|
+### 0.3.3 — Screen reflection (done, this version)
+|Item|Status|
 |---|---|
 |**Screen reflection (iPhone Duo)**|Playing upright, half-folded or flat open: a live, soft reflection of the game glows behind the pad and status panel; on by default, off in Settings › Display|
 
