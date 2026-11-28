@@ -53,18 +53,16 @@ and on device.
 
 <table>
 <tr>
-<td width="40%"><img src="docs/screenshots/duo-portrait.jpg" alt="iPhone Duo open and upright in No. 5 Reactor: the 16:9 game in the top half; below, the status panel with Cloud, Barret and Tifa, quick buttons, and the touch pad at the sides"></td>
+<td width="62%"><img src="docs/screenshots/duo-portrait.jpg" alt="iPhone Duo open and upright in No. 5 Reactor: the 16:9 game in the top half; below, the status panel with Cloud, Barret and Tifa, quick buttons, and the touch pad at the sides"></td>
 <td>
 
 ### iPhone Duo — upright
 
-Open or half-folded and held upright: the game sits in the **top half**, clear of the fold. Below
-it, a companion status panel shows location, play time, gil, and each member's HP, MP, and Limit
-(ATB and enemy HP in battle), plus quick buttons — Menu, save/load state, speed 1×/2×/3×, random
-battles, Battle+.
+Open or half-folded: the game in the **top half**, clear of the fold. Below, a status panel
+with location, play time, gil, HP / MP / Limit (ATB and enemy HP in battle) and quick buttons:
+Menu, save/load state, speed, battles, Battle+.
 
-The touch pad stays in the side columns, d-pad and face buttons high where thumbs reach. With a
-controller connected, the pad hides (Settings → Controls).
+The pad sits at the sides and hides with a controller.
 
 </td>
 </tr>
@@ -354,6 +352,11 @@ Planned by version. Order may change as reports come in.
 |**iCloud sync**|Saves, save states, and mods across Mac, iPhone, and iPad|
 |**MetalFX upscaling**|Lower-res draw + Metal upscale; less heat / longer battery (or sharper), esp. HD textures|
 |**Controller haptics**|Xbox / DualSense rumble; DualSense adaptive triggers; Taptic Engine on the touch pad|
+
+### 0.6 — Battle commands on the status panel
+|Item|Plan|
+|---|---|
+|**Battle commands (iPhone Duo)**|Playing upright: pick commands, spells, items and targets with big buttons on the status panel, like a dual-screen handheld; the game's own rules apply|
 
 ### Toward 1.0
 |Item|Plan|
